@@ -192,12 +192,12 @@ The AI never mutates database state or balances directly; every tool returns a s
 
 ## 5. System Architecture & Data Model
 
-### 5.1 Technical Stack & Data Flow (100% Free Cloudflare Edge Stack)
+### 5.1 Technical Stack & Data Flow (Docker Compose `dev` & `prod` + Shared TypeScript Engine)
 
-- **Frontend:** React (Vite), TypeScript, real-time WebSocket / D1 version-delta state sync, push-to-talk Web Speech API + Web Audio capture, served as free Cloudflare Worker Static Assets.
-- **Backend:** Single Cloudflare Worker (TypeScript + Hono), shared deterministic single-transaction rules engine (`clock` injected as a parameter for replay determinism).
-- **Database & Infra:** Cloudflare D1 (Managed Edge SQLite on the Free Tier) with atomic batch transactions (`env.DB.batch`), optimistic concurrency control + idempotency keys; zero-Docker local development via Wrangler.
-- **AI & Feeds:** Cloudflare Workers AI (`env.AI` Free Tier — `@cf/meta/llama-3.3-70b-instruct-fp8-fast` for structured tool calling + `@cf/openai/whisper-tiny-en` for voice transcription, with optional Gemini Free Tier key and deterministic offline fallback); sports feed tick controller with **deterministic Replay Mode** (variable-speed recorded match playback for demos and integration tests).
+- **Frontend:** React (Vite), TypeScript, real-time state sync, push-to-talk Web Speech API + Web Audio capture.
+- **Backend:** Hono API server (`src/worker/index.ts` & `scripts/prod_server.mjs`), shared deterministic single-transaction rules engine (`clock` injected as a parameter for replay determinism).
+- **Database & Infra:** Multi-stage Docker deployment (`Dockerfile`, `docker-compose.dev.yml`, `docker-compose.prod.yml`) with a dedicated Python 3 dev seeding container (`Dockerfile.seed` + `scripts/seed_dev.py` in `docker-compose.dev.yml` only) and SQLite/D1 schema (`migrations/0001_initial_schema.sql`) with optimistic concurrency control + idempotency keys.
+- **AI & Feeds:** Two-Stage Intake & Classifier pipeline (`src/worker/agents.ts`) with structured tool schemas and voice transcription; sports feed tick controller (`src/worker/replay.ts`) with **deterministic Replay Mode** (variable-speed recorded match playback for demos and integration tests).
 - **Testing:** `Vitest` + `fast-check` property-based test suite.
 
 ### 5.2 Unified Data Model

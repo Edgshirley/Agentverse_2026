@@ -5,8 +5,10 @@
   "type": "module",
   "description": "Friend Spreader (Spread) — Zero-cost Cloudflare Edge social market-making & continuous trading terminal",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build && npm run build:server",
+    "build:server": "esbuild src/worker/index.ts --bundle --platform=node --format=esm --outfile=dist-server/worker.mjs",
+    "start:prod": "node scripts/prod_server.mjs",
     "preview": "wrangler dev",
     "deploy": "npm run build && wrangler deploy",
     "db:migrate:local": "wrangler d1 migrations apply spread-db --local",

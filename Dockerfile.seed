@@ -1,0 +1,10 @@
+# ============================================================================
+# Friend Spreader (Spread) — Python Dev Seed Container (dev compose only)
+# ============================================================================
+
+FROM python:3.12-slim
+WORKDIR /seed
+ENV PYTHONUNBUFFERED=1
+COPY scripts/seed_dev.py /seed/seed_dev.py
+RUN chmod +x /seed/seed_dev.py
+CMD ["python3", "/seed/seed_dev.py"]

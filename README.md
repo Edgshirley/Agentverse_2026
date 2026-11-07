@@ -28,7 +28,27 @@ Built on a **100% Free Cloudflare Edge Stack** (`Cloudflare Workers + Static Ass
 
 ---
 
-## Local Quickstart (Zero Docker Required)
+## Docker Compose Deployment (`dev` & `prod`)
+
+### 1. Development Compose (with Python `seed` container)
+
+Runs the live-reloading Citadel Poker Terminal on `http://localhost:5173` and automatically executes the Python `seed` container ([`scripts/seed_dev.py`](file:///Users/andreas/Documents/Agentverse_2026/scripts/seed_dev.py) via [`Dockerfile.seed`](file:///Users/andreas/Documents/Agentverse_2026/Dockerfile.seed)) once the `app` healthcheck passes:
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+### 2. Production Compose (no `seed` container)
+
+Builds the production bundle + compiled server (`dist/` + `dist-server/worker.mjs`) and serves the application on `http://localhost:3000`:
+
+```bash
+docker compose -f docker-compose.prod.yml up --build -d
+```
+
+---
+
+## Local Node Quickstart & Verification Suite
 
 ```bash
 # 1. Install dependencies
@@ -37,24 +57,9 @@ npm install
 # 2. Run the Golden Test, Cascade/Arbiter Suite, Risk Gate Suite, E2E Replay, and fast-check Property Tests
 npm test
 
-# 3. Start the interactive Citadel Poker Terminal + Worker API locally
+# 3. Build client + production server bundle
+npm run build
+
+# 4. Start the interactive Citadel Poker Terminal locally
 npm run dev
-```
-
----
-
-## Free-Tier Cloudflare Deployment (\$0/month)
-
-Everything deploys as a single Cloudflare Worker with free Static Assets, free D1 SQLite storage (5 GB free), and free Workers AI (`env.AI` — 10,000 neurons/day free):
-
-```bash
-# 1. Create your free Cloudflare D1 database (once) and paste the database_id into wrangler.jsonc
-npx wrangler d1 create spread-db
-
-# 2. Apply the SQLite schema migration (local or remote)
-npm run db:migrate:local
-npm run db:migrate:remote
-
-# 3. Build static assets and deploy to Cloudflare Workers Free Tier
-npm run deploy
 ```

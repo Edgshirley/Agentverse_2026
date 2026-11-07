@@ -6,6 +6,13 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { Env, globalStore } from './db';
 import { Market, OrderType, PositionSide, StrategyMandate } from '../shared/types';
+import {
+  estimateAdvisoryFairValue,
+  generateMarketRecap,
+  parseStrategyRuleWithRiskGate,
+  runAgent1Intake,
+  runAgent2Classifier,
+} from './agents';
 
 export const app = new Hono<{ Bindings: Env }>();
 
@@ -532,6 +539,94 @@ app.post('/api/markets/:id/resolve/settle', async (c) => {
     globalStore.bumpVersion();
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+// 11b. Multi-Agent Pipeline Endpoints (Agent 1 Intake -> Agent 2 Classifier, 3-Part Risk Gate, Recap)
+app.post('/api/agents/intake', async (c) => {
+  try {
+    const { prompt, playerId } = await c.req.json<{ prompt: string; playerId?: string }>();
+    if (!prompt || !prompt.trim()) {
+      return c.json({ error: 'Prompt is required for Agent 1 Intake' }, 400);
+    }
+    const { draft, lint, widthSuggestion } = await runAgent1Intake(prompt, c.env);
+    const classification = await runAgent2Classifier(prompt, draft, c.env);
+
+    const activeMarkets = globalStore.engine.getAllMarkets();
+    if (activeMarkets[0]) {
+      globalStore.engine.emitWireTrace(
+        activeMarkets[0].id,
+        'PLAYER',
+        'ORACLE_AGENT',
+        'AGENT1_2_INTAKE_PIPELINE',
+        `${(playerId || 'ana').toUpperCase()} prompt -> Agent 1 drafted "${draft.question}" | Agent 2 classified [${classification.archetype.toUpperCase()} / ${classification.route.toUpperCase()}] (conf=${Math.round(classification.confidence * 100)}%)`
+      );
+      globalStore.bumpVersion();
+    }
+
+    return c.json({
+      draft,
+      lint,
+      widthSuggestion,
+      classification,
+    });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+app.post('/api/agents/parse-strategy', async (c) => {
+  try {
+    const { marketId, transcript, modality, playerId } = await c.req.json<{
+      marketId: string;
+      transcript: string;
+      modality?: 'voice' | 'text';
+      playerId?: string;
+    }>();
+    const market = globalStore.engine.getMarket(marketId);
+    const proposal = await parseStrategyRuleWithRiskGate(
+      transcript,
+      modality || 'voice',
+      market,
+      c.env
+    );
+
+    globalStore.engine.emitWireTrace(
+      marketId,
+      'PLAYER',
+      'RISK_AGENT',
+      `PARSE_RULE_${(modality || 'voice').toUpperCase()}`,
+      `Transcript: "${transcript}" -> Gate=${proposal.gate_passed ? 'PASSED' : `BLOCKED (missing: ${proposal.missing_risk_gate_fields.join(', ')})`}`
+    );
+    globalStore.bumpVersion();
+
+    return c.json({
+      proposal,
+      advisoryFairValue: estimateAdvisoryFairValue(market),
+      playerId: playerId || 'ana',
+    });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+app.get('/api/agents/recap/:id', async (c) => {
+  try {
+    const marketId = c.req.param('id');
+    const market = globalStore.engine.getMarket(marketId);
+    const entries = globalStore.engine.ledger.getEntries(marketId);
+    const netPnlByPlayer: Record<string, number> = {};
+    for (const e of entries) {
+      if (e.account === 'wallet') {
+        netPnlByPlayer[e.player_id] = (netPnlByPlayer[e.player_id] ?? 0) + e.delta_toks;
+      }
+    }
+    return c.json({
+      recap: generateMarketRecap(market, netPnlByPlayer),
+      netPnlByPlayer,
+    });
   } catch (err: any) {
     return c.json({ error: err.message }, 400);
   }

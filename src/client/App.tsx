@@ -2,8 +2,13 @@ import React, { useState } from 'react';
 import { useMarketSync } from './hooks/useMarketSync';
 import { HeaderBar } from './components/HeaderBar';
 import { TradingControls } from './components/TradingControls';
+import { StrategySheetModal } from './components/StrategySheetModal';
+import { ArbiterPanel } from './components/ArbiterPanel';
 import { ExhibitA_PlayerRing } from './exhibits/ExhibitA_PlayerRing';
 import { ExhibitB_Swimlanes } from './exhibits/ExhibitB_Swimlanes';
+import { ExhibitB_SwingTree } from './exhibits/ExhibitB_SwingTree';
+import { ExhibitC_TelemetryCard } from './exhibits/ExhibitC_TelemetryCard';
+import { ExhibitD_WireTrace } from './exhibits/ExhibitD_WireTrace';
 
 export const App: React.FC = () => {
   const {
@@ -19,6 +24,7 @@ export const App: React.FC = () => {
   } = useMarketSync();
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [strategyModalTab, setStrategyModalTab] = useState<'create' | 'strategy' | null>(null);
 
   if (loading || !data || !data.activeBundle) {
     return (
@@ -28,9 +34,23 @@ export const App: React.FC = () => {
     );
   }
 
-  const { group, players, markets, activeBundle } = data;
-  const { market, positions, orders, p2pBids, widthBids, swimlanes, liveEvents, mmEscrowToks } =
-    activeBundle;
+  const { group, players, markets, activeBundle, serverClockMs } = data;
+  const {
+    market,
+    positions,
+    orders,
+    p2pBids,
+    widthBids,
+    swimlanes,
+    wireTrace,
+    swingTree,
+    swingRiskLabel,
+    mandates,
+    liveEvents,
+    mmEscrowToks,
+  } = activeBundle;
+
+  const activePlayer = players.find((p) => p.id === activePlayerId) ?? players[0];
 
   return (
     <div className="citadel-shell" data-theme={theme}>
@@ -41,7 +61,8 @@ export const App: React.FC = () => {
         onSelectPlayer={setActivePlayerId}
         theme={theme}
         onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-        onOpenStrategySheet={() => {}}
+        onOpenStrategySheet={(mode) => setStrategyModalTab(mode)}
+        onStepReplay={() => dispatchAction(`/api/markets/${market.id}/replay/step`, {})}
         onResetDemo={() => dispatchAction('/api/demo/reset', {})}
         onJoinPlayer={async (nickname) => {
           const res = await dispatchAction('/api/groups/join', { nickname });
@@ -61,8 +82,8 @@ export const App: React.FC = () => {
             onClick={() => setSelectedMarketId(m.id)}
           >
             M{idx + 1} [{m.archetype.toUpperCase()} / {m.state.toUpperCase()}] ::{' '}
-            {m.question.slice(0, 46)}
-            {m.question.length > 46 ? '...' : ''}
+            {m.question.slice(0, 48)}
+            {m.question.length > 48 ? '...' : ''}
           </div>
         ))}
       </nav>
@@ -85,6 +106,7 @@ export const App: React.FC = () => {
       )}
 
       <main className="terminal-grid">
+        {/* Left Column: Exhibit A (Radial Ring), Arbiter/Stacked Panel, 1-Tap Controls, Exhibit B (Swimlanes) */}
         <div className="terminal-col">
           <ExhibitA_PlayerRing
             market={market}
@@ -95,6 +117,17 @@ export const App: React.FC = () => {
             selectedPlayerId={activePlayerId}
             onSelectPlayer={setActivePlayerId}
           />
+
+          <ArbiterPanel
+            market={market}
+            allMarkets={markets}
+            activePlayerId={activePlayerId}
+            players={players}
+            serverClockMs={serverClockMs}
+            onDispatch={dispatchAction}
+            onSelectMarket={setSelectedMarketId}
+          />
+
           <TradingControls
             market={market}
             activePlayerId={activePlayerId}
@@ -104,12 +137,50 @@ export const App: React.FC = () => {
             widthBids={widthBids}
             onDispatch={dispatchAction}
           />
-        </div>
 
-        <div className="terminal-col">
           <ExhibitB_Swimlanes players={players} swimlanes={swimlanes} />
         </div>
+
+        {/* Right Column: Exhibit C (Telemetry Card), Exhibit B Bottom (Swing Tree), Exhibit D (Wire Trace) */}
+        <div className="terminal-col">
+          <ExhibitC_TelemetryCard
+            market={market}
+            selectedPlayer={activePlayer}
+            positions={positions}
+            orders={orders}
+            mandates={mandates}
+            mmEscrowToks={mmEscrowToks}
+            swingRiskLabel={swingRiskLabel}
+          />
+
+          <ExhibitB_SwingTree
+            swingTree={swingTree}
+            orders={orders}
+            p2pBids={p2pBids}
+            players={players}
+          />
+
+          <ExhibitD_WireTrace
+            wireTrace={wireTrace}
+            onToggleFeedDelay={() =>
+              dispatchAction(`/api/markets/${market.id}/replay/feed-delayed`, {})
+            }
+          />
+        </div>
       </main>
+
+      {strategyModalTab && (
+        <StrategySheetModal
+          initialTab={strategyModalTab}
+          activeMarket={market}
+          allMarkets={markets}
+          activePlayer={activePlayer}
+          players={players}
+          onClose={() => setStrategyModalTab(null)}
+          onDispatch={dispatchAction}
+          onSelectMarket={setSelectedMarketId}
+        />
+      )}
     </div>
   );
 };

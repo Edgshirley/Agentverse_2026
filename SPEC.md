@@ -266,8 +266,8 @@ The AI never mutates database state or balances directly; every tool returns a s
 
 ### 7.2 Phased Delivery Milestones
 
-- [ ] **M0 — Deterministic Rules Engine:** Pure TypeScript engine covering width auction, `[L, H]` quotes, `Pot`/`Binary`/`Linear`/`Log` payoffs, escrow, P2P position transfers, continuous mark-to-market pool math, limit/stop cascade matching, and Golden + `fast-check` property test suites.
-- [ ] **M1 — Citadel Poker Terminal Web App & Cloudflare D1 Backend:** Single Cloudflare Worker + D1 persistence, invite-link groups, real-time state sync, Dual-Theme UI (`#000000` Live Terminal + `#FAFAFA` Strategy Sheet), Player Ring, Action Swimlanes, 1-tap takes, and manual resolution.
-- [ ] **M2 — Multi-Agent AI & Voice Layer:** Cloudflare Workers AI (`env.AI`) pipeline for Agent 1 (`draft_market`, `lint_criteria`), Agent 2 (`classify_market`), push-to-talk voice input, `parse_rule` with the mandatory 3-part Risk Gate, `commentate`, and `write_recap`.
-- [ ] **M3 — Live Feeds, Order Book & Demo Readiness:** Sports feed tick controller with Replay Mode, Poisson fair-value model, P2P standing bids, public Limit/Stop Swing Map, Branching Swing Tree, Telemetry Card, and Wire Trace.
-- [ ] **M4 — Stacked Markets, Arbiter Route & Edge Deployment:** Stacked derivative markets (`parent_market_id`), countdown-locked 3rd-party Arbiter workflow, ranking markets, and zero-cost Cloudflare Worker + D1 deployment.
+- [x] **M0 — Deterministic Rules Engine:** Pure TypeScript engine covering width auction, `[L, H]` quotes, `Pot`/`Binary`/`Linear`/`Log` payoffs, escrow, P2P position transfers, continuous mark-to-market pool math, limit/stop cascade matching, and Golden + `fast-check` property test suites.
+- [x] **M1 — Citadel Poker Terminal Web App & Cloudflare D1 Backend:** Single Cloudflare Worker + D1 persistence, invite-link groups, real-time state sync, Dual-Theme UI (`#000000` Live Terminal + `#FAFAFA` Strategy Sheet), Player Ring, Action Swimlanes, 1-tap takes, and manual resolution.
+- [x] **M2 — Multi-Agent AI & Voice Layer:** Cloudflare Workers AI (`env.AI`) pipeline for Agent 1 (`draft_market`, `lint_criteria`), Agent 2 (`classify_market`), push-to-talk voice input, `parse_rule` with the mandatory 3-part Risk Gate, `commentate`, and `write_recap`.
+- [x] **M3 — Live Feeds, Order Book & Demo Readiness:** Sports feed tick controller with Replay Mode, Poisson fair-value model, P2P standing bids, public Limit/Stop Swing Map, Branching Swing Tree, Telemetry Card, and Wire Trace.
+- [x] **M4 — Stacked Markets, Arbiter Route & Edge Deployment:** Stacked derivative markets (`parent_market_id`), countdown-locked 3rd-party Arbiter workflow, ranking markets, and zero-cost Cloudflare Worker + D1 deployment.

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Market, Order, Player, Position, StrategyMandate } from '../../shared/types';
+import { Market, Order, Player, Position, StrategyMandate } from '../shared/types';
 
 interface ExhibitCTelemetryProps {
   market: Market;

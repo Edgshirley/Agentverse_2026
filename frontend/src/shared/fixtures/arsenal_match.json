@@ -1,0 +1,62 @@
+[
+  {
+    "minute": 1,
+    "event_type": "kickoff",
+    "score_home": 0,
+    "score_away": 0,
+    "description": "KICKOFF: Arsenal 0 - 0 Chelsea. Spread [35, 43] min active.",
+    "implied_value": 40
+  },
+  {
+    "minute": 18,
+    "event_type": "custom_tick",
+    "score_home": 0,
+    "score_away": 0,
+    "description": "18' [0-0] Saka curls off the crossbar! High press continues.",
+    "implied_value": 44
+  },
+  {
+    "minute": 30,
+    "event_type": "custom_tick",
+    "score_home": 0,
+    "score_away": 0,
+    "description": "30' [0-0] Still scoreless at minute 30 — Poisson Over probability climbs.",
+    "implied_value": 52
+  },
+  {
+    "minute": 38,
+    "event_type": "goal",
+    "score_home": 1,
+    "score_away": 0,
+    "description": "38' [1-0 PROVISIONAL] Havertz taps in at 38' (inside [35, 43]) — VAR checking offside...",
+    "propose_x": 38,
+    "settle_immediately": false,
+    "implied_value": 38
+  },
+  {
+    "minute": 40,
+    "event_type": "var_correction",
+    "score_home": 0,
+    "score_away": 0,
+    "description": "40' [0-0 VAR DISALLOWED] Goal overturned for offside! Auto-proposal X=38 withdrawn; market LIVE.",
+    "implied_value": 64
+  },
+  {
+    "minute": 45,
+    "event_type": "halftime",
+    "score_home": 0,
+    "score_away": 0,
+    "description": "45' [0-0 HALFTIME] Clock passed H=43' scoreless! OVER [35..43] guaranteed to win.",
+    "implied_value": 78
+  },
+  {
+    "minute": 50,
+    "event_type": "goal",
+    "score_home": 1,
+    "score_away": 0,
+    "description": "50' [1-0 CONFIRMED GOAL] Odegaard strikes at 50'! Outcome X = 50 (OVER WINS).",
+    "propose_x": 50,
+    "settle_immediately": true,
+    "implied_value": 50
+  }
+]

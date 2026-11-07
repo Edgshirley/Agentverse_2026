@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Market, Player } from '../../shared/types';
+import { Market, Player } from '../shared/types';
 
 interface ArbiterPanelProps {
   market: Market;

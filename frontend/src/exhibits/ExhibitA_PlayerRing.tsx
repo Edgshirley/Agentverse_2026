@@ -1,5 +1,5 @@
 import React from 'react';
-import { LiveEvent, Market, Player, Position } from '../../shared/types';
+import { LiveEvent, Market, Player, Position } from '../shared/types';
 
 interface ExhibitAProps {
   market: Market;

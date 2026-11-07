@@ -11,7 +11,7 @@ import time
 import urllib.error
 import urllib.request
 
-API_BASE_URL = os.environ.get("API_BASE_URL", "http://app:5173").rstrip("/")
+API_BASE_URL = os.environ.get("API_BASE_URL", "http://backend:4000").rstrip("/")
 MAX_WAIT_SECONDS = int(os.environ.get("SEED_WAIT_TIMEOUT", "60"))
 
 

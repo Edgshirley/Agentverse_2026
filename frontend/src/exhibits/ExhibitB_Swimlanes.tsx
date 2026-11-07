@@ -1,5 +1,5 @@
 import React from 'react';
-import { LifecyclePhase, Player, SwimlaneEvent } from '../../shared/types';
+import { LifecyclePhase, Player, SwimlaneEvent } from '../shared/types';
 
 interface ExhibitBSwimlanesProps {
   players: Player[];

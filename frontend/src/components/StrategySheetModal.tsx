@@ -7,7 +7,7 @@ import {
   ParseRuleProposal,
   Player,
   SuggestWidthProposal,
-} from '../../shared/types';
+} from '../shared/types';
 import { usePushToTalk } from '../hooks/usePushToTalk';
 
 interface StrategySheetModalProps {

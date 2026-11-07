@@ -1,22 +1,23 @@
 # ============================================================================
-# Friend Spreader (Spread) — Multi-Stage Application Dockerfile (dev & prod)
+# Friend Spreader (Spread) — Backend Container Dockerfile (dev & prod)
 # ============================================================================
 
 FROM node:22-alpine AS base
 WORKDIR /app
-COPY package.json package-lock.json* ./
+COPY package.json ./
 RUN npm install --no-audit
 
 # ----------------------------------------------------------------------------
-# Stage: dev (used by docker-compose.dev.yml)
+# Stage: dev (mounted with ./backend:/app in docker-compose.dev.yml)
 # ----------------------------------------------------------------------------
 FROM base AS dev
 COPY . .
-EXPOSE 5173
+ENV PORT=4000
+EXPOSE 4000
 CMD ["npm", "run", "dev"]
 
 # ----------------------------------------------------------------------------
-# Stage: builder (builds static assets + bundles Worker API for production)
+# Stage: builder
 # ----------------------------------------------------------------------------
 FROM base AS builder
 COPY . .
@@ -28,12 +29,9 @@ RUN npm run build
 FROM node:22-alpine AS prod
 WORKDIR /app
 ENV NODE_ENV=production
-ENV PORT=3000
-
+ENV PORT=4000
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/dist-server ./dist-server
-COPY --from=builder /app/scripts/prod_server.mjs ./scripts/prod_server.mjs
-
-EXPOSE 3000
-CMD ["node", "scripts/prod_server.mjs"]
+COPY --from=builder /app/scripts/run_server.mjs ./scripts/run_server.mjs
+EXPOSE 4000
+CMD ["node", "scripts/run_server.mjs"]

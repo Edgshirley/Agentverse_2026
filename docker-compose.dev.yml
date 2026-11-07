@@ -1,34 +1,54 @@
 services:
-  app:
+  backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
       target: dev
-    container_name: spread-app-dev
+    container_name: spread-backend-dev
     ports:
-      - "5173:5173"
+      - "4000:4000"
     environment:
       - NODE_ENV=development
+      - PORT=4000
     volumes:
-      - ./src:/app/src
-      - ./index.html:/app/index.html
-      - ./vite.config.ts:/app/vite.config.ts
+      - ./backend:/app
+      - /app/node_modules
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:5173/api/state"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/api/state"]
       interval: 3s
       timeout: 3s
       retries: 15
       start_period: 3s
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: spread-frontend-dev
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - BACKEND_URL=http://backend:4000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+
   seed:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile.seed
     container_name: spread-seed-dev
     environment:
-      - API_BASE_URL=http://app:5173
+      - API_BASE_URL=http://backend:4000
       - SEED_WAIT_TIMEOUT=60
+    volumes:
+      - ./backend/scripts:/seed
     depends_on:
-      app:
+      backend:
         condition: service_healthy
     restart: "no"

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Group, Player } from '../../shared/types';
+import { Group, Player } from '../shared/types';
 
 interface HeaderBarProps {
   group: Group;

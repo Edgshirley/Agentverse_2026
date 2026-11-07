@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Market, Order, OrderType, Position, PositionBid, WidthBid } from '../../shared/types';
+import { Market, Order, OrderType, Position, PositionBid, WidthBid } from '../shared/types';
 
 interface TradingControlsProps {
   market: Market;

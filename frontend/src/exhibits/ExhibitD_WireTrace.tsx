@@ -1,5 +1,5 @@
 import React from 'react';
-import { WireTraceEntry } from '../../shared/types';
+import { WireTraceEntry } from '../shared/types';
 
 interface ExhibitDWireTraceProps {
   wireTrace: WireTraceEntry[];

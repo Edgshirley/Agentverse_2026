@@ -1,0 +1,24 @@
+{
+  "name": "friend-spreader-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Friend Spreader (Spread) — Deterministic Rules Engine, AI Pipeline & Hono API Server",
+  "scripts": {
+    "dev": "npm run build && node scripts/run_server.mjs",
+    "build": "tsc --noEmit && esbuild src/worker/index.ts --bundle --platform=node --format=esm --outfile=dist/worker.mjs",
+    "start": "node scripts/run_server.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "hono": "^4.7.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250214.0",
+    "esbuild": "^0.25.0",
+    "fast-check": "^3.23.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}

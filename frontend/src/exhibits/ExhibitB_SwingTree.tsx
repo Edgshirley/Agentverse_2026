@@ -1,5 +1,5 @@
 import React from 'react';
-import { Order, Player, PositionBid, SwingTreeProjection } from '../../shared/types';
+import { Order, Player, PositionBid, SwingTreeProjection } from '../shared/types';
 
 interface ExhibitBSwingTreeProps {
   swingTree: SwingTreeProjection;

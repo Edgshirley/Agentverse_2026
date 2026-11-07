@@ -18,7 +18,7 @@ import {
   SwingTreeProjection,
   WidthBid,
   WireTraceEntry,
-} from '../../shared/types';
+} from '../shared/types';
 
 export interface ActiveMarketBundle {
   market: Market;

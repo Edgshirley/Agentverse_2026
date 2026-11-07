@@ -13,6 +13,7 @@ import {
   runAgent1Intake,
   runAgent2Classifier,
 } from './agents';
+import { stepDeterministicReplay, toggleFeedDelayedStatus } from './replay';
 
 export const app = new Hono<{ Bindings: Env }>();
 
@@ -627,6 +628,34 @@ app.get('/api/agents/recap/:id', async (c) => {
       recap: generateMarketRecap(market, netPnlByPlayer),
       netPnlByPlayer,
     });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+// 11c. Deterministic Replay Mode & Feed Delay Endpoints
+app.post('/api/markets/:id/replay/step', async (c) => {
+  try {
+    const marketId = c.req.param('id');
+    const tick = stepDeterministicReplay(globalStore, marketId);
+    globalStore.bumpVersion();
+    await globalStore.persistToD1(c.env);
+    return c.json({
+      ...globalStore.getFullMarketBundle(marketId),
+      replayTick: tick,
+    });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+app.post('/api/markets/:id/replay/feed-delayed', async (c) => {
+  try {
+    const marketId = c.req.param('id');
+    toggleFeedDelayedStatus(globalStore, marketId);
+    globalStore.bumpVersion();
+    await globalStore.persistToD1(c.env);
+    return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
     return c.json({ error: err.message }, 400);
   }

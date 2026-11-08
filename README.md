@@ -6,8 +6,6 @@ Turn any argument in your group chat into a market. Friends bet play-money `CHIP
 
 <sub>▶ Click the slide to open the pitch deck (arrow keys to move).</sub>
 
-![MarketMate: group chat in the centre, live bets and the bot in the right rail](docs/screenshot.png)
-
 > ⚠️ **Before committing, read [INSTRUCTIONS.md](INSTRUCTIONS.md)** — API keys must never be pushed to GitHub.
 
 ## How a bet works

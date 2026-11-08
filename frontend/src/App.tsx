@@ -3,12 +3,19 @@ import { useMarketSync } from './hooks/useMarketSync';
 import { useActivePlayerId } from './hooks/useActivePlayerId';
 import { PlayerSwitcher } from './dev/PlayerSwitcher';
 import { HeaderBar } from './components/HeaderBar';
+import { ProfileModal, generateThemedGamerName } from './components/ProfileModal';
 import { AskBotPanel } from './components/askbot/AskBotPanel';
 import { ChatFeed, MascotWidgetAlert } from './components/chat/ChatFeed';
 import { LiveBetsList } from './components/chat/LiveBetsList';
 import { BetDrawer } from './components/market/BetDrawer';
 import { MarketDetail } from './components/market/MarketDetail';
-import { PixelJokerCard, PixelMascot, PixelPokerChip } from './components/PixelMascot';
+import {
+  CAT_AVATAR_OPTIONS,
+  CatAvatarId,
+  PixelJokerCard,
+  PixelMascot,
+  PixelPokerChip,
+} from './components/PixelMascot';
 import { Icon, IconName } from './components/Icon';
 import { sfx } from './utils/soundEffects';
 
@@ -24,6 +31,47 @@ const MOBILE_TABS: { pane: MobilePane; label: string; icon: IconName }[] = [
   { pane: 'bets', label: 'Live bets', icon: 'chart' },
   { pane: 'bot', label: 'Ask bot', icon: 'mic' },
 ];
+
+interface StoredProfile {
+  avatar: CatAvatarId;
+  customName: string;
+  defaultName: string;
+  onboarded: boolean;
+}
+
+const PROFILE_STORAGE_KEY = 'spread.profile.v1';
+
+function loadStoredProfile(): StoredProfile {
+  const fallback: StoredProfile = {
+    avatar: 'bowtie',
+    customName: '',
+    defaultName: generateThemedGamerName(),
+    onboarded: false,
+  };
+  try {
+    const raw = window.localStorage.getItem(PROFILE_STORAGE_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as Partial<StoredProfile>;
+    return {
+      avatar: CAT_AVATAR_OPTIONS.some((c) => c.id === parsed.avatar)
+        ? (parsed.avatar as CatAvatarId)
+        : fallback.avatar,
+      customName: typeof parsed.customName === 'string' ? parsed.customName : '',
+      defaultName: parsed.defaultName || fallback.defaultName,
+      onboarded: parsed.onboarded === true,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function saveStoredProfile(profile: StoredProfile): void {
+  try {
+    window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+  } catch {
+    // Private mode / blocked storage: profile just won't persist across reloads.
+  }
+}
 
 export const App: React.FC = () => {
   const {
@@ -47,6 +95,31 @@ export const App: React.FC = () => {
   const [mobilePane, setMobilePane] = useState<MobilePane>('chat');
   const [betDrawerOpen, setBetDrawerOpen] = useState<boolean>(false);
   const [newBetRequest, setNewBetRequest] = useState<number>(0);
+
+  // Player Profile State: 6 Cat Avatars + Custom or Auto-Generated Themed Gamer Name.
+  // Saved in this browser's localStorage for now (see TEAM_TASKS.md: move to the server profile later).
+  const [savedProfile] = useState<StoredProfile>(() => loadStoredProfile());
+  const [selectedAvatar, setSelectedAvatar] = useState<CatAvatarId>(savedProfile.avatar);
+  const [customName, setCustomName] = useState<string>(savedProfile.customName);
+  const [defaultGeneratedName, setDefaultGeneratedName] = useState<string>(
+    savedProfile.defaultName
+  );
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
+
+  // First-time startup onboarding exclamation mark (appears on Profile button & How the Game Works button;
+  // both disappear once the user clicks out of / closes the Profile modal, and stay gone on later visits)
+  const [showProfileOnboardingBadge, setShowProfileOnboardingBadge] = useState<boolean>(
+    !savedProfile.onboarded
+  );
+
+  useEffect(() => {
+    saveStoredProfile({
+      avatar: selectedAvatar,
+      customName,
+      defaultName: defaultGeneratedName,
+      onboarded: !showProfileOnboardingBadge,
+    });
+  }, [selectedAvatar, customName, defaultGeneratedName, showProfileOnboardingBadge]);
 
   const [chatMascotAlert, setChatMascotAlert] = useState<MascotWidgetAlert | null>(null);
   const [forwardedChatPrompt, setForwardedChatPrompt] = useState<string | null>(null);
@@ -106,13 +179,15 @@ export const App: React.FC = () => {
     );
   }
 
+  const effectiveDisplayName = customName.trim() || defaultGeneratedName;
+
   const { group, players, markets, activeBundle, chatMessages, serverClockMs } = data;
-  const activePlayer =
+  const rawActivePlayer =
     players.find((p) => p.id === activePlayerId) ??
     players[0] ?? {
       id: 'you',
       group_id: group.id,
-      nickname: 'YOU',
+      nickname: effectiveDisplayName,
       is_admin: true,
       wallet_balance_toks: 1000,
       escrow_balance_toks: 0,
@@ -131,6 +206,22 @@ export const App: React.FC = () => {
       sfx.playBetConfirm();
     }
     return res;
+  };
+
+  // Personas keep their own names; the profile name is for a real player.
+  const activePlayer = devPlayerTools
+    ? rawActivePlayer
+    : { ...rawActivePlayer, nickname: effectiveDisplayName };
+
+  const playersWithProfileName = devPlayerTools
+    ? players
+    : players.map((p) =>
+        p.id === activePlayer.id ? { ...p, nickname: effectiveDisplayName } : p
+      );
+
+  const handleCloseProfile = () => {
+    setIsProfileOpen(false);
+    setShowProfileOnboardingBadge(false);
   };
 
   return (
@@ -220,6 +311,24 @@ export const App: React.FC = () => {
             </>
           ) : null
         }
+        selectedAvatar={selectedAvatar}
+        displayName={effectiveDisplayName}
+        showProfileExclamation={showProfileOnboardingBadge}
+        onOpenProfile={() => setIsProfileOpen(true)}
+      />
+
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={handleCloseProfile}
+        selectedAvatar={selectedAvatar}
+        onSelectAvatar={setSelectedAvatar}
+        customName={customName}
+        defaultGeneratedName={defaultGeneratedName}
+        onChangeCustomName={setCustomName}
+        onRollNewDefaultName={() =>
+          setDefaultGeneratedName((prev) => generateThemedGamerName(prev))
+        }
+        showRulesExclamation={showProfileOnboardingBadge}
         onResetDemo={!import.meta.env.DEV ? undefined : async () => {
           await dispatchAction('/api/demo/reset', {});
           // The reset empties the ring: re-seat the logged-in player
@@ -259,7 +368,7 @@ export const App: React.FC = () => {
           <ChatFeed
             activePlayer={activePlayer}
             chatMessages={chatMessages}
-            players={players}
+            players={playersWithProfileName}
             mascotAlert={chatMascotAlert}
             setMascotAlert={setChatMascotAlert}
             onForwardChatPrompt={setForwardedChatPrompt}
@@ -328,7 +437,7 @@ export const App: React.FC = () => {
           <MarketDetail
             activeBundle={activeBundle}
             allMarkets={markets}
-            players={players}
+            players={playersWithProfileName}
             activePlayer={activePlayer}
             serverClockMs={serverClockMs}
             showUnitLadder={showUnitLadder}

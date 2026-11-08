@@ -1,16 +1,19 @@
 import React from 'react';
 import { Icon } from './Icon';
 import { Player } from '../shared/types';
-import { PixelMascot } from './PixelMascot';
+import { CatAvatarId, PixelCatAvatar, PixelMascot } from './PixelMascot';
 
 interface HeaderBarProps {
   activePlayer: Player;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
   playerSwitcher?: React.ReactNode;
-  onResetDemo?: () => void;
   username?: string;
   onLogout?: () => void;
+  selectedAvatar: CatAvatarId;
+  displayName: string;
+  showProfileExclamation: boolean;
+  onOpenProfile: () => void;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
@@ -18,9 +21,12 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   theme,
   onToggleTheme,
   playerSwitcher,
-  onResetDemo,
   username,
   onLogout,
+  selectedAvatar,
+  displayName,
+  showProfileExclamation,
+  onOpenProfile,
 }) => {
   return (
     <header className="terminal-header">
@@ -32,7 +38,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         </span>
       </div>
 
-      {/* Your CHIP Balance & Theme */}
+      {/* Your CHIP Balance, Theme & Cat Profile Button */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         {playerSwitcher}
 
@@ -58,16 +64,37 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         >
           <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
         </button>
-        {onResetDemo && (
+
+        {/* Cat Profile Button (replaces START FRESH) with First-Startup [!] Badge */}
         <button
-          onClick={onResetDemo}
-          style={{ padding: '6px 8px', color: 'var(--fg-muted)' }}
-          title="Start fresh: clears all bets and chat"
-          aria-label="Start fresh"
+          type="button"
+          onClick={onOpenProfile}
+          className="profile-header-btn"
+          title="Profile and how the game works"
+          aria-label="Profile and how the game works"
         >
-          <Icon name="reload" />
+          {showProfileExclamation && (
+            <span
+              className="pixel-exclamation-badge pixel-font"
+              title="Set up your profile & check how the game works!"
+            >
+              !
+            </span>
+          )}
+          <PixelCatAvatar variant={selectedAvatar} size={22} />
+          <span
+            className="pixel-font"
+            style={{
+              fontSize: 10.5,
+              maxWidth: 135,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {displayName}
+          </span>
         </button>
-        )}
         {onLogout && (
           <button
             onClick={onLogout}

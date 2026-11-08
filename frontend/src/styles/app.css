@@ -1203,3 +1203,91 @@ button:disabled {
   color: var(--accent-neg);
   font-weight: 700;
 }
+
+
+/* ============================================================================
+ * Cat Profile Header Button, 6-Cat Avatar Picker Modal & Onboarding [!] Badges
+ * ============================================================================ */
+
+.profile-header-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 2px solid var(--pastel-mint-border);
+  background-color: var(--pastel-mint-bg);
+  color: var(--pastel-mint-text);
+  font-weight: 700;
+  box-shadow: 2px 2px 0px var(--pixel-shadow);
+}
+
+.profile-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background-color: rgba(12, 14, 18, 0.76);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.profile-modal-card {
+  width: 100%;
+  max-width: 620px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border-color: var(--border-strong);
+  animation: widgetPopIn 0.16s ease-out;
+}
+
+.cat-avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 560px) {
+  .cat-avatar-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cat-avatar-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 2px solid var(--border-color);
+  background-color: var(--bg-canvas);
+  transition: all 0.12s ease;
+}
+
+.cat-avatar-option-btn.selected {
+  background-color: var(--pastel-mint-bg);
+  border-color: var(--pastel-mint-border);
+  box-shadow: 3px 3px 0px var(--pixel-shadow);
+}
+
+.pixel-exclamation-inline {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background-color: var(--pastel-coral-bg);
+  color: var(--pastel-coral-text);
+  border: 2px solid var(--pastel-coral-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 2px 2px 0px var(--pixel-shadow);
+  animation: exclaimJump 0.75s steps(2, end) infinite;
+}

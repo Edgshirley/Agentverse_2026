@@ -139,12 +139,13 @@ app.post('/api/markets', async (c) => {
       live_fair_value_toks: body.live_fair_value_toks ?? Number(body.lot_stake_k || 25),
       fair_value_source: body.fair_value_source || 'AI_ADVISORY',
       feed_status: 'LIVE',
-      toggles: body.toggles || {
-        max_lots: 3,
-        forced_trading: false,
-        hidden_takes: false,
-        single_mm_requote: true,
-        live_reopen_halftime: false,
+      toggles: {
+        max_lots: body.toggles?.max_lots ?? 3,
+        forced_trading: body.toggles?.forced_trading ?? false,
+        hidden_takes: body.toggles?.hidden_takes ?? false,
+        single_mm_requote: body.toggles?.single_mm_requote ?? true,
+        live_reopen_halftime: body.toggles?.live_reopen_halftime ?? false,
+        public_positions_and_stops: body.toggles?.public_positions_and_stops ?? false,
       },
       version: 1,
       created_at: now,
@@ -162,6 +163,39 @@ app.post('/api/markets', async (c) => {
       market: created,
       bundle: globalStore.getFullMarketBundle(created.id),
     });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+// 3b. Market Creator Option: Update Market Toggles (e.g. show everyone's positions & stops to all participants)
+app.post('/api/markets/:id/toggles', async (c) => {
+  try {
+    const marketId = c.req.param('id');
+    const { playerId, public_positions_and_stops } = await c.req.json<{
+      playerId: string;
+      public_positions_and_stops: boolean;
+    }>();
+    const validPlayerId = ensurePlayerRegistered(playerId);
+    const market = globalStore.engine.getMarket(marketId);
+    if (market.proposer_id !== validPlayerId) {
+      return c.json(
+        { error: 'Only the person who created this market can change visibility of positions & stops for the group.' },
+        403
+      );
+    }
+    const updated: Market = {
+      ...market,
+      toggles: {
+        ...market.toggles,
+        public_positions_and_stops: Boolean(public_positions_and_stops),
+      },
+      version: market.version + 1,
+    };
+    globalStore.engine.createMarket(updated);
+    globalStore.bumpVersion();
+    await globalStore.persistToD1(c.env);
+    return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
     return c.json({ error: err.message }, 400);
   }
@@ -217,14 +251,19 @@ app.post('/api/markets/:id/auction/quote', async (c) => {
     const marketId = c.req.param('id');
     const { playerId, L } = await c.req.json<{ playerId: string; L: number }>();
     const market = globalStore.engine.getMarket(marketId);
-    const updated = globalStore.engine.auction.submitQuote(market, playerId, Number(L));
-    globalStore.engine.createMarket(updated);
+    const effectiveMm = market.mm_player_id || ensurePlayerRegistered(playerId);
+    const quoted = globalStore.engine.auction.submitQuote(market, effectiveMm, Number(L));
+    const liveMarket = globalStore.engine.spreadBook.lockTakesAndGoLive(
+      quoted,
+      `go_live_${marketId}_${globalStore.clock.now()}`
+    );
+    globalStore.engine.createMarket(liveMarket);
     globalStore.engine.emitWireTrace(
       marketId,
       'PLAYER',
       'MARKET_ENGINE',
       'MM_QUOTE_SUBMITTED',
-      `MM ${playerId.toUpperCase()} quoted [${updated.L}, ${updated.H}]`
+      `MM ${effectiveMm.toUpperCase()} quoted [${liveMarket.L}, ${liveMarket.H}]`
     );
     globalStore.bumpVersion();
     await globalStore.persistToD1(c.env);
@@ -267,6 +306,16 @@ app.post('/api/markets/:id/take', async (c) => {
       idempotencyKey?: string;
     }>();
     const validPlayerId = ensurePlayerRegistered(playerId);
+    const mkt = globalStore.engine.getMarket(marketId);
+    if (
+      mkt.archetype === 'spread' &&
+      mkt.mm_player_id === validPlayerId &&
+      globalStore.engine.spreadBook.getMmEscrow(marketId) === 0
+    ) {
+      // Allow single-player testing to take OVER/UNDER even after setting the window by delegating MM escrow cover to house_mm
+      const fallbackMm = ensurePlayerRegistered('house_mm');
+      globalStore.engine.createMarket({ ...mkt, mm_player_id: fallbackMm });
+    }
     globalStore.clock.advance(250);
     const key = idempotencyKey || `take_${marketId}_${validPlayerId}_${globalStore.clock.now()}`;
     globalStore.engine.executeOneTapTake(marketId, validPlayerId, side, Number(amount), key);
@@ -308,7 +357,41 @@ app.post('/api/markets/:id/withdraw', async (c) => {
     }>();
     globalStore.clock.advance(250);
     const key = idempotencyKey || `withdraw_${marketId}_${playerId}_${globalStore.clock.now()}`;
-    globalStore.engine.withdrawFromPool(marketId, playerId, side, Number(fractionP), key);
+    const mkt = globalStore.engine.getMarket(marketId);
+    if (mkt.archetype === 'spread') {
+      const positions = globalStore.engine.spreadBook.getPositions(marketId);
+      const posIdx = positions.findIndex(
+        (p) => p.player_id === playerId && p.live_equity_toks > 0
+      );
+      if (posIdx >= 0) {
+        const pos = positions[posIdx];
+        const pClamp = Math.min(1, Math.max(0.01, Number(fractionP)));
+        const refund =
+          pClamp >= 0.999
+            ? pos.staked_toks
+            : Math.max(1, Math.round(pos.staked_toks * pClamp));
+        globalStore.engine.ledger.releaseEscrow(
+          playerId,
+          marketId,
+          refund,
+          'PARTIAL_WITHDRAWAL',
+          key,
+          `${playerId} withdrew ${refund} SPRD from window market`
+        );
+        const remaining = Math.max(0, pos.staked_toks - refund);
+        positions[posIdx] = {
+          ...pos,
+          staked_toks: remaining,
+          entry_cost_toks: remaining,
+          live_equity_toks: remaining,
+          lots: remaining === 0 ? 0 : pos.lots,
+          withdrawn_toks: pos.withdrawn_toks + refund,
+        };
+        globalStore.engine.spreadBook.setPositions(marketId, positions);
+      }
+    } else {
+      globalStore.engine.withdrawFromPool(marketId, playerId, side, Number(fractionP), key);
+    }
     globalStore.bumpVersion();
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
@@ -457,6 +540,15 @@ app.post('/api/markets/:id/strategy/activate', async (c) => {
     globalStore.clock.advance(250);
     const now = globalStore.clock.now();
     const validPlayerId = ensurePlayerRegistered(body.player_id || 'you');
+    const mkt = globalStore.engine.getMarket(marketId);
+    if (
+      mkt.archetype === 'spread' &&
+      mkt.mm_player_id === validPlayerId &&
+      globalStore.engine.spreadBook.getMmEscrow(marketId) === 0
+    ) {
+      const fallbackMm = ensurePlayerRegistered('house_mm');
+      globalStore.engine.createMarket({ ...mkt, mm_player_id: fallbackMm });
+    }
     const mandate: StrategyMandate = {
       id: body.id || `mandate_${now}`,
       market_id: marketId,
@@ -481,6 +573,35 @@ app.post('/api/markets/:id/strategy/activate', async (c) => {
       mandate,
       `strat_${marketId}_${now}`
     );
+
+    // If spread market, also place the TP and SL on poolBook so they show on the vertical unit ladder graph
+    const updatedMkt = globalStore.engine.getMarket(marketId);
+    if (updatedMkt.archetype === 'spread') {
+      if (mandate.take_profit_level != null) {
+        globalStore.engine.poolBook.placeOrder(
+          updatedMkt,
+          validPlayerId,
+          mandate.side,
+          'take_profit',
+          mandate.take_profit_level,
+          mandate.stake_toks,
+          `strat_tp_${marketId}_${now}`,
+          mandate.id
+        );
+      }
+      if (mandate.min_balance_floor != null) {
+        globalStore.engine.poolBook.placeOrder(
+          updatedMkt,
+          validPlayerId,
+          mandate.side,
+          'stop_loss',
+          mandate.min_balance_floor,
+          mandate.stake_toks,
+          `strat_sl_${marketId}_${now}`,
+          mandate.id
+        );
+      }
+    }
     globalStore.bumpVersion();
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));

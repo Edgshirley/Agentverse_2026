@@ -50,6 +50,7 @@ export interface MarketToggles {
   hidden_takes: boolean; // default true
   single_mm_requote: boolean;
   live_reopen_halftime: boolean;
+  public_positions_and_stops?: boolean; // Creator-only option: show everyone's positions & stops graph to all market participants
 }
 
 export interface Market {

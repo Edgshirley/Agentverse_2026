@@ -7,16 +7,7 @@ import { ActiveMarketBundle } from '../hooks/useMarketSync';
 import { PixelMascot } from '../components/PixelMascot';
 import { AppScreen } from '../App';
 
-interface GroupChatScreenProps {
-  activeBundle: ActiveMarketBundle | null;
-  allMarkets: Market[];
-  activePlayer: Player;
-  onSelectMarket: (marketId: string) => void;
-  onDispatch: (path: string, body?: Record<string, any>) => Promise<any>;
-  onNavigateScreen: (screen: AppScreen) => void;
-}
-
-interface LocalChatMessage {
+export interface LocalChatMessage {
   id: string;
   sender: string;
   text: string;
@@ -24,29 +15,50 @@ interface LocalChatMessage {
   isMine: boolean;
 }
 
-interface MascotWidgetAlert {
+export interface MascotWidgetAlert {
   question: string;
   archetype: string;
   route: string;
+}
+
+interface GroupChatScreenProps {
+  activeBundle: ActiveMarketBundle | null;
+  allMarkets: Market[];
+  activePlayer: Player;
+  chatMessages: LocalChatMessage[];
+  setChatMessages: React.Dispatch<React.SetStateAction<LocalChatMessage[]>>;
+  mascotAlert: MascotWidgetAlert | null;
+  setMascotAlert: React.Dispatch<React.SetStateAction<MascotWidgetAlert | null>>;
+  onForwardChatPromptToMainPage: (promptText: string) => void;
+  onSelectMarket: (marketId: string) => void;
+  onDispatch: (path: string, body?: Record<string, any>) => Promise<any>;
+  onNavigateScreen: (screen: AppScreen) => void;
 }
 
 export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
   activeBundle,
   allMarkets,
   activePlayer,
+  chatMessages,
+  setChatMessages,
+  mascotAlert,
+  setMascotAlert,
+  onForwardChatPromptToMainPage,
   onSelectMarket,
   onDispatch,
   onNavigateScreen,
 }) => {
   const [chatInput, setChatInput] = useState('');
-  const [customMessages, setCustomMessages] = useState<LocalChatMessage[]>([]);
-  const [mascotAlert, setMascotAlert] = useState<MascotWidgetAlert | null>(null);
 
-  // Heuristic check so casual greetings like "hi!" do not trigger the bet widget
+  // Heuristic check so casual greetings like "hi!" do not trigger the bet widget,
+  // while any bet/market/F1/sport/temperature message triggers the Tuxedo Cat handoff!
   const looksLikeBetProposal = (text: string): boolean => {
     const t = text.trim().toLowerCase();
-    if (t.length < 10) return false;
-    return /\b(bet|odds|will|score|temp|°c|sprd|rank|win|over|under|market)\b/i.test(t);
+    if (t.length < 5) return false;
+    if (/^(hi|hey|hello|yo|sup|ok|okay|thanks|lol|haha)[!?.]*$/i.test(t)) return false;
+    return /\b(bet|make a|market|f1|race|pit|stop|odds|will|score|temp|°c|sprd|rank|win|over|under|window|linear|who|when|how many)\b/i.test(
+      t
+    );
   };
 
   const handleSendChat = async (e: React.FormEvent) => {
@@ -55,7 +67,7 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
     if (!trimmed) return;
 
     const nowStr = new Date().toTimeString().slice(0, 5);
-    setCustomMessages((prev) => [
+    setChatMessages((prev) => [
       ...prev,
       {
         id: `usr_${Date.now()}`,
@@ -67,8 +79,10 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
     ]);
     setChatInput('');
 
-    // Only pop up the bottom-right 8-bit Mascot Widget if the message looks like a bet idea
+    // If the chat message looks like a bet idea (e.g. "lets make a bet on f1"),
+    // queue it onto the Main Page (ASK BOT) and pop up the Tuxedo Cat widget!
     if (looksLikeBetProposal(trimmed)) {
+      onForwardChatPromptToMainPage(trimmed);
       try {
         const res = await onDispatch('/api/agents/intake', {
           prompt: trimmed,
@@ -76,12 +90,16 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
         });
         const c = res.classification;
         setMascotAlert({
-          question: (res.draft.question || trimmed).replace(/TOKS/gi, 'SPRD'),
-          archetype: c.archetype.toUpperCase(),
+          question: trimmed.replace(/TOKS/gi, 'SPRD'),
+          archetype: c.archetype === 'spread' ? 'LINEAR WINDOW' : c.archetype.toUpperCase(),
           route: c.route,
         });
       } catch {
-        // ignore
+        setMascotAlert({
+          question: trimmed,
+          archetype: 'BET',
+          route: 'auto',
+        });
       }
     }
   };
@@ -89,12 +107,15 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
   const handleSimulateFriendReply = () => {
     const nowStr = new Date().toTimeString().slice(0, 5);
     const friendSamples = [
-      { sender: 'ALEX', text: "I'm down! Let's bet 50 SPRD on whether it hits 24°C tomorrow." },
-      { sender: 'SAM', text: "Put me on NO — no way it gets past 22°C!" },
-      { sender: 'JORDAN', text: "Are we doing the Q4 team ranking bet with the boss as arbiter?" },
+      {
+        sender: 'ALEX',
+        text: 'I want to make a market for pit stops in the F1 race tomorrow, 25 SPRD!',
+      },
+      { sender: 'SAM', text: "I'm down! Let's bet 50 SPRD on whether it hits 24°C tomorrow." },
+      { sender: 'JORDAN', text: 'Are we doing the Q4 team ranking bet with the boss as arbiter?' },
     ];
-    const pick = friendSamples[customMessages.length % friendSamples.length];
-    setCustomMessages((prev) => [
+    const pick = friendSamples[chatMessages.length % friendSamples.length];
+    setChatMessages((prev) => [
       ...prev,
       {
         id: `fr_${Date.now()}`,
@@ -104,16 +125,17 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
         isMine: false,
       },
     ]);
+    onForwardChatPromptToMainPage(pick.text);
     setMascotAlert({
       question: pick.text,
-      archetype: 'SIMPLE',
+      archetype: pick.text.toLowerCase().includes('f1') ? 'LINEAR WINDOW' : 'SIMPLE',
       route: 'auto',
     });
   };
 
   return (
     <div className="chat-screen-grid">
-      {/* Left: Group Chat (Green = You, Pastel Blue = Friends, Bottom-Right Mascot Widget) */}
+      {/* Left: Group Chat (Green = You, Pastel Blue = Friends, Bottom-Right Tuxedo Cat Widget) */}
       <div className="chat-feed-box">
         <div
           style={{
@@ -125,7 +147,7 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
           }}
         >
           <span className="pixel-font" style={{ fontSize: 12 }}>
-            CHAT
+            CHAT ({chatMessages.length})
           </span>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <button
@@ -140,13 +162,14 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
         </div>
 
         <div className="chat-messages-scroll">
-          {customMessages.length === 0 && (
+          {chatMessages.length === 0 && (
             <div style={{ color: 'var(--fg-muted)', textAlign: 'center', margin: 'auto 0' }}>
-              No messages yet — say hi to your group or propose a bet!
+              No messages yet — say hi to your group or type a bet idea (e.g. &ldquo;lets make a bet
+              on f1&rdquo;)!
             </div>
           )}
 
-          {customMessages.map((m) => (
+          {chatMessages.map((m) => (
             <div
               key={m.id}
               className={`chat-bubble ${m.isMine ? 'mine' : 'friend-msg'}`}
@@ -169,10 +192,10 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
           ))}
         </div>
 
-        {/* Bottom-Right Floating 8-Bit Mascot Widget with Animated [!] Exclamation */}
+        {/* Bottom-Right Floating 8-Bit Tuxedo Cat Widget with Animated [!] Exclamation */}
         {mascotAlert && (
           <div className="chat-mascot-widget">
-            <PixelMascot size={42} showExclamation={true} />
+            <PixelMascot size={44} showExclamation={true} />
             <div style={{ flex: 1 }}>
               <div
                 style={{
@@ -182,8 +205,8 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
                   marginBottom: 4,
                 }}
               >
-                <span className="pixel-font" style={{ fontSize: 10 }}>
-                  DEALER BOT · {mascotAlert.archetype} BET IDEA
+                <span className="pixel-font" style={{ fontSize: 10, color: 'var(--pastel-gold-text)' }}>
+                  TUX CAT DEALER · {mascotAlert.archetype}
                 </span>
                 <button
                   onClick={() => setMascotAlert(null)}
@@ -193,17 +216,17 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
                 </button>
               </div>
               <div style={{ fontSize: 11.5, marginBottom: 8 }}>
-                Turn &ldquo;{mascotAlert.question.slice(0, 60)}&rdquo; into a live bet?
+                Hey! I&apos;ve put your chat message (&ldquo;{mascotAlert.question.slice(0, 48)}
+                &rdquo;) on the Main Page to make the bet!
               </div>
               <button
                 className="btn-coral pixel-font"
-                style={{ fontSize: 10, padding: '4px 10px', width: '100%' }}
+                style={{ fontSize: 10, padding: '5px 10px', width: '100%' }}
                 onClick={() => {
-                  setMascotAlert(null);
                   onNavigateScreen('voice');
                 }}
               >
-                OPEN IN ASK BOT -&gt;
+                GO TO MAIN PAGE &amp; MAKE BET -&gt;
               </button>
             </div>
           </div>
@@ -222,7 +245,7 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
             type="text"
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
-            placeholder="Message friends (or type a bet idea to trigger the Dealer Bot widget)..."
+            placeholder="Message friends (e.g. 'lets make a bet on f1')..."
             style={{ flex: 1, padding: '8px 12px' }}
           />
           <button type="submit" className="btn-coral pixel-font">
@@ -251,13 +274,13 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
         {allMarkets.length === 0 ? (
           <div className="pastel-card" style={{ textAlign: 'center', padding: 28 }}>
             <div style={{ marginBottom: 10 }}>
-              <PixelMascot size={44} />
+              <PixelMascot size={46} />
             </div>
             <div className="pixel-font" style={{ marginBottom: 8 }}>
               NO BETS CREATED YET
             </div>
             <p style={{ fontSize: 12, color: 'var(--fg-muted)', marginBottom: 14 }}>
-              Start by telling the Bot your first bet in SPRD!
+              Type a bet idea in Chat or ask the Tuxedo Cat Bot on the Main Page!
             </p>
             <button className="btn-coral pixel-font" onClick={() => onNavigateScreen('voice')}>
               ASK BOT TO CREATE BET
@@ -282,7 +305,8 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
             >
               <div>
                 <div className="pixel-font" style={{ fontSize: 10, opacity: 0.75 }}>
-                  BET #{idx + 1} · {m.archetype.toUpperCase()} · {m.state.toUpperCase()}
+                  BET #{idx + 1} · {m.archetype === 'spread' ? 'LINEAR WINDOW' : m.archetype.toUpperCase()} ·{' '}
+                  {m.state.toUpperCase()}
                 </div>
                 <div style={{ fontWeight: 700, fontSize: 14, marginTop: 2 }}>
                   {m.question.replace(/TOKS/gi, 'SPRD')}

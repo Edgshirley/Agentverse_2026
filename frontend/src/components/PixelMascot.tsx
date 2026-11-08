@@ -8,9 +8,9 @@ interface PixelMascotProps {
 }
 
 /**
- * 8-Bit Betting & Finance Mascot: "DEALER BULL"
- * Crisp 16x16 pixel-art SVG of a Wall Street Bull / Casino Dealer with golden horns,
- * dealer visor, and pixel shades + optional bouncing 8-bit [!] alert badge.
+ * 8-Bit Betting & Finance Mascot: "TUXEDO CAT DEALER"
+ * Crisp 16x16 pixel-art SVG of a dapper black-and-white Tuxedo Cat with pink inner ears,
+ * emerald cat eyes, white whiskers & tuxedo bib, and a casino pastel red bowtie.
  */
 export const PixelMascot: React.FC<PixelMascotProps> = ({
   size = 48,
@@ -33,7 +33,7 @@ export const PixelMascot: React.FC<PixelMascotProps> = ({
       }}
     >
       {showExclamation && (
-        <div className="pixel-exclamation-badge pixel-font" title="Bot suggestion!">
+        <div className="pixel-exclamation-badge pixel-font" title="Tuxedo Cat Bot Alert!">
           !
         </div>
       )}
@@ -46,40 +46,56 @@ export const PixelMascot: React.FC<PixelMascotProps> = ({
         xmlns="http://www.w3.org/2000/svg"
         style={{ imageRendering: 'pixelated' }}
       >
-        {/* Golden Bull Horns */}
-        <rect x="1" y="2" width="2" height="1" fill="#F0CA62" />
-        <rect x="1" y="3" width="1" height="2" fill="#F0CA62" />
-        <rect x="2" y="4" width="2" height="1" fill="#E5B842" />
+        {/* Pointy Black Cat Ears + Pastel Pink Inner Ears */}
+        <rect x="2" y="1" width="2" height="1" fill="#1E202B" />
+        <rect x="2" y="2" width="3" height="2" fill="#1E202B" />
+        <rect x="3" y="2" width="1" height="2" fill="#F4A6A6" />
 
-        <rect x="13" y="2" width="2" height="1" fill="#F0CA62" />
-        <rect x="14" y="3" width="1" height="2" fill="#F0CA62" />
-        <rect x="12" y="4" width="2" height="1" fill="#E5B842" />
+        <rect x="12" y="1" width="2" height="1" fill="#1E202B" />
+        <rect x="11" y="2" width="3" height="2" fill="#1E202B" />
+        <rect x="12" y="2" width="1" height="2" fill="#F4A6A6" />
 
-        {/* Casino Dealer Green Visor Hat */}
-        <rect x="4" y="2" width="8" height="2" fill="#63C7A3" />
-        <rect x="3" y="4" width="10" height="1" fill="#3A9B78" />
+        {/* Tuxedo Cat Head (Charcoal Black Fur) */}
+        <rect x="2" y="4" width="12" height="6" fill="#232634" />
+        <rect x="1" y="6" width="1" height="3" fill="#232634" />
+        <rect x="14" y="6" width="1" height="3" fill="#232634" />
 
-        {/* Bull Head Base (Warm Casino Red/Bronze) */}
-        <rect x="3" y="5" width="10" height="6" fill="#E87A7A" />
-        <rect x="2" y="6" width="1" height="2" fill="#D46565" />
-        <rect x="13" y="6" width="1" height="2" fill="#D46565" />
+        {/* White Forehead Blaze & Muzzle */}
+        <rect x="7" y="5" width="2" height="2" fill="#F5F2EB" />
+        <rect x="5" y="7" width="6" height="3" fill="#F5F2EB" />
 
-        {/* Pixel Cool Shades / Visor Eyes */}
-        <rect x="3" y="6" width="10" height="2" fill="#191A23" />
-        <rect x="4" y="6" width="2" height="1" fill="#7EC4F2" />
-        <rect x="10" y="6" width="2" height="1" fill="#7EC4F2" />
+        {/* Emerald Mint Cat Eyes + Pupils */}
+        <rect x="3" y="6" width="2" height="2" fill="#6BC4A2" />
+        <rect x="4" y="6" width="1" height="2" fill="#14161D" />
 
-        {/* Snout & Golden Nose Ring */}
-        <rect x="4" y="9" width="8" height="3" fill="#F4A6A6" />
-        <rect x="5" y="10" width="1" height="1" fill="#3B2328" />
-        <rect x="10" y="10" width="1" height="1" fill="#3B2328" />
-        <rect x="6" y="12" width="4" height="2" fill="#F0CA62" />
-        <rect x="7" y="12" width="2" height="1" fill="#222430" />
+        <rect x="11" y="6" width="2" height="2" fill="#6BC4A2" />
+        <rect x="11" y="6" width="1" height="2" fill="#14161D" />
 
-        {/* Tuxedo / Dealer Bowtie */}
-        <rect x="4" y="14" width="8" height="2" fill="#222430" />
-        <rect x="6" y="14" width="4" height="1" fill="#E87A7A" />
-        <rect x="7" y="14" width="2" height="1" fill="#F0CA62" />
+        {/* Cute Pink Cat Nose */}
+        <rect x="7" y="8" width="2" height="1" fill="#E58585" />
+
+        {/* White Cat Whiskers */}
+        <rect x="0" y="7" width="2" height="1" fill="#F5F2EB" />
+        <rect x="0" y="9" width="2" height="1" fill="#D5CFC2" />
+        <rect x="14" y="7" width="2" height="1" fill="#F5F2EB" />
+        <rect x="14" y="9" width="2" height="1" fill="#D5CFC2" />
+
+        {/* Tuxedo Shoulders & Crisp White Chest Bib */}
+        <rect x="3" y="10" width="10" height="5" fill="#1E202B" />
+        <rect x="5" y="10" width="6" height="4" fill="#F5F2EB" />
+
+        {/* Casino Pastel Red Bowtie + Gold Center */}
+        <rect x="5" y="10" width="2" height="2" fill="#E58585" />
+        <rect x="9" y="10" width="2" height="2" fill="#E58585" />
+        <rect x="7" y="10" width="2" height="2" fill="#DFC06C" />
+
+        {/* White Tuxedo Paws */}
+        <rect x="3" y="14" width="2" height="1" fill="#F5F2EB" />
+        <rect x="11" y="14" width="2" height="1" fill="#F5F2EB" />
+
+        {/* Curled Tuxedo Tail with White Tip */}
+        <rect x="13" y="11" width="2" height="3" fill="#232634" />
+        <rect x="14" y="10" width="1" height="1" fill="#F5F2EB" />
       </svg>
     </div>
   );
@@ -122,6 +138,24 @@ export const PixelJokerCard: React.FC<{ className?: string; style?: React.CSSPro
         <span>★</span>
         <span>JKR</span>
       </div>
+    </div>
+  );
+};
+
+/**
+ * Perfectly Centered 8-Bit SPRD Casino Chip Component
+ */
+export const PixelPokerChip: React.FC<{
+  amount: string;
+  className?: string;
+  style?: React.CSSProperties;
+}> = ({ amount, className = '', style }) => {
+  return (
+    <div className={`floating-chip-bg ${className}`} style={style}>
+      <span style={{ display: 'block', fontSize: 10, lineHeight: 1.05 }}>{amount}</span>
+      <span style={{ display: 'block', fontSize: 7.5, lineHeight: 1.05, opacity: 0.9 }}>
+        SPRD
+      </span>
     </div>
   );
 };

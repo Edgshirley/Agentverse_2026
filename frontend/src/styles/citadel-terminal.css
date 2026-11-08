@@ -242,26 +242,94 @@ button:disabled {
   font-family: 'Silkscreen', monospace;
   font-size: 11px;
   user-select: none;
+  animation: gentleBgFloat 7.5s ease-in-out infinite alternate;
 }
 
 .floating-card-bg.joker-card {
   border-color: var(--pastel-coral-border);
+  animation: gentleBgFloatAlt 8.8s ease-in-out infinite alternate;
 }
 
 .floating-chip-bg {
   position: absolute;
-  width: 52px;
-  height: 52px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
   border: 4px dashed var(--pastel-coral-border);
   background-color: var(--pastel-coral-bg);
   box-shadow: 3px 3px 0px var(--pixel-shadow);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  text-align: center;
+  gap: 2px;
+  padding: 0;
   font-family: 'Silkscreen', monospace;
   font-size: 9px;
   color: var(--pastel-coral-text);
+  user-select: none;
+  animation: gentleChipDrift 6.8s ease-in-out infinite alternate;
+}
+
+@keyframes gentleBgFloat {
+  0% {
+    margin-top: 0px;
+    margin-left: 0px;
+  }
+  100% {
+    margin-top: -10px;
+    margin-left: 5px;
+  }
+}
+
+@keyframes gentleBgFloatAlt {
+  0% {
+    margin-top: 0px;
+    margin-left: 0px;
+  }
+  100% {
+    margin-top: 9px;
+    margin-left: -6px;
+  }
+}
+
+@keyframes gentleChipDrift {
+  0% {
+    margin-top: 0px;
+  }
+  100% {
+    margin-top: -8px;
+  }
+}
+
+/* High-Visibility Preset & Quick-Idea Pills */
+.preset-label-badge {
+  font-family: 'Silkscreen', monospace;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background-color: var(--pastel-gold-bg);
+  color: var(--pastel-gold-text);
+  border: 1.5px solid var(--pastel-gold-border);
+  letter-spacing: 0.04em;
+}
+
+.preset-pill-btn {
+  font-size: 11.5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background-color: var(--pastel-sky-bg);
+  color: var(--pastel-sky-text);
+  border: 2px solid var(--pastel-sky-border);
+  font-weight: 700;
+  box-shadow: 2px 2px 0px var(--pixel-shadow);
+}
+
+.preset-pill-btn:hover:not(:disabled) {
+  background-color: var(--pastel-gold-bg);
+  color: var(--pastel-gold-text);
+  border-color: var(--pastel-gold-border);
 }
 
 /* ============================================================================

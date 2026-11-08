@@ -62,6 +62,14 @@ export async function runAgent1Intake(
   );
 
   const lower = prompt.toLowerCase();
+  const isF1OrRacing =
+    lower.includes('pit stop') ||
+    lower.includes('pitstop') ||
+    lower.includes('f1') ||
+    lower.includes('formula') ||
+    lower.includes('grand prix') ||
+    lower.includes('laps') ||
+    lower.includes('safety car');
   const isFootballMinute =
     lower.includes('score') ||
     lower.includes('goal') ||
@@ -79,10 +87,11 @@ export async function runAgent1Intake(
     lower.includes('parent') ||
     lower.includes('p&l') ||
     lower.includes('pnl') ||
-    lower.includes('odds hit');
+    lower.includes('odds hit') ||
+    lower.includes('stacked');
 
-  // Extract stake k if mentioned (e.g. "25 TOKS")
-  const stakeMatch = prompt.match(/(\d+)\s*toks?/i);
+  // Extract stake k if mentioned (e.g. "25 SPRD" or "25 TOKS")
+  const stakeMatch = prompt.match(/(\d+)\s*(?:toks?|sprd)/i);
   const k = stakeMatch ? Math.max(5, parseInt(stakeMatch[1], 10)) : isFootballMinute ? 10 : 25;
 
   let bounds: [number, number] = [0, 100];
@@ -92,18 +101,36 @@ export async function runAgent1Intake(
   let criteria = `Official verifiable outcome for: "${prompt.trim()}"`;
   let payoffMode: PayoffMode = 'pot';
 
-  if (isFootballMinute && !isStacked) {
+  if (isF1OrRacing && !isStacked) {
+    bounds = [0, 12];
+    unit = lower.includes('lap') ? 'laps' : 'pit stops';
+    noEventValue = 0;
+    resolutionSource = 'Official FIA / Formula 1 Race Timing Feed';
+    criteria = `Official FIA race ${unit} count. Window [L, H] market: MM wins inside window [L, H]; takers bet ABOVE (> H) or BELOW (< L).`;
+    payoffMode = 'linear';
+  } else if (isFootballMinute && !isStacked) {
     bounds = [0, 95];
     unit = 'min';
     noEventValue = 95;
     resolutionSource = 'Official Match Clock Feed (Opta / Replay)';
     criteria = 'Official match minute of first goal (0..95); settles at 95 if 0-0 fulltime.';
+    payoffMode = 'linear';
   } else if (isWeather) {
     bounds = [0, 45];
     unit = '°C';
     noEventValue = 20;
     resolutionSource = 'Met Office Daily High Feed';
     criteria = 'Official Met Office weather station daily high temperature.';
+  } else if (
+    lower.includes('make a market') ||
+    lower.includes('window') ||
+    lower.includes('linear') ||
+    lower.includes('spread')
+  ) {
+    bounds = [0, 50];
+    unit = 'units';
+    noEventValue = 0;
+    payoffMode = 'linear';
   }
 
   const draft: DraftMarketProposal = aiDraft ?? {
@@ -178,9 +205,20 @@ export async function runAgent2Classifier(
   } else if (
     lower.includes('when will') ||
     lower.includes('how many') ||
+    lower.includes('make a market') ||
+    lower.includes('pit stop') ||
+    lower.includes('pitstop') ||
+    lower.includes('f1') ||
+    lower.includes('formula') ||
+    lower.includes('grand prix') ||
+    lower.includes('laps') ||
+    lower.includes('window') ||
+    lower.includes('linear') ||
     lower.includes('spread') ||
     lower.includes('range') ||
-    draft.unit === 'min'
+    draft.unit === 'min' ||
+    draft.unit === 'pit stops' ||
+    draft.unit === 'laps'
   ) {
     archetype = 'spread';
   } else if (lower.includes('rank') || lower.includes('who finishes first')) {
@@ -244,14 +282,14 @@ export async function parseStrategyRuleWithRiskGate(
 
   // Extract direction (`OVER`, `UNDER`, `YES`, `NO`)
   let side: PositionSide = market.archetype === 'spread' ? 'OVER' : 'YES';
-  if (lower.includes('under')) side = 'UNDER';
-  else if (lower.includes('over')) side = 'OVER';
+  if (lower.includes('under') || lower.includes('below')) side = 'UNDER';
+  else if (lower.includes('over') || lower.includes('above')) side = 'OVER';
   else if (/\bno\b|\bshort\b/.test(lower)) side = market.archetype === 'spread' ? 'UNDER' : 'NO';
 
-  // Extract stake in TOKS (e.g. "Put 100 TOKS" or "stake 80")
+  // Extract stake in SPRD / TOKS (e.g. "Put 100 SPRD" or "stake 80")
   const stakeMatch =
-    clean.match(/(?:put|bet|stake|enter|buy)\s+(\d+)\s*(?:toks?)?/i) ||
-    clean.match(/(\d+)\s*toks?/i);
+    clean.match(/(?:put|bet|stake|enter|buy)\s+(\d+)\s*(?:toks?|sprd)?/i) ||
+    clean.match(/(\d+)\s*(?:toks?|sprd)/i);
   const stakeToks = stakeMatch ? parseInt(stakeMatch[1], 10) : market.lot_stake_k * 2;
 
   // Extract optional entry trigger (e.g. "if odds dip below 40%" or "entry at 42%")
@@ -259,16 +297,16 @@ export async function parseStrategyRuleWithRiskGate(
   const entryTriggerLevel = entryMatch ? parseFloat(entryMatch[1]) : null;
 
   // Extract Field 2: Take-Profit / Exit Target (`take_profit_level`)
-  // Matches phrases like: "take profit at 70%", "tp 75", "scale out half up 50%", "sell at 1350", "target 68%"
+  // Matches phrases like: "take profit at 70%", "sell at 27°C", "tp 75", "scale out half up 50%", "target 68%"
   const tpMatch = clean.match(
-    /(?:take[- ]?profit|tp|scale out[^0-9]*|target|exit at|sell if[^0-9]*|profit at)\s*@?\s*(\d+(?:\.\d+)?)/i
+    /(?:take[- ]?profit|tp|scale out[^0-9]*|target|exit at|sell(?:\s*at|\s*if[^0-9]*)|profit at)\s*@?\s*(\d+(?:\.\d+)?)/i
   );
   const takeProfitLevel = tpMatch ? parseFloat(tpMatch[1]) : null;
 
   // Extract Field 3: Drawdown Floor / Stop-Loss (`min_balance_floor`)
-  // Matches phrases like: "cut me at 60 TOKS", "floor 45", "stop at 40%", "drawdown 50", "min balance 60"
+  // Matches phrases like: "cut me at 60", "stop me out if it drops to 21", "floor 45", "stop at 40%"
   const floorMatch = clean.match(
-    /(?:cut me at|floor(?:\s*at)?|stop(?:\s*loss)?(?:\s*at)?|drawdown(?:\s*floor)?|cut at|protect at)\s*@?\s*(\d+(?:\.\d+)?)/i
+    /(?:cut me at|floor(?:\s*at)?|stop(?:\s*me\s*out)?(?:\s*if[^0-9]*)?(?:\s*drops\s*to)?(?:\s*loss)?(?:\s*at)?|drops\s*to|drawdown(?:\s*floor)?|cut at|protect at)\s*@?\s*(\d+(?:\.\d+)?)/i
   );
   const minBalanceFloor = floorMatch ? parseFloat(floorMatch[1]) : null;
 

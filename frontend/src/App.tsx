@@ -2,9 +2,13 @@ import React, { useState } from 'react';
 import { useMarketSync } from './hooks/useMarketSync';
 import { HeaderBar } from './components/HeaderBar';
 import { VoiceBotScreen } from './screens/VoiceBotScreen';
-import { GroupChatScreen } from './screens/GroupChatScreen';
+import {
+  GroupChatScreen,
+  LocalChatMessage,
+  MascotWidgetAlert,
+} from './screens/GroupChatScreen';
 import { MarketTableScreen } from './screens/MarketTableScreen';
-import { PixelJokerCard } from './components/PixelMascot';
+import { PixelJokerCard, PixelPokerChip } from './components/PixelMascot';
 
 export type AppScreen = 'voice' | 'table' | 'chat';
 
@@ -21,7 +25,12 @@ export const App: React.FC = () => {
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [activeScreen, setActiveScreen] = useState<AppScreen>('voice');
-  const [showUnitLadder, setShowUnitLadder] = useState<boolean>(false);
+  const [showUnitLadder, setShowUnitLadder] = useState<boolean>(true);
+
+  // Persistent Chat State across tabs + Chat-to-Main-Page Mascot Handoff
+  const [chatMessages, setChatMessages] = useState<LocalChatMessage[]>([]);
+  const [chatMascotAlert, setChatMascotAlert] = useState<MascotWidgetAlert | null>(null);
+  const [forwardedChatPrompt, setForwardedChatPrompt] = useState<string | null>(null);
 
   if (loading || !data) {
     return (
@@ -45,34 +54,55 @@ export const App: React.FC = () => {
 
   return (
     <div className="citadel-shell" data-theme={theme}>
-      {/* Subtle 8-Bit Playing Cards, Joker Card & SPRD Poker Chips Background Motif */}
+      {/* Subtle Gently-Floating 8-Bit Playing Cards, Joker Card & Centered SPRD Poker Chips */}
       <div className="bg-betting-decor" aria-hidden="true">
-        <div className="floating-card-bg" style={{ top: '12%', left: '4%', transform: 'rotate(-8deg)' }}>
+        <div
+          className="floating-card-bg"
+          style={{ top: '12%', left: '4%', transform: 'rotate(-8deg)', animationDelay: '0s' }}
+        >
           <span>A</span>
           <span style={{ alignSelf: 'center', fontSize: 18 }}>♠</span>
           <span style={{ alignSelf: 'flex-end' }}>A</span>
         </div>
 
         {/* 8-Bit Pixel Joker Card */}
-        <PixelJokerCard style={{ top: '16%', right: '5%', transform: 'rotate(9deg)' }} />
+        <PixelJokerCard
+          style={{ top: '16%', right: '5%', transform: 'rotate(9deg)', animationDelay: '1.2s' }}
+        />
 
         <div
           className="floating-card-bg"
-          style={{ bottom: '14%', left: '6%', transform: 'rotate(6deg)', color: '#e58585' }}
+          style={{
+            bottom: '14%',
+            left: '6%',
+            transform: 'rotate(6deg)',
+            color: '#e58585',
+            animationDelay: '2.4s',
+          }}
         >
           <span>Q</span>
           <span style={{ alignSelf: 'center', fontSize: 18 }}>♦</span>
           <span style={{ alignSelf: 'flex-end' }}>Q</span>
         </div>
 
-        <PixelJokerCard style={{ bottom: '18%', right: '6%', transform: 'rotate(-10deg)' }} />
+        <PixelJokerCard
+          style={{
+            bottom: '18%',
+            right: '6%',
+            transform: 'rotate(-10deg)',
+            animationDelay: '3.1s',
+          }}
+        />
 
-        <div className="floating-chip-bg" style={{ top: '48%', left: '3%' }}>
-          100 SPRD
-        </div>
-        <div className="floating-chip-bg" style={{ top: '62%', right: '4%' }}>
-          25 SPRD
-        </div>
+        {/* Centered 8-Bit SPRD Poker Chips */}
+        <PixelPokerChip
+          amount="100"
+          style={{ top: '48%', left: '3%', animationDelay: '0.7s' }}
+        />
+        <PixelPokerChip
+          amount="25"
+          style={{ top: '62%', right: '4%', animationDelay: '1.9s' }}
+        />
       </div>
 
       <HeaderBar
@@ -85,6 +115,9 @@ export const App: React.FC = () => {
         onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
         onResetDemo={async () => {
           await dispatchAction('/api/demo/reset', {});
+          setChatMessages([]);
+          setChatMascotAlert(null);
+          setForwardedChatPrompt(null);
           setActiveScreen('voice');
         }}
       />
@@ -116,6 +149,8 @@ export const App: React.FC = () => {
             activeMarket={activeBundle?.market ?? null}
             allMarkets={markets}
             activePlayer={activePlayer}
+            forwardedChatPrompt={forwardedChatPrompt}
+            onClearForwardedChatPrompt={() => setForwardedChatPrompt(null)}
             showUnitLadder={showUnitLadder}
             onToggleUnitLadder={setShowUnitLadder}
             onSelectMarket={setSelectedMarketId}
@@ -144,6 +179,11 @@ export const App: React.FC = () => {
             activeBundle={activeBundle}
             allMarkets={markets}
             activePlayer={activePlayer}
+            chatMessages={chatMessages}
+            setChatMessages={setChatMessages}
+            mascotAlert={chatMascotAlert}
+            setMascotAlert={setChatMascotAlert}
+            onForwardChatPromptToMainPage={setForwardedChatPrompt}
             onSelectMarket={setSelectedMarketId}
             onDispatch={dispatchAction}
             onNavigateScreen={setActiveScreen}

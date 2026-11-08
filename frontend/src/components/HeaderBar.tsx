@@ -1,6 +1,7 @@
 import React from 'react';
 import { Group, Player } from '../shared/types';
 import { AppScreen } from '../App';
+import { CatAvatarId, PixelCatAvatar } from './PixelMascot';
 
 interface HeaderBarProps {
   group: Group;
@@ -10,9 +11,12 @@ interface HeaderBarProps {
   onNavigateScreen: (screen: AppScreen) => void;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
-  onResetDemo: () => void;
   username?: string;
   onLogout?: () => void;
+  selectedAvatar: CatAvatarId;
+  displayName: string;
+  showProfileExclamation: boolean;
+  onOpenProfile: () => void;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
@@ -23,9 +27,12 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onNavigateScreen,
   theme,
   onToggleTheme,
-  onResetDemo,
   username,
   onLogout,
+  selectedAvatar,
+  displayName,
+  showProfileExclamation,
+  onOpenProfile,
 }) => {
   return (
     <header className="terminal-header">
@@ -59,7 +66,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         </button>
       </nav>
 
-      {/* Your SPRD Balance & Theme */}
+      {/* Your SPRD Balance, Theme & Cat Profile Button */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div className="chip-wallet-badge">
           <span className="pixel-font">{activePlayer.wallet_balance_toks.toLocaleString()}</span>
@@ -76,12 +83,35 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         <button onClick={onToggleTheme} style={{ padding: '5px 10px', fontSize: 11 }}>
           {theme === 'dark' ? '☀ LIGHT' : '☾ DARK'}
         </button>
+
+        {/* Cat Profile Button (replaces START FRESH) with First-Startup [!] Badge */}
         <button
-          onClick={onResetDemo}
-          style={{ padding: '5px 10px', fontSize: 11, color: 'var(--fg-muted)' }}
-          title="Clear all markets and start fresh as the first person in your group"
+          type="button"
+          onClick={onOpenProfile}
+          className="profile-header-btn"
+          title="Customize your Cat Avatar, Display Handle & view How the Game Works"
         >
-          START FRESH
+          {showProfileExclamation && (
+            <span
+              className="pixel-exclamation-badge pixel-font"
+              title="Set up your profile & check how the game works!"
+            >
+              !
+            </span>
+          )}
+          <PixelCatAvatar variant={selectedAvatar} size={22} />
+          <span
+            className="pixel-font"
+            style={{
+              fontSize: 10.5,
+              maxWidth: 135,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {displayName}
+          </span>
         </button>
         {onLogout && (
           <button

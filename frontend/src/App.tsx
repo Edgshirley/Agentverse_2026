@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useMarketSync } from './hooks/useMarketSync';
 import { HeaderBar } from './components/HeaderBar';
+import {
+  ProfileModal,
+  generateThemedGamerName,
+} from './components/ProfileModal';
 import { VoiceBotScreen } from './screens/VoiceBotScreen';
 import {
   GroupChatScreen,
@@ -8,10 +12,56 @@ import {
   MascotWidgetAlert,
 } from './screens/GroupChatScreen';
 import { MarketTableScreen } from './screens/MarketTableScreen';
-import { PixelJokerCard, PixelPokerChip } from './components/PixelMascot';
+import {
+  CAT_AVATAR_OPTIONS,
+  CatAvatarId,
+  PixelJokerCard,
+  PixelPokerChip,
+} from './components/PixelMascot';
 import { sfx } from './utils/soundEffects';
 
 export type AppScreen = 'voice' | 'table' | 'chat';
+
+interface StoredProfile {
+  avatar: CatAvatarId;
+  customName: string;
+  defaultName: string;
+  onboarded: boolean;
+}
+
+const PROFILE_STORAGE_KEY = 'spread.profile.v1';
+
+function loadStoredProfile(): StoredProfile {
+  const fallback: StoredProfile = {
+    avatar: 'bowtie',
+    customName: '',
+    defaultName: generateThemedGamerName(),
+    onboarded: false,
+  };
+  try {
+    const raw = window.localStorage.getItem(PROFILE_STORAGE_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as Partial<StoredProfile>;
+    return {
+      avatar: CAT_AVATAR_OPTIONS.some((c) => c.id === parsed.avatar)
+        ? (parsed.avatar as CatAvatarId)
+        : fallback.avatar,
+      customName: typeof parsed.customName === 'string' ? parsed.customName : '',
+      defaultName: parsed.defaultName || fallback.defaultName,
+      onboarded: parsed.onboarded === true,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function saveStoredProfile(profile: StoredProfile): void {
+  try {
+    window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+  } catch {
+    // Private mode / blocked storage: profile just won't persist across reloads.
+  }
+}
 
 export const App: React.FC = () => {
   const {
@@ -32,6 +82,31 @@ export const App: React.FC = () => {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [activeScreen, setActiveScreen] = useState<AppScreen>('voice');
   const [showUnitLadder, setShowUnitLadder] = useState<boolean>(true);
+
+  // Player Profile State: 6 Cat Avatars + Custom or Auto-Generated Themed Gamer Name.
+  // Saved in this browser's localStorage for now (see TEAM_TASKS.md: move to the server profile later).
+  const [savedProfile] = useState<StoredProfile>(() => loadStoredProfile());
+  const [selectedAvatar, setSelectedAvatar] = useState<CatAvatarId>(savedProfile.avatar);
+  const [customName, setCustomName] = useState<string>(savedProfile.customName);
+  const [defaultGeneratedName, setDefaultGeneratedName] = useState<string>(
+    savedProfile.defaultName
+  );
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
+
+  // First-time startup onboarding exclamation mark (appears on Profile button & How the Game Works button;
+  // both disappear once the user clicks out of / closes the Profile modal, and stay gone on later visits)
+  const [showProfileOnboardingBadge, setShowProfileOnboardingBadge] = useState<boolean>(
+    !savedProfile.onboarded
+  );
+
+  useEffect(() => {
+    saveStoredProfile({
+      avatar: selectedAvatar,
+      customName,
+      defaultName: defaultGeneratedName,
+      onboarded: !showProfileOnboardingBadge,
+    });
+  }, [selectedAvatar, customName, defaultGeneratedName, showProfileOnboardingBadge]);
 
   // Persistent Chat State across tabs + Chat-to-Main-Page Mascot Handoff
   const [chatMessages, setChatMessages] = useState<LocalChatMessage[]>([]);
@@ -62,13 +137,15 @@ export const App: React.FC = () => {
     );
   }
 
+  const effectiveDisplayName = customName.trim() || defaultGeneratedName;
+
   const { group, players, markets, activeBundle, serverClockMs } = data;
-  const activePlayer =
+  const rawActivePlayer =
     players.find((p) => p.id === activePlayerId) ??
     players[0] ?? {
       id: 'you',
       group_id: group.id,
-      nickname: 'YOU',
+      nickname: effectiveDisplayName,
       is_admin: true,
       wallet_balance_toks: 1000,
       escrow_balance_toks: 0,
@@ -87,6 +164,20 @@ export const App: React.FC = () => {
       sfx.playBetConfirm();
     }
     return res;
+  };
+
+  const activePlayer = {
+    ...rawActivePlayer,
+    nickname: effectiveDisplayName,
+  };
+
+  const playersWithProfileName = players.map((p) =>
+    p.id === activePlayer.id ? { ...p, nickname: effectiveDisplayName } : p
+  );
+
+  const handleCloseProfile = () => {
+    setIsProfileOpen(false);
+    setShowProfileOnboardingBadge(false);
   };
 
   return (
@@ -161,6 +252,24 @@ export const App: React.FC = () => {
         onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
         username={authUser?.username}
         onLogout={authStatus === 'authenticated' ? logout : undefined}
+        selectedAvatar={selectedAvatar}
+        displayName={effectiveDisplayName}
+        showProfileExclamation={showProfileOnboardingBadge}
+        onOpenProfile={() => setIsProfileOpen(true)}
+      />
+
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={handleCloseProfile}
+        selectedAvatar={selectedAvatar}
+        onSelectAvatar={setSelectedAvatar}
+        customName={customName}
+        defaultGeneratedName={defaultGeneratedName}
+        onChangeCustomName={setCustomName}
+        onRollNewDefaultName={() =>
+          setDefaultGeneratedName((prev) => generateThemedGamerName(prev))
+        }
+        showRulesExclamation={showProfileOnboardingBadge}
         onResetDemo={async () => {
           await dispatchAction('/api/demo/reset', {});
           // The reset empties the ring: re-seat the logged-in player
@@ -213,7 +322,7 @@ export const App: React.FC = () => {
           <MarketTableScreen
             activeBundle={activeBundle}
             allMarkets={markets}
-            players={players}
+            players={playersWithProfileName}
             activePlayer={activePlayer}
             serverClockMs={serverClockMs}
             showUnitLadder={showUnitLadder}

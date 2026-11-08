@@ -39,3 +39,20 @@ This document tracks the UX, AI Agent pipeline, and backend rules-engine tasks t
 
 - [ ] **ENG-05: 3rd-Party Arbiter Role Invite & Countdown Auto-Lock**
   - **Task:** When Agent 2 classifies a market as `custom_unverifiable` (e.g., internal company earnings or team performance rankings), notify the designated 3rd-party arbiter (e.g., Boss), enforce that the arbiter cannot place bets in that market, and automatically lock all bets and withdrawals when `countdown_ends_at` reaches `00:00:00`.
+
+
+---
+
+## 5. First-Time Profile Setup & Onboarding Exclamation Badges (Team Integration Notes)
+
+- [ ] **UX-03: First-Startup Unauthenticated Profile & Rules `[!]` Exclamation Badges**
+  - **Context / Behavior:** Replacing the old `START FRESH` header button is the new **Cat Profile Button** (with 6 selectable 8-bit cat avatars: 1 with no hat, 1 with a power tie, 1 with a bow tie, and 3 with different hat styles/colors, plus a custom display name input that falls back to a themed video-game handle generator (prefix + cat/casino noun + number, e.g. `LuckyWhisker_42`, `HighRollerJoker_7`; 🎲 ROLL NAME re-rolls it), and a separate **"How the Game Works"** button).
+  - **Team Integration Note (Auth / First Launch):** The very first time a user starts the app up and is **not logged in** (or has not completed initial profile setup):
+    1. A little 8-bit exclamation mark (`[!]`) appears on the **Profile button** in the top header bar prompting them to set up their profile.
+    2. Inside the Profile modal itself, a second exclamation mark (`[!]`) sits right beside the **"How the Game Works"** button.
+    3. Once the user clicks out of / closes the Profile modal, **both exclamation marks disappear**.
+  - **Current implementation (frontend only):** avatar, custom name, generated default name and the "onboarded" flag are saved in the browser's `localStorage` under `spread.profile.v1` (`frontend/src/App.tsx`), so the badges only show on a browser's first launch and stay gone after the profile is closed once. Clear that key to see the first-launch badges again.
+  - **Still to do when we integrate versions:**
+    - [ ] Store avatar + display name on the server player record (keyed by the Keycloak user) so it follows the user across devices, and send the display name to the backend so other players see it (right now it is only swapped in on the client).
+    - [ ] Decide whether the `[!]` badges should key off "no server profile yet" instead of the per-browser `localStorage` flag.
+    - [ ] `↺ RESET DEMO MARKETS` (old START FRESH action) now lives in the Profile modal footer — keep or move to an admin-only spot.

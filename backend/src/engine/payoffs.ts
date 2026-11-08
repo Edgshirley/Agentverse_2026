@@ -316,6 +316,8 @@ export class SpreadMarketBook {
 
     positions.push(pos);
     this.positionsByMarket.set(market.id, positions);
+    pos.entry_chance = this.crowdChance(market, side);
+    this.markToMarket(market);
 
     return {
       market: {
@@ -324,6 +326,118 @@ export class SpreadMarketBook {
       },
       position: { ...pos },
     };
+  }
+
+  // -------------------------------------------------------------------------
+  // Live cash-out for window bets
+  //
+  // The crowd's money is the price signal: the chance a side wins is its share of
+  // the money, with the window itself (the market maker) as a third outcome and a
+  // little smoothing so one bet can't swing it to 0 or 100. A bet is worth its stake
+  // scaled by how that chance has moved since it was placed. Cashing out sells the
+  // bet back to the market maker: the price is paid from the taker's own escrow plus
+  // any market-maker cover that the smaller book no longer needs, and a sale below
+  // the stake leaves the difference with the market maker. Every move is zero-sum.
+  // -------------------------------------------------------------------------
+
+  /** Crowd-implied chance (0..1) that `side` wins, from the money currently on each side. */
+  public crowdChance(market: Market, side: 'OVER' | 'UNDER'): number {
+    const active = (this.positionsByMarket.get(market.id) ?? []).filter((p) => p.lots > 0);
+    const over = active.filter((p) => p.side === 'OVER').reduce((a, p) => a + p.staked_toks, 0);
+    const under = active.filter((p) => p.side === 'UNDER').reduce((a, p) => a + p.staked_toks, 0);
+    const smoothing = 2 * market.lot_stake_k;
+    return ((side === 'OVER' ? over : under) + smoothing) / (over + under + 3 * smoothing);
+  }
+
+  private lotTotals(marketId: string) {
+    const active = (this.positionsByMarket.get(marketId) ?? []).filter((p) => p.lots > 0);
+    return {
+      over: active.filter((p) => p.side === 'OVER').reduce((a, p) => a + p.lots, 0),
+      under: active.filter((p) => p.side === 'UNDER').reduce((a, p) => a + p.lots, 0),
+    };
+  }
+
+  /** What selling `lots` of `pos` back to the market maker pays right now. */
+  public quoteCashOut(market: Market, pos: Position, lots: number) {
+    const side = pos.side === 'UNDER' ? 'UNDER' : 'OVER';
+    const sellLots = Math.min(lots, pos.lots);
+    const stakeSold = Math.round((pos.staked_toks * sellLots) / Math.max(1, pos.lots));
+    const { over, under } = this.lotTotals(market.id);
+    const newRequired = computeRequiredMmEscrow(
+      market,
+      over - (side === 'OVER' ? sellLots : 0),
+      under - (side === 'UNDER' ? sellLots : 0)
+    );
+    const mmEscrow = this.mmEscrowByMarket.get(market.id) ?? 0;
+    const mmRelease = Math.max(0, mmEscrow - newRequired);
+    const ratio = this.crowdChance(market, side) / (pos.entry_chance ?? 1 / 3);
+    const fair = Math.round(stakeSold * Math.min(3, Math.max(0, ratio)));
+    // A gain can only be paid from cover the market maker no longer needs
+    const value = Math.max(0, Math.min(fair, stakeSold + mmRelease));
+    return { sellLots, stakeSold, mmRelease, value };
+  }
+
+  /** Keep every window bet's live value (`live_equity_toks`) at its cash-out price. */
+  public markToMarket(market: Market): void {
+    const positions = this.positionsByMarket.get(market.id) ?? [];
+    for (const p of positions) {
+      if (p.lots > 0) p.live_equity_toks = this.quoteCashOut(market, p, p.lots).value;
+    }
+  }
+
+  /** Sell `fraction` (0..1] of a player's bet on `side` back to the market maker. */
+  public cashOut(
+    market: Market,
+    playerId: string,
+    side: 'OVER' | 'UNDER',
+    fraction: number,
+    idempotencyKey: string
+  ): { paidOut: number } {
+    if (market.state !== 'open' && market.state !== 'live') {
+      throw new PayoffError('Cashing out is only possible while the bet is running');
+    }
+    const mmId = market.mm_player_id;
+    if (!mmId) throw new PayoffError('This bet has no market maker to sell back to');
+    const positions = this.positionsByMarket.get(market.id) ?? [];
+    const mine = positions.filter((p) => p.player_id === playerId && p.side === side && p.lots > 0);
+    const totalLots = mine.reduce((a, p) => a + p.lots, 0);
+    if (totalLots === 0) throw new PayoffError(`You have no ${side === 'OVER' ? 'ABOVE' : 'BELOW'} bet to cash out`);
+
+    let lotsLeft =
+      fraction >= 0.999 ? totalLots : Math.max(1, Math.min(totalLots, Math.round(totalLots * fraction)));
+    let paidOut = 0;
+    mine.forEach((pos, i) => {
+      if (lotsLeft <= 0) return;
+      const q = this.quoteCashOut(market, pos, lotsLeft);
+      this.ledger.settleEscrowBatch(
+        market.id,
+        [
+          { playerId, escrowRelease: q.stakeSold, walletCredit: q.value, note: 'Cash out (sold to market maker)' },
+          {
+            playerId: mmId,
+            escrowRelease: q.mmRelease,
+            walletCredit: q.stakeSold + q.mmRelease - q.value,
+            note: 'Bought back a bet',
+          },
+        ],
+        'PARTIAL_WITHDRAWAL',
+        `${idempotencyKey}:${i}`
+      );
+      this.mmEscrowByMarket.set(market.id, (this.mmEscrowByMarket.get(market.id) ?? 0) - q.mmRelease);
+      const keep = pos.lots - q.sellLots;
+      pos.entry_cost_toks = Math.round((pos.entry_cost_toks * keep) / pos.lots);
+      pos.lots = keep;
+      pos.staked_toks -= q.stakeSold;
+      pos.current_shares = keep;
+      pos.realized_pnl_toks += q.value - q.stakeSold;
+      pos.withdrawn_toks += q.value;
+      pos.live_equity_toks = 0;
+      pos.updated_at = this.clock.now();
+      lotsLeft -= q.sellLots;
+      paidOut += q.value;
+    });
+    this.markToMarket(market);
+    return { paidOut };
   }
 
   /**

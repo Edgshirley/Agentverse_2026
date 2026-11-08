@@ -135,6 +135,8 @@ export interface Position {
   withdrawn_toks: number;
   is_hidden: boolean;
   updated_at: number;
+  /** Window bets: the crowd's chance for this side when the bet was placed (0..1). */
+  entry_chance?: number;
 }
 
 export interface PositionBid {

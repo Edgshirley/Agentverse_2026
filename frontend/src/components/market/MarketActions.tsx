@@ -24,6 +24,11 @@ export const MarketActions: React.FC<MarketActionsProps> = ({
     players.find((p) => p.id === market.mm_player_id)?.nickname ?? 'The market maker';
 
   const [showCustomWithdraw, setShowCustomWithdraw] = useState<boolean>(false);
+  // What you put in vs what cashing out pays right now (moves with the money on each side)
+  const myPaid = positions
+    .filter((p) => p.player_id === activePlayer.id && (p.lots > 0 || p.live_equity_toks > 0))
+    .reduce((a, p) => a + p.entry_cost_toks, 0);
+  const myChange = myLiveBalance - myPaid;
   const [withdrawValue, setWithdrawValue] = useState<string>('25');
   const [withdrawMode, setWithdrawMode] = useState<'CHIP' | '%'>('CHIP');
 
@@ -150,12 +155,23 @@ export const MarketActions: React.FC<MarketActionsProps> = ({
                   fractionP: 1.0,
                 })
               }
+              title="Cash out now at the live price"
             >
-              <Icon name="wallet" size={14} /> {myLiveBalance} CHIP
+              <Icon name="wallet" size={14} /> CASH OUT {myLiveBalance} CHIP
             </button>
           </>
         )}
       </div>
+
+      {myLiveBalance > 0 && myPaid > 0 && (
+        <p className={`cash-out-line ${myChange > 0 ? 'up' : myChange < 0 ? 'down' : ''}`}>
+          You paid {myPaid} CHIP · worth {myLiveBalance} now
+          {myChange !== 0 && ` (${myChange > 0 ? '+' : ''}${myChange})`}.{' '}
+          {isSpread
+            ? 'It goes up as more money backs your side and down as it backs the other side; cashing out sells it back to the market maker.'
+            : 'It moves with the chance of YES as people bet.'}
+        </p>
+      )}
 
       {showCustomWithdraw && myLiveBalance > 0 && (
         <div

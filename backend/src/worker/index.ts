@@ -28,12 +28,12 @@ export { globalStore, EdgeStateStore } from './db';
 export { config, PostgresConnectionSingleton, REDIS, MESSAGE_BUS };
 
 /** Betting closes at the market's close time; the result is entered after that. */
-function assertBettingOpen(market: Market): void {
+function assertBettingOpen(market: Market, what = 'Betting'): void {
   if (market.state === 'settled' || market.state === 'void') {
     throw new Error('This bet is finished.');
   }
   if (market.closes_at_wall_ms != null && Date.now() >= market.closes_at_wall_ms) {
-    throw new Error("Betting has closed on this one. Waiting for the result.");
+    throw new Error(`${what} has closed on this one. Waiting for the result.`);
   }
 }
 
@@ -550,37 +550,16 @@ app.post('/api/markets/:id/withdraw', async (c) => {
     globalStore.clock.advance(250);
     const key = idempotencyKey || `withdraw_${marketId}_${playerId}_${globalStore.clock.now()}`;
     const mkt = globalStore.engine.getMarket(marketId);
+    assertBettingOpen(mkt, 'Cashing out');
     if (mkt.archetype === 'spread') {
-      const positions = globalStore.engine.spreadBook.getPositions(marketId);
-      const posIdx = positions.findIndex(
-        (p) => p.player_id === playerId && p.live_equity_toks > 0
+      // Sell back to the market maker at the live crowd price (see SpreadMarketBook.cashOut)
+      globalStore.engine.spreadBook.cashOut(
+        mkt,
+        playerId,
+        normalizeSpreadSide(side),
+        Number(fractionP),
+        key
       );
-      if (posIdx >= 0) {
-        const pos = positions[posIdx];
-        const pClamp = Math.min(1, Math.max(0.01, Number(fractionP)));
-        const refund =
-          pClamp >= 0.999
-            ? pos.staked_toks
-            : Math.max(1, Math.round(pos.staked_toks * pClamp));
-        globalStore.engine.ledger.releaseEscrow(
-          playerId,
-          marketId,
-          refund,
-          'PARTIAL_WITHDRAWAL',
-          key,
-          `${playerId} withdrew ${refund} CHIP from window market`
-        );
-        const remaining = Math.max(0, pos.staked_toks - refund);
-        positions[posIdx] = {
-          ...pos,
-          staked_toks: remaining,
-          entry_cost_toks: remaining,
-          live_equity_toks: remaining,
-          lots: remaining === 0 ? 0 : pos.lots,
-          withdrawn_toks: pos.withdrawn_toks + refund,
-        };
-        globalStore.engine.spreadBook.setPositions(marketId, positions);
-      }
     } else {
       globalStore.engine.withdrawFromPool(marketId, playerId, side, Number(fractionP), key);
     }

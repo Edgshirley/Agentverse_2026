@@ -1847,3 +1847,15 @@ button:disabled {
   margin-top: 4px;
   font-size: 14px;
 }
+
+.cash-out-line {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.85;
+}
+.cash-out-line.up {
+  color: var(--pastel-mint-text);
+}
+.cash-out-line.down {
+  color: var(--pastel-coral-text);
+}

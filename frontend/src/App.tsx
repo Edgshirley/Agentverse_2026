@@ -8,8 +8,9 @@ import { ChatFeed, MascotWidgetAlert } from './components/chat/ChatFeed';
 import { LiveBetsList } from './components/chat/LiveBetsList';
 import { BetDrawer } from './components/market/BetDrawer';
 import { MarketDetail } from './components/market/MarketDetail';
-import { PixelJokerCard, PixelPokerChip } from './components/PixelMascot';
+import { PixelJokerCard, PixelMascot, PixelPokerChip } from './components/PixelMascot';
 import { Icon, IconName } from './components/Icon';
+import { sfx } from './utils/soundEffects';
 
 // The dev-only simulator; Vite strips this import from production builds.
 const SimConsole = import.meta.env.DEV ? React.lazy(() => import('./dev/SimConsole')) : null;
@@ -30,11 +31,16 @@ export const App: React.FC = () => {
     loading,
     errorBanner,
     setErrorBanner,
-            setSelectedMarketId,
+    setSelectedMarketId,
     refresh,
     dispatchAction,
+    authStatus,
+    authUser,
+    refreshAuth,
+    login,
+    logout,
   } = useMarketSync();
-  const [activePlayerId, setActivePlayerId] = useActivePlayerId();
+  const [activePlayerId, setActivePlayerId] = useActivePlayerId(authUser?.player_id);
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [showUnitLadder, setShowUnitLadder] = useState<boolean>(true);
@@ -45,14 +51,19 @@ export const App: React.FC = () => {
   const [chatMascotAlert, setChatMascotAlert] = useState<MascotWidgetAlert | null>(null);
   const [forwardedChatPrompt, setForwardedChatPrompt] = useState<string | null>(null);
 
-    // Dev only: keep the personas registered, including after a reset
+  // Behind the gateway every action is bound to the signed-in user, so stand-in
+  // friends, personas and the simulator only make sense without it.
+  const standInFriends = authStatus !== 'authenticated';
+  const devPlayerTools = import.meta.env.DEV && authStatus === 'disabled';
+
+  // Dev only: keep the personas registered, including after a reset
   const personasMissing =
-    import.meta.env.DEV && data != null && !data.players.some((p) => p.id === 'edouard');
+    devPlayerTools && data != null && !data.players.some((p) => p.id === 'edouard');
   useEffect(() => {
     if (personasMissing) void dispatchAction('/api/dev/personas', {});
   }, [personasMissing, dispatchAction]);
 
-    const closeBetDrawer = useCallback(() => setBetDrawerOpen(false), []);
+  const closeBetDrawer = useCallback(() => setBetDrawerOpen(false), []);
   const openBetDrawer = useCallback(() => setBetDrawerOpen(true), []);
 
   const openPanel = useCallback((panel: AppPanel) => {
@@ -69,7 +80,25 @@ export const App: React.FC = () => {
     setNewBetRequest((n) => n + 1);
   }, [openPanel]);
 
-  if (loading || !data) {
+  if (authStatus === 'anonymous') {
+    return (
+      <div className="app-root login-screen" data-theme={theme}>
+        <div className="pastel-card login-card">
+          <span className="brand-lockup">
+            <PixelMascot size={40} />
+            <span className="pixel-font brand-wordmark">MarketMate</span>
+          </span>
+          <p>Log in to take a seat at your group&apos;s table.</p>
+          <button className="btn-brand pixel-font" onClick={login}>
+            <Icon name="login" size={16} />
+            LOG IN
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (authStatus === 'checking' || loading || !data) {
     return (
       <div className="app-root" data-theme={theme} style={{ padding: 40, textAlign: 'center' }}>
         <span className="pixel-font">LOADING MARKETMATE...</span>
@@ -89,8 +118,32 @@ export const App: React.FC = () => {
       escrow_balance_toks: 0,
     };
 
+  const handleDispatchWithSound = async (path: string, body?: Record<string, any>) => {
+    const res = await dispatchAction(path, body);
+    if (
+      path.includes('/take') ||
+      path.includes('/orders') ||
+      path.includes('/auction') ||
+      path.includes('/settle') ||
+      path.includes('/withdraw') ||
+      path.includes('/strategy/activate')
+    ) {
+      sfx.playBetConfirm();
+    }
+    return res;
+  };
+
   return (
-    <div className="app-root app-shell" data-theme={theme}>
+    <div
+      className="app-root app-shell"
+      data-theme={theme}
+      onClickCapture={(e) => {
+        const target = e.target as HTMLElement | null;
+        if (target && target.closest('button, .depth-center-pill')) {
+          sfx.playUiClick();
+        }
+      }}
+    >
       {/* Subtle Gently-Floating 8-Bit Playing Cards, Joker Card & Centered CHIP Poker Chips */}
       <div className="bg-betting-decor" aria-hidden="true">
         <div
@@ -146,8 +199,10 @@ export const App: React.FC = () => {
         activePlayer={activePlayer}
         theme={theme}
         onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+        username={authUser?.username}
+        onLogout={authStatus === 'authenticated' ? logout : undefined}
         playerSwitcher={
-          import.meta.env.DEV ? (
+          devPlayerTools ? (
             <>
               <a
                 className="dev-sim-link"
@@ -167,6 +222,8 @@ export const App: React.FC = () => {
         }
         onResetDemo={!import.meta.env.DEV ? undefined : async () => {
           await dispatchAction('/api/demo/reset', {});
+          // The reset empties the ring: re-seat the logged-in player
+          if (authStatus === 'authenticated') await refreshAuth();
           setChatMascotAlert(null);
           setForwardedChatPrompt(null);
           setBetDrawerOpen(false);
@@ -206,8 +263,9 @@ export const App: React.FC = () => {
             mascotAlert={chatMascotAlert}
             setMascotAlert={setChatMascotAlert}
             onForwardChatPrompt={setForwardedChatPrompt}
-            onDispatch={dispatchAction}
+            onDispatch={handleDispatchWithSound}
             onOpenPanel={openPanel}
+            standInFriends={standInFriends}
           />
         </section>
 
@@ -231,7 +289,7 @@ export const App: React.FC = () => {
               showUnitLadder={showUnitLadder}
               onToggleUnitLadder={setShowUnitLadder}
               onSelectMarket={setSelectedMarketId}
-              onDispatch={dispatchAction}
+              onDispatch={handleDispatchWithSound}
               onOpenPanel={openPanel}
               newBetRequest={newBetRequest}
             />
@@ -253,7 +311,7 @@ export const App: React.FC = () => {
         ))}
       </nav>
 
-            {isSimRoute && SimConsole && (
+      {isSimRoute && devPlayerTools && SimConsole && (
         <Suspense fallback={null}>
           <SimConsole
             refresh={refresh}
@@ -276,7 +334,8 @@ export const App: React.FC = () => {
             showUnitLadder={showUnitLadder}
             onToggleUnitLadder={setShowUnitLadder}
             onSelectMarket={setSelectedMarketId}
-            onDispatch={dispatchAction}
+            onDispatch={handleDispatchWithSound}
+            standInFriends={standInFriends}
           />
         </BetDrawer>
       )}

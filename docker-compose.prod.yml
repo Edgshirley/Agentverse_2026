@@ -1,18 +1,131 @@
+# Production stack. Run: make prod   (uses prod.env, see prod.env.example)
+#
+# Published on loopback only; the host's reverse proxy (nginx) terminates TLS:
+#   127.0.0.1:3900 -> frontend  (UI; proxies /api + /api/v1/ws to the api)
+#   127.0.0.1:8900 -> api       (FastAPI backend)
+#   127.0.0.1:8980 -> keycloak  (identity provider, served at KC_HOSTNAME)
+# engine, postgres and redis are reachable only on the compose network.
+#
+# There is no kc-config here (dev only): create the realm clients once in the
+# Keycloak console (or run kc/configure_keycloak.py by hand) and put the
+# backend client's secret in KEYCLOAK_CLIENT_SECRET.
+
 services:
-  backend:
+
+  api:
+    build:
+      context: ./api
+    container_name: marketmate-api-prod
+    restart: unless-stopped
+    command: [ "uvicorn", "src.main:api", "--host", "0.0.0.0", "--port", "8000" ]
+    ports:
+      - "127.0.0.1:8900:8000"
+    environment:
+      - ENV=prod
+      - VERSION=${VERSION:-0.0.0}
+      - TITLE=${TITLE:-MarketMate API}
+
+      # Database Configuration
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=${SPREAD_USER}
+      - POSTGRES_PASSWORD=${SPREAD_PASSWORD:?SPREAD_PASSWORD must be set}
+      - POSTGRES_DB=${SPREAD_DB}
+
+      # Keycloak Configuration
+      - KEYCLOAK_URL=http://keycloak:8080
+      - KEYCLOAK_EXT_URL=${KEYCLOAK_EXT_URL:?KEYCLOAK_EXT_URL must be set}
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
+      - KEYCLOAK_FRONTEND_CLIENT_ID=${KEYCLOAK_FRONTEND_CLIENT_ID}
+      - KEYCLOAK_BACKEND_CLIENT_ID=${KEYCLOAK_BACKEND_CLIENT_ID}
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET:?KEYCLOAK_CLIENT_SECRET must be set}
+      - KEYCLOAK_REDIRECT_URI=${KEYCLOAK_REDIRECT_URI:?KEYCLOAK_REDIRECT_URI must be set}
+      - POST_LOGOUT_REDIRECT_URI=${POST_LOGOUT_REDIRECT_URI}
+
+      # Redis Configuration
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+      - SESSION_TTL_SECONDS=${SESSION_TTL_SECONDS:-2592000}
+
+      # Message bus (realtime fan-out)
+      - MESSAGE_BUS=redis
+      - BUS_CHANNEL=${BUS_CHANNEL:-spread-messages}
+
+      # Rules engine (internal)
+      - ENGINE_URL=http://engine:4000
+
+      # Frontend Configuration
+      - FRONTEND_EXT_URL=${FRONTEND_EXT_URL:?FRONTEND_EXT_URL must be set}
+      - FRONTEND_COOKIE_SAMESITE=${FRONTEND_COOKIE_SAMESITE:-lax}
+      - FRONTEND_COOKIE_SECURE=${FRONTEND_COOKIE_SECURE:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
+      engine:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/system/ping').read()"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  db-migrate:
+    build:
+      context: ./api
+    container_name: marketmate-db-migrate-prod
+    command: [ "python", "-m", "src.migrate" ]
+    environment:
+      - ENV=prod
+      # The migrator never talks to Keycloak; config only needs a non-empty value.
+      - KEYCLOAK_CLIENT_SECRET=unused-by-migrate
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=${SPREAD_USER}
+      - POSTGRES_PASSWORD=${SPREAD_PASSWORD}
+      - POSTGRES_DB=${SPREAD_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  engine:
     build:
       context: ./backend
       dockerfile: Dockerfile
       target: prod
-    container_name: spread-backend-prod
-    ports:
-      - "4000:4000"
+    container_name: marketmate-engine-prod
+    restart: unless-stopped
+    expose:
+      - "4000"
     environment:
       - NODE_ENV=production
+      - ENV=prod
       - PORT=4000
-    restart: unless-stopped
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=${SPREAD_USER}
+      - POSTGRES_PASSWORD=${SPREAD_PASSWORD}
+      - POSTGRES_DB=${SPREAD_DB}
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - MESSAGE_BUS=redis
+      - BUS_CHANNEL=${BUS_CHANNEL:-spread-messages}
+    volumes:
+      - engine-spread-prod:/app/data
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4000/api/state"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/api/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,13 +136,113 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: prod
-    container_name: spread-frontend-prod
+    container_name: marketmate-frontend-prod
+    restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3900:3000"
     environment:
       - NODE_ENV=production
-      - BACKEND_URL=http://backend:4000
+      - BACKEND_URL=http://api:8000
+      - FRONTEND_ALLOWED_HOSTS=${FRONTEND_ALLOWED_HOSTS:?FRONTEND_ALLOWED_HOSTS must be set}
     depends_on:
-      backend:
+      api:
         condition: service_healthy
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.6.2
+    container_name: marketmate-keycloak-prod
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:8980:8080"
+    environment:
+      # Database Connection
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak
+      - KC_DB_USERNAME=${KC_DB_USERNAME}
+      - KC_DB_PASSWORD=${KC_DB_PASSWORD:?KC_DB_PASSWORD must be set}
+
+      # Admin Credentials (Bootstrap; only used on the first start)
+      - KC_BOOTSTRAP_ADMIN_USERNAME=${KC_BOOTSTRAP_ADMIN_USERNAME}
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=${KC_BOOTSTRAP_ADMIN_PASSWORD:?KC_BOOTSTRAP_ADMIN_PASSWORD must be set}
+
+      # Public URL (full URL, e.g. https://auth.example.com); TLS ends at nginx
+      - KC_HOSTNAME=${KC_HOSTNAME:?KC_HOSTNAME must be set}
+      - KC_PROXY_HEADERS=xforwarded
+
+      # Health and Metrics
+      - KC_HTTP_ENABLED=true
+      - KC_HEALTH_ENABLED=true
+    command: start
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000
+          && printf "GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3
+          && cat <&3 | grep -q '"status": "UP"'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 180s
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: marketmate-redis-prod
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - "${REDIS_PASSWORD:?REDIS_PASSWORD must be set}"
+    environment:
+      # Lets the healthcheck's redis-cli authenticate.
+      - REDISCLI_AUTH=${REDIS_PASSWORD}
+    volumes:
+      - redis-spread-prod:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: marketmate-postgres-prod
+    restart: unless-stopped
+    configs:
+      - source: postgres_init
+        target: /docker-entrypoint-initdb.d/init.sql
+    environment:
+      # Superuser (only for bootstrapping)
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+    volumes:
+      - postgres-spread-prod:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -h 127.0.0.1 -U ${SPREAD_USER} -d ${SPREAD_DB}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  postgres-spread-prod:
+  redis-spread-prod:
+  engine-spread-prod:
+
+configs:
+  postgres_init:
+    content: |
+      -- Application role + database
+      CREATE ROLE ${SPREAD_USER} LOGIN PASSWORD '${SPREAD_PASSWORD}';
+      CREATE DATABASE ${SPREAD_DB} OWNER ${SPREAD_USER} ENCODING 'UTF8';
+
+      -- Keycloak role + database
+      CREATE ROLE ${KC_DB_USERNAME} LOGIN PASSWORD '${KC_DB_PASSWORD}';
+      CREATE DATABASE keycloak OWNER ${KC_DB_USERNAME} ENCODING 'UTF8';
+
+      \connect ${SPREAD_DB}
+      CREATE EXTENSION IF NOT EXISTS pgcrypto;

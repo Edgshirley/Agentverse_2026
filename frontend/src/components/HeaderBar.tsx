@@ -6,19 +6,21 @@ import { PixelMascot } from './PixelMascot';
 interface HeaderBarProps {
   activePlayer: Player;
   theme: 'dark' | 'light';
-    onToggleTheme: () => void;
+  onToggleTheme: () => void;
   playerSwitcher?: React.ReactNode;
   onResetDemo?: () => void;
-
+  username?: string;
+  onLogout?: () => void;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
   activePlayer,
   theme,
-    onToggleTheme,
+  onToggleTheme,
   playerSwitcher,
   onResetDemo,
-
+  username,
+  onLogout,
 }) => {
   return (
     <header className="terminal-header">
@@ -65,6 +67,17 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         >
           <Icon name="reload" />
         </button>
+        )}
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            style={{ padding: '5px 8px', fontSize: 11 }}
+            title={username ? `Log out ${username}` : 'Log out'}
+            aria-label={username ? `Log out ${username}` : 'Log out'}
+          >
+            <Icon name="logout" size={15} />
+            {username}
+          </button>
         )}
       </div>
     </header>

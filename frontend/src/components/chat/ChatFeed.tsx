@@ -3,6 +3,7 @@ import { Icon } from '../Icon';
 import { ChatMessage, Player } from '../../shared/types';
 import { PixelMascot } from '../PixelMascot';
 import { AppPanel } from '../../App';
+import { sfx } from '../../utils/soundEffects';
 
 export interface MascotWidgetAlert {
   question: string;
@@ -17,6 +18,7 @@ interface ChatFeedProps {
   onForwardChatPrompt: (promptText: string) => void;
   onDispatch: (path: string, body?: Record<string, any>) => Promise<any>;
   onOpenPanel: (panel: AppPanel) => void;
+  standInFriends: boolean;
 }
 
 export const ChatFeed: React.FC<ChatFeedProps> = ({
@@ -28,6 +30,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
   onForwardChatPrompt,
   onDispatch,
   onOpenPanel,
+  standInFriends,
 }) => {
   const [chatInput, setChatInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -55,6 +58,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
     if (!trimmed) return;
 
     setChatInput('');
+    sfx.playChatPop();
     try {
       await onDispatch('/api/chat', { playerId: activePlayer.id, text: trimmed });
     } catch {
@@ -63,6 +67,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
     }
 
     if (looksLikeBetProposal(trimmed)) {
+      sfx.playCatAlert();
       setMascotAlert({ question: trimmed });
     }
   };
@@ -74,7 +79,9 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
       { playerId: 'andre', text: 'Are we doing the Q4 team ranking bet with the boss as arbiter?' },
     ];
     const pick = friendSamples[chatMessages.length % friendSamples.length];
+    sfx.playChatPop();
     await onDispatch('/api/chat', pick);
+    setTimeout(() => sfx.playCatAlert(), 120);
     setMascotAlert({ question: pick.text });
   };
 
@@ -94,7 +101,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
           {chatMessages.length}
         </span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {import.meta.env.DEV && (
+          {import.meta.env.DEV && standInFriends && (
           <button
             className="btn-sky"
             style={{ padding: '3px 8px' }}

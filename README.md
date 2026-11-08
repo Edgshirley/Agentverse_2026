@@ -36,23 +36,49 @@ An outcome exactly on `L` or `H` counts as inside the window. Yes/no and stacked
 
 ## Run it
 
-Needs Docker, or Node 22+ and Python 3.
+Needs Docker.
 
 ```bash
 make dev
 ```
 
-The app opens at http://localhost:5173, with the API on `:4000`. Stop it with `make dev-down`.
+Open http://localhost:5173 and log in as `alice`, `bob`, `carol` or `dave` (password in `dev.env`). Stop it with `make dev-down`.
 
-Run the backend tests:
+| Service | Port | Role |
+| --- | --- | --- |
+| `frontend` | 5173 | Vite UI, proxies `/api` to the gateway |
+| `api` | 8000 | FastAPI gateway: login, sessions, WebSocket |
+| `keycloak` | 8080 | Identity provider (dev only) |
+| `engine` | internal | TypeScript rules engine, reachable only from `api` |
+| `postgres`, `redis` | 5432, 6379 | Users and snapshots; sessions and the message bus |
+
+Every `/api/*` call needs a session, and the gateway binds each action to the signed-in player. Browsers get live updates on `/api/v1/ws`.
+
+For production, copy `prod.env.example` to `prod.env` and run `make prod`. Create the `spread-api` and `spread-ui` Keycloak clients once and set `KEYCLOAK_CLIENT_SECRET`.
+
+Run the tests:
 
 ```bash
 cd backend && npm test
 ```
 
-The bot works without keys using built-in rules. Set `GEMINI_API_KEY` or `OPENAI_API_KEY` on the backend for LLM parsing.
+```bash
+make api-test
+```
+
+The bot works without keys using built-in rules. Set `GEMINI_API_KEY` or `OPENAI_API_KEY` on the engine for LLM parsing.
 
 ## Dev tools
+
+Personas and the simulator need a run without the gateway, because the gateway binds every action to you:
+
+```bash
+cd backend && npm install && npm run dev
+```
+
+```bash
+cd frontend && npm install && npm run dev
+```
 
 `npm run dev` sets `DEV_TOOLS=1`, which enables `/api/dev/*` and `/api/demo/*`. Both return 404 in production.
 
@@ -64,7 +90,8 @@ The bot works without keys using built-in rules. Set `GEMINI_API_KEY` or `OPENAI
 | Path | What's there |
 | --- | --- |
 | `frontend/` | React app: chat, right rail, bet drawer |
+| `api/`, `kc/` | FastAPI gateway and Keycloak setup |
 | `backend/src/engine/` | Deterministic rules: auction, payouts, order book, ledger |
-| `backend/src/worker/` | Hono API, bot agents, SQLite/D1 persistence |
+| `backend/src/worker/` | Hono API, bot agents, persistence |
 | `SPEC.md` | Full product and engine spec |
 | `TEAM_TASKS.md` | Open tasks |

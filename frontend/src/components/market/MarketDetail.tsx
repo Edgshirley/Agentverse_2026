@@ -19,6 +19,7 @@ interface MarketDetailProps {
   onToggleUnitLadder: (show: boolean) => void;
   onSelectMarket: (marketId: string) => void;
   onDispatch: (path: string, body?: Record<string, any>) => Promise<any>;
+  standInFriends: boolean;
 }
 
 export const MarketDetail: React.FC<MarketDetailProps> = ({
@@ -31,6 +32,7 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
   onToggleUnitLadder,
   onSelectMarket,
   onDispatch,
+  standInFriends,
 }) => {
   const [showAdminDrawer, setShowAdminDrawer] = useState<boolean>(false);
   const [outcomeInput, setOutcomeInput] = useState<string>('5');
@@ -96,7 +98,14 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
   };
 
   if (isSpread && (market.state === 'width_auction' || market.state === 'quoting')) {
-    return <AuctionStepCard view={view} activePlayer={activePlayer} onDispatch={onDispatch} />;
+    return (
+      <AuctionStepCard
+        view={view}
+        activePlayer={activePlayer}
+        onDispatch={onDispatch}
+        standInFriends={standInFriends}
+      />
+    );
   }
 
   // Countdown for Arbiter markets
@@ -180,7 +189,7 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
             }}
           >
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {import.meta.env.DEV && (
+              {import.meta.env.DEV && standInFriends && (
                 <button style={{ fontSize: 11 }} onClick={handleSimulateFriendActivity}>
                   <Icon name="user-plus" size={13} /> FRIEND BET
                 </button>

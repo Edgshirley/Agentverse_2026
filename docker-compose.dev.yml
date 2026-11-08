@@ -1,55 +1,297 @@
+# Dev stack (mirrors ../freevo-api/docker-compose.dev.yaml). Run: make dev
+#
+#   browser -> frontend (vite :5173) --/api, /api/v1/ws--> api (FastAPI :8000)
+#                                                         |-- keycloak (:8080)   login, introspection
+#                                                         |-- redis              sessions + message bus
+#                                                         |-- postgres           users, snapshots
+#                                                         '-- engine (:4000)     rules engine, internal only
+#
+# The engine publishes every state change on the Redis bus; the api's
+# ws_worker fans it out to the browser WebSockets.
+
 services:
-  backend:
+
+  api:
+    build:
+      context: ./api
+    container_name: marketmate-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/usr/src/app
+      - ${CLIENT_SECRET_SHARED_DIRECTORY}:/usr/shared
+    environment:
+      - ENV=${ENV}
+      - VERSION=${VERSION}
+      - TITLE=${TITLE}
+
+      # Database Configuration
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_USER=${SPREAD_USER}
+      - POSTGRES_PASSWORD=${SPREAD_PASSWORD}
+      - POSTGRES_DB=${SPREAD_DB}
+
+      # Keycloak Configuration
+      - KEYCLOAK_URL=${KEYCLOAK_URL}
+      - KEYCLOAK_EXT_URL=${KEYCLOAK_EXT_URL}
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
+      - KEYCLOAK_FRONTEND_CLIENT_ID=${KEYCLOAK_FRONTEND_CLIENT_ID}
+      - KEYCLOAK_BACKEND_CLIENT_ID=${KEYCLOAK_BACKEND_CLIENT_ID}
+      - KEYCLOAK_REDIRECT_URI=${KEYCLOAK_REDIRECT_URI}
+      - POST_LOGOUT_REDIRECT_URI=${POST_LOGOUT_REDIRECT_URI}
+
+      # Redis Configuration
+      - REDIS_HOST=${REDIS_HOST}
+      - SESSION_TTL_SECONDS=${SESSION_TTL_SECONDS}
+
+      # Message bus (realtime fan-out)
+      - MESSAGE_BUS=${MESSAGE_BUS}
+      - BUS_CHANNEL=${BUS_CHANNEL}
+
+      # Rules engine (internal)
+      - ENGINE_URL=http://engine:4000
+
+      # Frontend Configuration
+      - FRONTEND_EXT_URL=${FRONTEND_EXT_URL}
+      - FRONTEND_COOKIE_SAMESITE=${FRONTEND_COOKIE_SAMESITE}
+      - FRONTEND_COOKIE_SECURE=${FRONTEND_COOKIE_SECURE}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      kc-config:
+        condition: service_completed_successfully
+      db-migrate:
+        condition: service_completed_successfully
+      engine:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/system/ping').read()"
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  db-migrate:
+    build:
+      context: ./api
+    container_name: marketmate-db-migrate
+    command: [ "python", "-m", "src.migrate" ]
+    volumes:
+      - ./api:/usr/src/app
+    environment:
+      - ENV=${ENV}
+      # The migrator never talks to Keycloak; config only needs a non-empty value.
+      - KEYCLOAK_CLIENT_SECRET=unused-by-migrate
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_USER=${SPREAD_USER}
+      - POSTGRES_PASSWORD=${SPREAD_PASSWORD}
+      - POSTGRES_DB=${SPREAD_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  engine:
     build:
       context: ./backend
       dockerfile: Dockerfile
       target: dev
-    container_name: spread-backend-dev
-    ports:
-      - "4000:4000"
+    container_name: marketmate-engine
+    expose:
+      - "4000"
     environment:
       - NODE_ENV=development
+      - ENV=${ENV}
       - PORT=4000
       - DEV_TOOLS=1
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_USER=${SPREAD_USER}
+      - POSTGRES_PASSWORD=${SPREAD_PASSWORD}
+      - POSTGRES_DB=${SPREAD_DB}
+      - REDIS_HOST=${REDIS_HOST}
+      - MESSAGE_BUS=${MESSAGE_BUS}
+      - BUS_CHANNEL=${BUS_CHANNEL}
     volumes:
       - ./backend:/app
       - /app/node_modules
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4000/api/state"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/api/health"]
       interval: 3s
       timeout: 3s
-      retries: 15
-      start_period: 3s
+      retries: 20
+      start_period: 5s
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       target: dev
-    container_name: spread-frontend-dev
+    container_name: marketmate-frontend-dev
     ports:
       - "5173:5173"
     environment:
       - NODE_ENV=development
-      - BACKEND_URL=http://backend:4000
+      - BACKEND_URL=http://api:8000
     volumes:
       - ./frontend:/app
       - /app/node_modules
     depends_on:
-      backend:
+      api:
         condition: service_healthy
 
   seed:
     build:
       context: ./backend
       dockerfile: Dockerfile.seed
-    container_name: spread-seed-dev
+    container_name: marketmate-seed-dev
     environment:
-      - API_BASE_URL=http://backend:4000
+      # Seeds the engine directly over the internal network (like freevo's
+      # seed writing straight to Postgres), so it needs no user session.
+      - API_BASE_URL=http://engine:4000
       - SEED_WAIT_TIMEOUT=60
     volumes:
       - ./backend/scripts:/seed
     depends_on:
-      backend:
+      engine:
         condition: service_healthy
     restart: "no"
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: marketmate-redis
+    command: [ "redis-server", "--appendonly", "yes" ]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-spread-dev:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: marketmate-postgres
+    configs:
+      - source: postgres_init
+        target: /docker-entrypoint-initdb.d/init.sql
+    environment:
+      # Superuser (only for bootstrapping)
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-spread-dev:/var/lib/postgresql/data
+    healthcheck:
+      # TCP probe: the init phase only listens on the unix socket, so this
+      # waits until init.sql has run and the real server is up.
+      test: [ "CMD-SHELL", "pg_isready -h 127.0.0.1 -U ${SPREAD_USER} -d ${SPREAD_DB}" ]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.6.2
+    container_name: marketmate-keycloak
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      # Database Connection
+      - KC_DB=${KC_DB}
+      - KC_DB_URL=${KC_DB_URL}
+      - KC_DB_USERNAME=${KC_DB_USERNAME}
+      - KC_DB_PASSWORD=${KC_DB_PASSWORD}
+
+      # Admin Credentials (Bootstrap)
+      - KC_BOOTSTRAP_ADMIN_USERNAME=${KC_BOOTSTRAP_ADMIN_USERNAME}
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=${KC_BOOTSTRAP_ADMIN_PASSWORD}
+
+      # Same issuer (http://localhost:8080/realms/...) whether a token is
+      # requested by the browser or by the api over the docker network.
+      - KC_HOSTNAME=${KC_HOSTNAME}
+      - KC_HOSTNAME_STRICT=false
+
+      # Health and Metrics
+      - KC_HTTP_ENABLED=${KC_HTTP_ENABLED}
+      - KC_HEALTH_ENABLED=${KC_HEALTH_ENABLED}
+    command: start-dev
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000
+          && printf "GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3
+          && cat <&3 | grep -q '"status": "UP"'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      # First boot on a fresh database (augmentation + schema creation) is slow.
+      start_period: 180s
+
+  kc-config:
+    build:
+      context: ./kc
+    container_name: marketmate-kc-config
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    environment:
+      - ENV=${ENV}
+
+      # Keycloak Bootstrap Admin Credentials
+      - KC_BOOTSTRAP_ADMIN_USERNAME=${KC_BOOTSTRAP_ADMIN_USERNAME}
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=${KC_BOOTSTRAP_ADMIN_PASSWORD}
+
+      # Keycloak Admin Credentials
+      - KC_ADMIN_EMAIL=${KC_ADMIN_EMAIL}
+      - KC_ADMIN_USERNAME=${KC_ADMIN_USERNAME}
+      - KC_ADMIN_PASSWORD=${KC_ADMIN_PASSWORD}
+      - SEED_USERS_PASSWORD=${SEED_USERS_PASSWORD}
+
+      # Keycloak Clients
+      - KEYCLOAK_BACKEND_CLIENT_ID=${KEYCLOAK_BACKEND_CLIENT_ID}
+      - KEYCLOAK_FRONTEND_CLIENT_ID=${KEYCLOAK_FRONTEND_CLIENT_ID}
+
+      # Keycloak Realm & URL
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
+      - KEYCLOAK_URL=${KEYCLOAK_URL}
+      - FRONTEND_EXT_URL=${FRONTEND_EXT_URL}
+      - KEYCLOAK_REDIRECT_URI=${KEYCLOAK_REDIRECT_URI}
+      - POST_LOGOUT_REDIRECT_URI=${POST_LOGOUT_REDIRECT_URI}
+    volumes:
+      - ${CLIENT_SECRET_SHARED_DIRECTORY}:/usr/shared
+
+volumes:
+  postgres-spread-dev:
+  redis-spread-dev:
+
+configs:
+  postgres_init:
+    content: |
+      -- Application role + database
+      CREATE ROLE ${SPREAD_USER} LOGIN PASSWORD '${SPREAD_PASSWORD}';
+      CREATE DATABASE ${SPREAD_DB} OWNER ${SPREAD_USER} ENCODING 'UTF8';
+
+      -- Keycloak role + database
+      CREATE ROLE ${KC_DB_USERNAME} LOGIN PASSWORD '${KC_DB_PASSWORD}';
+      CREATE DATABASE keycloak OWNER ${KC_DB_USERNAME} ENCODING 'UTF8';
+
+      \connect ${SPREAD_DB}
+      CREATE EXTENSION IF NOT EXISTS pgcrypto;

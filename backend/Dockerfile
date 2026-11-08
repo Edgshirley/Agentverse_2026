@@ -1,5 +1,5 @@
 # ============================================================================
-# Friend Spreader (Spread) — Backend Container Dockerfile (dev & prod)
+# MarketMate — Backend Container Dockerfile (dev & prod)
 # ============================================================================
 
 FROM node:22-alpine AS base

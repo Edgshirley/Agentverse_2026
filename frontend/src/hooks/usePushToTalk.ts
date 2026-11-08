@@ -1,17 +1,22 @@
 // ============================================================================
-// Zero-Cost Push-to-Talk Voice Hook (Browser Web Speech API + Preset Simulator)
-// (SPEC §1.5, §3.3, §5.1)
+// Toggle Voice Hook (Click Once to Start Listening, Click Again to Finish)
+// With WhatsApp-style start & stop indicator chimes
 // ============================================================================
 
 import { useState, useRef, useCallback } from 'react';
+import { sfx } from '../utils/soundEffects';
 
 export function usePushToTalk(onTranscript: (text: string) => void) {
   const [isRecording, setIsRecording] = useState(false);
-  const [voiceStatus, setVoiceStatus] = useState<string>('READY (HOLD OR TAP PUSH-TO-TALK)');
+  const [voiceStatus, setVoiceStatus] = useState<string>('TAP SPEAK TO START');
   const recognitionRef = useRef<any>(null);
+  const capturedTranscriptRef = useRef<string>('');
 
   const startRecording = useCallback(() => {
+    sfx.playVoiceStart();
     setIsRecording(true);
+    capturedTranscriptRef.current = '';
+
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
@@ -19,22 +24,23 @@ export function usePushToTalk(onTranscript: (text: string) => void) {
       try {
         const rec = new SpeechRecognition();
         rec.lang = 'en-US';
-        rec.interimResults = false;
+        rec.continuous = true;
+        rec.interimResults = true;
         rec.maxAlternatives = 1;
-        rec.onstart = () => setVoiceStatus('LISTENING VIA WEB SPEECH AUDIO...');
+        rec.onstart = () => setVoiceStatus('LISTENING... TAP AGAIN TO SEND');
         rec.onresult = (event: any) => {
-          const text = event.results?.[0]?.[0]?.transcript;
-          if (text) {
-            onTranscript(text);
-            setVoiceStatus(`CAPTURED VOICE: "${text}"`);
+          let combined = '';
+          for (let i = 0; i < event.results.length; i++) {
+            combined += event.results[i][0].transcript;
+          }
+          if (combined.trim()) {
+            capturedTranscriptRef.current = combined.trim();
+            setVoiceStatus(`HEARD: "${combined.trim()}"`);
           }
         };
         rec.onerror = () => {
-          setVoiceStatus('MIC FALLBACK -> USE VOICE PRESET OR TEXT');
-          setIsRecording(false);
-        };
-        rec.onend = () => {
-          setIsRecording(false);
+          // Keep toggle state active until user clicks again so fallback works smoothly
+          setVoiceStatus('LISTENING... TAP AGAIN TO SEND');
         };
         recognitionRef.current = rec;
         rec.start();
@@ -44,12 +50,14 @@ export function usePushToTalk(onTranscript: (text: string) => void) {
       }
     }
 
-    setVoiceStatus('SIMULATED MIC CAPTURE ACTIVE — RELEASE TO TRANSCRIBE');
-  }, [onTranscript]);
+    setVoiceStatus('LISTENING... TAP AGAIN TO SEND');
+  }, []);
 
   const stopRecording = useCallback(
     (fallbackSampleText?: string) => {
+      sfx.playVoiceStop();
       setIsRecording(false);
+
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
@@ -57,16 +65,30 @@ export function usePushToTalk(onTranscript: (text: string) => void) {
           // ignore
         }
         recognitionRef.current = null;
-        return;
       }
-      if (fallbackSampleText) {
-        onTranscript(fallbackSampleText);
-        setVoiceStatus(`TRANSCRIBED VOICE: "${fallbackSampleText}"`);
+
+      const finalText = capturedTranscriptRef.current.trim() || fallbackSampleText?.trim() || '';
+      capturedTranscriptRef.current = '';
+
+      if (finalText) {
+        onTranscript(finalText);
+        setVoiceStatus(`SENT: "${finalText}"`);
       } else {
-        setVoiceStatus('READY');
+        setVoiceStatus('TAP SPEAK TO START');
       }
     },
     [onTranscript]
+  );
+
+  const toggleRecording = useCallback(
+    (fallbackSampleText?: string) => {
+      if (isRecording) {
+        stopRecording(fallbackSampleText);
+      } else {
+        startRecording();
+      }
+    },
+    [isRecording, startRecording, stopRecording]
   );
 
   return {
@@ -74,5 +96,6 @@ export function usePushToTalk(onTranscript: (text: string) => void) {
     voiceStatus,
     startRecording,
     stopRecording,
+    toggleRecording,
   };
 }

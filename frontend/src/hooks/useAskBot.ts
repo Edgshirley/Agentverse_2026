@@ -8,6 +8,7 @@ import {
   Player,
 } from '../shared/types';
 import { usePushToTalk } from './usePushToTalk';
+import { sfx } from '../utils/soundEffects';
 import { AppPanel } from '../App';
 
 export interface AskBotOptions {
@@ -143,6 +144,7 @@ export function useAskBot({
         const c: ClassifyMarketProposal = res.classification;
         setDraft(d);
         setClassification(c);
+        sfx.playCatAlert();
         setInHousePayoffMode(c.archetype === 'spread' ? 'linear' : d.payoff_mode || 'pot');
         setInHouseLotStake(String(d.lot_stake_k || 25));
         setInHouseUnit(
@@ -262,6 +264,7 @@ export function useAskBot({
       if (createdMarket?.id) {
         onSelectMarket(createdMarket.id);
       }
+      sfx.playBetConfirm();
       setDraft(null);
       setClassification(null);
 

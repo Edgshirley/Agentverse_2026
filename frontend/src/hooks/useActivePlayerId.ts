@@ -13,12 +13,10 @@ function readStoredPlayerId(): string {
 }
 
 /**
- * Answers "who is using the app?". This is the one place login should plug in:
- * replace the body with the signed-in user's id and remove the setter's callers.
- *
- * In dev the choice is per browser tab, so two tabs can play two personas.
+ * Answers "who is using the app?". A signed-in user always wins. Without the
+ * gateway, the dev choice applies, per browser tab, so two tabs can play two personas.
  */
-export function useActivePlayerId(): [string, (id: string) => void] {
+export function useActivePlayerId(signedInPlayerId?: string): [string, (id: string) => void] {
   const [playerId, setPlayerId] = useState<string>(readStoredPlayerId);
 
   const choosePlayer = useCallback((id: string) => {
@@ -30,5 +28,5 @@ export function useActivePlayerId(): [string, (id: string) => void] {
     }
   }, []);
 
-  return [playerId, choosePlayer];
+  return [signedInPlayerId ?? playerId, choosePlayer];
 }

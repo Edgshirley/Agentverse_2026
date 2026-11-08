@@ -9,10 +9,17 @@ interface AuctionStepCardProps {
   view: MarketView;
   activePlayer: Player;
   onDispatch: (path: string, body?: Record<string, any>) => Promise<any>;
+  /** False behind the gateway: real friends bet, and the market stays open for them. */
+  standInFriends: boolean;
 }
 
 /** The two agent-guided steps a window market goes through before it is live. */
-export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({ view, activePlayer, onDispatch }) => {
+export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({
+  view,
+  activePlayer,
+  onDispatch,
+  standInFriends,
+}) => {
   const { market, isSpread, unitLabel } = view;
   const [widthBidInput, setWidthBidInput] = useState<string>('2');
   const [quoteLInput, setQuoteLInput] = useState<string>('3');
@@ -48,6 +55,7 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({ view, activePl
       playerId: market.mm_player_id || activePlayer.id,
       L: lVal,
     });
+    if (!standInFriends) return;
     // Seed a friend on each side, since a market with no takers voids when it locks
     await onDispatch(`/api/markets/${market.id}/take`, {
       playerId: friendAbove,

@@ -477,6 +477,22 @@ button:disabled {
   }
 }
 
+.login-screen {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: min(420px, 100%);
+  padding: 28px;
+  text-align: center;
+}
+
 .brand-lockup {
   display: inline-flex;
   align-items: center;

@@ -14,6 +14,8 @@ import { Flag } from 'pixelarticons/react/Flag.js';
 import { Forward } from 'pixelarticons/react/Forward.js';
 import { Link } from 'pixelarticons/react/Link.js';
 import { Lock } from 'pixelarticons/react/Lock.js';
+import { Login } from 'pixelarticons/react/Login.js';
+import { Logout } from 'pixelarticons/react/Logout.js';
 import { Message } from 'pixelarticons/react/Message.js';
 import { Mic } from 'pixelarticons/react/Mic.js';
 import { Minus } from 'pixelarticons/react/Minus.js';
@@ -51,6 +53,8 @@ const ICONS = {
   forward: Forward,
   link: Link,
   lock: Lock,
+  login: Login,
+  logout: Logout,
   message: Message,
   mic: Mic,
   minus: Minus,

@@ -1,5 +1,8 @@
 // ============================================================================
 // Backend HTTP + WebSocket Server Entrypoint (Hono /api/* + WS /ws on :4000)
+// Internal rules engine: in the docker stack only the FastAPI gateway (../api)
+// reaches it; it publishes state changes on the Redis bus for the API's
+// WebSocket fan-out. `/ws` here is only for running the engine standalone.
 // Also serves built static UI from ../frontend/dist if present (like env.ASSETS)
 // ============================================================================
 
@@ -30,7 +33,10 @@ const MIME_TYPES = {
 // Initialize persistent SQLite database (D1-compatible) and hydrate/seed state
 const sqliteDb = createSqliteD1Database(SQLITE_DB_PATH);
 globalStore.attachDatabase(sqliteDb);
-const hydrated = await globalStore.hydrateFromD1({ ...process.env, DB: sqliteDb });
+// Postgres / Redis snapshot first (docker stack), then the local SQLite file
+const hydrated =
+  (await globalStore.hydrateFromPostgresOrRedis()) ||
+  (await globalStore.hydrateFromD1({ ...process.env, DB: sqliteDb }));
 
 const server = http.createServer(async (req, res) => {
   try {

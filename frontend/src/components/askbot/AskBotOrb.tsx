@@ -9,10 +9,10 @@ export const AskBotOrb: React.FC<{ bot: AskBot }> = ({ bot }) => {
   return (
     <div
       className={orbClass}
-      onMouseDown={ptt.startRecording}
-      onMouseUp={() =>
-        ptt.stopRecording(intentMode === 'propose' ? proposeInput : strategyInput)
+      onClick={() =>
+        ptt.toggleRecording(intentMode === 'propose' ? proposeInput : strategyInput)
       }
+      title={ptt.isRecording ? 'Tap to finish and send' : 'Tap to speak'}
     >
       <div className="orb-ring orb-ring-1" />
       <div className="orb-ring orb-ring-2" />
@@ -24,7 +24,11 @@ export const AskBotOrb: React.FC<{ bot: AskBot }> = ({ bot }) => {
           isProcessing={isProcessing}
         />
         <span className="pixel-font" style={{ fontSize: 10 }}>
-          {isProcessing && !ptt.isRecording ? '...' : <Icon name="mic" size={16} />}
+          {isProcessing && !ptt.isRecording ? (
+            '...'
+          ) : (
+            <Icon name={ptt.isRecording ? 'send' : 'mic'} size={16} />
+          )}
         </span>
       </div>
     </div>

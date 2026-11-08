@@ -18,17 +18,11 @@
         extend: {
           colors: {
             pastel: {
-              mint: '#6bc4a2',
-              sky: '#78b7e6',
-              coral: '#e58585',
-              gold: '#dfc06c',
-              felt: '#1c2924',
-              feltDark: '#141e1a',
-              card: '#22342e',
-              border: '#2e453d',
-              paper: '#f4f1ea',
-              paperCard: '#e9e4d8',
-              paperBorder: '#d5cdbc',
+              mint: 'var(--pastel-mint-border)',
+              sky: 'var(--pastel-sky-border)',
+              coral: 'var(--pastel-coral-border)',
+              gold: 'var(--pastel-gold-border)',
+              brand: 'var(--brand-border)',
             }
           },
           fontFamily: {
@@ -41,35 +35,53 @@
   </script>
 
   <style>
-    :root {
-      --bg-felt: #1c2924;
-      --bg-felt-dark: #141e1a;
-      --bg-card: #22342e;
-      --border-felt: #2e453d;
-      --border-accent: #6bc4a2;
-      --fg-primary: #f4f1ea;
-      --fg-muted: #8fa89b;
-      --fg-dim: #5c7569;
-      --pastel-mint: #6bc4a2;
-      --pastel-sky: #78b7e6;
-      --pastel-coral: #e58585;
-      --pastel-gold: #dfc06c;
-      --chip-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    /* Design tokens copied from frontend/src/styles/app.css so the deck matches the app */
+    body, body.theme-dark {
+      --bg-canvas: #0d0f12;
+      --bg-panel: #15181c;
+      --bg-elevated: #1c2025;
+      --fg-primary: #e6edf3;
+      --fg-muted: #8b949e;
+      --fg-dim: #6e7681;
+      --border-color: #292e36;
+      --border-strong: #d7dde3;
+      --pixel-shadow: #050607;
+      --pastel-mint-bg: #143018;  --pastel-mint-border: #54c546;  --pastel-mint-text: #cdf5c7;
+      --pastel-sky-bg: #0f2650;   --pastel-sky-border: #287eff;   --pastel-sky-text: #cfe1ff;
+      --pastel-coral-bg: #3b1416; --pastel-coral-border: #f9524e; --pastel-coral-text: #ffd6d4;
+      --pastel-gold-bg: #36280a;  --pastel-gold-border: #edb541;  --pastel-gold-text: #fbe8bb;
+      --brand-bg: #3a0d12; --brand-border: #e3212f; --brand-text: #ffd8da; --brand-ink: #ff5a60;
+      --badge-bg: #d7dde3; --badge-fg: #0d0f12;
     }
-
     body.theme-light {
-      --bg-felt: #f4f1ea;
-      --bg-felt-dark: #eae5da;
-      --bg-card: #e8e3d6;
-      --border-felt: #cfc7b6;
-      --border-accent: #3b8a6e;
-      --fg-primary: #1c2924;
-      --fg-muted: #4e6b5d;
-      --fg-dim: #7a9486;
-      --pastel-mint: #3b8a6e;
-      --pastel-sky: #3b76a6;
-      --pastel-coral: #c04e4e;
-      --pastel-gold: #a68428;
+      --bg-canvas: #edeff1;
+      --bg-panel: #fafbfc;
+      --bg-elevated: #dfe2e6;
+      --fg-primary: #1a1e23;
+      --fg-muted: #59636e;
+      --fg-dim: #8a939d;
+      --border-color: #cdd2d8;
+      --border-strong: #1f2328;
+      --pixel-shadow: #c5cad1;
+      --pastel-mint-bg: #e3f7df;  --pastel-mint-border: #35a527;  --pastel-mint-text: #124a0b;
+      --pastel-sky-bg: #e1edff;   --pastel-sky-border: #125dce;   --pastel-sky-text: #0b3a82;
+      --pastel-coral-bg: #ffe4e3; --pastel-coral-border: #cf2c31; --pastel-coral-text: #761417;
+      --pastel-gold-bg: #fdf1d3;  --pastel-gold-border: #d69712;  --pastel-gold-text: #573b04;
+      --brand-bg: #fde3e4; --brand-border: #c8102e; --brand-text: #7a0a1c; --brand-ink: #c8102e;
+      --badge-bg: #1f2328; --badge-fg: #fafbfc;
+    }
+    /* Legacy deck names, resolved per theme */
+    body {
+      --bg-felt: var(--bg-canvas);
+      --bg-felt-dark: var(--bg-panel);
+      --bg-card: var(--bg-panel);
+      --border-felt: var(--border-color);
+      --border-accent: var(--border-strong);
+      --pastel-mint: var(--pastel-mint-border);
+      --pastel-sky: var(--pastel-sky-border);
+      --pastel-coral: var(--pastel-coral-border);
+      --pastel-gold: var(--pastel-gold-border);
+      --chip-shadow: 2px 2px 0px var(--pixel-shadow);
     }
 
     * {
@@ -135,8 +147,8 @@
     }
     .btn-8bit.active {
       background: var(--pastel-mint);
-      color: #141e1a;
-      border-color: #f4f1ea;
+      color: var(--bg-panel);
+      border-color: var(--fg-primary);
       font-weight: 700;
     }
 
@@ -241,7 +253,7 @@
       width: 68px;
       height: 68px;
       border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #78b7e6 0%, #6bc4a2 55%, #1c2924 100%);
+      background: radial-gradient(circle at 35% 35%, var(--pastel-sky-border) 0%, var(--pastel-mint-border) 55%, var(--bg-canvas) 100%);
       box-shadow: 0 0 24px rgba(107, 196, 162, 0.5), inset 0 0 12px rgba(255, 255, 255, 0.4);
       position: relative;
       display: flex;
@@ -431,7 +443,7 @@
     .trans-cat-dust {
       width: 14px;
       height: 14px;
-      background: #dfc06c;
+      background: var(--pastel-gold-border);
       border-radius: 50%;
       opacity: 0.8;
       animation: dust-puff 0.2s infinite alternate;
@@ -467,7 +479,7 @@
       bottom: 0;
       left: -100vw;
       width: 100vw;
-      background: repeating-linear-gradient(45deg, #1c2924, #1c2924 16px, #6bc4a2 16px, #6bc4a2 32px);
+      background: repeating-linear-gradient(45deg, var(--bg-canvas), var(--bg-canvas) 16px, var(--pastel-mint-border) 16px, var(--pastel-mint-border) 32px);
       box-shadow: 0 0 50px rgba(107, 196, 162, 0.8);
       animation: f1-sweep 0.7s cubic-bezier(0.65, 0, 0.35, 1) forwards;
       display: flex;
@@ -486,8 +498,8 @@
       position: absolute;
       left: 0;
       right: 0;
-      background: #141e1a;
-      border-bottom: 2px solid #6bc4a2;
+      background: var(--bg-panel);
+      border-bottom: 2px solid var(--pastel-mint-border);
       animation: blind-wipe 0.65s cubic-bezier(0.77, 0, 0.175, 1) forwards;
     }
     @keyframes blind-wipe {
@@ -504,9 +516,9 @@
       left: 50%;
       width: 90px;
       height: 130px;
-      background: #f4f1ea;
-      color: #141e1a;
-      border: 3px solid #141e1a;
+      background: var(--fg-primary);
+      color: var(--bg-panel);
+      border: 3px solid var(--bg-panel);
       border-radius: 8px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.6);
       display: flex;
@@ -528,13 +540,163 @@
       left: 0;
       right: 0;
       height: 12px;
-      background: #6bc4a2;
-      box-shadow: 0 0 30px #6bc4a2, 0 0 60px #78b7e6;
+      background: var(--pastel-mint-border);
+      box-shadow: 0 0 30px var(--pastel-mint-border), 0 0 60px var(--pastel-sky-border);
       animation: scan-sweep 0.75s cubic-bezier(0.45, 0, 0.55, 1) forwards;
     }
     @keyframes scan-sweep {
       0% { top: -20px; }
       100% { top: 105vh; }
+    }
+
+    /* ===== App-matching component styles ===== */
+    html, body { background: var(--bg-canvas); }
+    body::before { display: none; }
+
+    .btn-8bit {
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      font-size: 11.5px;
+      border: 2px solid var(--border-color);
+      background: var(--bg-panel);
+      box-shadow: 2px 2px 0px var(--pixel-shadow);
+    }
+    .btn-8bit:hover {
+      border-color: var(--border-strong);
+      color: var(--fg-primary);
+      box-shadow: 3px 3px 0px var(--border-strong);
+    }
+    .btn-8bit:active { box-shadow: 1px 1px 0px var(--border-strong); }
+    .btn-8bit.active {
+      background: var(--brand-bg);
+      color: var(--brand-text);
+      border-color: var(--brand-border);
+      box-shadow: 3px 3px 0px var(--pixel-shadow);
+    }
+
+    .pastel-card {
+      border-radius: 10px;
+      border: 2px solid var(--border-color);
+      background-color: var(--bg-panel);
+      box-shadow: 4px 4px 0px var(--pixel-shadow);
+    }
+    .pastel-card:hover { box-shadow: 4px 4px 0px var(--pixel-shadow); }
+    .pastel-card.mint-accent  { background-color: var(--pastel-mint-bg);  border-color: var(--pastel-mint-border); }
+    .pastel-card.sky-accent   { background-color: var(--pastel-sky-bg);   border-color: var(--pastel-sky-border); }
+    .pastel-card.coral-accent { background-color: var(--pastel-coral-bg); border-color: var(--pastel-coral-border); }
+    .pastel-card.gold-accent  { background-color: var(--pastel-gold-bg);  border-color: var(--pastel-gold-border); }
+
+    .sidenote-banner {
+      background: var(--pastel-gold-bg);
+      border: 2px dashed var(--pastel-gold-border);
+      color: var(--pastel-gold-text);
+      border-radius: 6px;
+    }
+
+    .chip-badge { border-radius: 6px; border-width: 2px; padding: 4px 9px; }
+    .chip-mint  { color: var(--pastel-mint-text);  background: var(--pastel-mint-bg);  border-color: var(--pastel-mint-border); }
+    .chip-sky   { color: var(--pastel-sky-text);   background: var(--pastel-sky-bg);   border-color: var(--pastel-sky-border); }
+    .chip-coral { color: var(--pastel-coral-text); background: var(--pastel-coral-bg); border-color: var(--pastel-coral-border); }
+    .chip-gold  { color: var(--pastel-gold-text);  background: var(--pastel-gold-bg);  border-color: var(--pastel-gold-border); }
+
+    .brand-wordmark { color: var(--brand-ink); }
+
+    /* Voice orb: the app's red dashed ring instead of the blue/green glow */
+    .voice-orb {
+      background: var(--bg-panel);
+      border: 4px dashed var(--brand-border);
+      box-shadow: 4px 4px 0px var(--pixel-shadow), 0 0 0 10px var(--bg-panel), 0 0 0 12px var(--pastel-mint-border);
+      animation: orb-breathe 3.2s infinite ease-in-out;
+    }
+    .voice-orb svg rect { stroke: none; }
+    .voice-orb::after { display: none; }
+    @keyframes orb-breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    .race-track-wrap, .depth-grid {
+      background: var(--bg-canvas);
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      box-shadow: 4px 4px 0px var(--pixel-shadow);
+    }
+    .race-lane { background: var(--bg-panel); border: 2px solid var(--border-color); border-radius: 4px; }
+    .race-block { background: var(--bg-elevated); border-radius: 2px; }
+    .depth-bar-bid { background: var(--pastel-mint-bg); color: var(--pastel-mint-text); }
+    .depth-bar-ask { background: var(--pastel-coral-bg); color: var(--pastel-coral-text); }
+    .depth-row:hover { background: var(--bg-elevated); }
+    .depth-pill { background: var(--bg-panel); border-width: 2px; border-color: var(--border-color); }
+    .depth-pill.is-window { background: var(--pastel-gold-bg); color: var(--pastel-gold-text); border-color: var(--pastel-gold-border); }
+
+    /* Transitions recoloured to the app palette */
+    .trans-f1-banner {
+      background: repeating-linear-gradient(45deg, var(--bg-canvas), var(--bg-canvas) 16px, var(--brand-border) 16px, var(--brand-border) 32px);
+      box-shadow: none;
+    }
+    .trans-blind-strip { background: var(--bg-panel); border-bottom: 2px solid var(--brand-border); }
+    .trans-scanline { background: var(--brand-border); box-shadow: 0 0 24px var(--brand-border); }
+    .trans-chip { border: 3px dashed var(--pastel-gold-border); color: var(--pastel-gold-text); box-shadow: 3px 3px 0px var(--pixel-shadow); }
+    .trans-card { background: var(--bg-panel); color: var(--fg-primary); border: 2px solid var(--brand-border); box-shadow: 3px 3px 0px var(--pixel-shadow); }
+    .trans-cat-dust { background: var(--pastel-gold-border); }
+
+    /* Background cards & chips, like the app's .bg-betting-decor */
+    .bg-betting-decor { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; opacity: 0.24; }
+    .floating-card-bg {
+      position: absolute; width: 60px; height: 84px;
+      border: 2px solid var(--border-color); background: var(--bg-panel); border-radius: 6px;
+      box-shadow: 3px 3px 0px var(--pixel-shadow);
+      display: flex; flex-direction: column; justify-content: space-between; padding: 5px 7px;
+      font-family: 'Silkscreen', monospace; font-size: 11px; color: var(--fg-muted);
+      animation: gentleBgFloat 7.5s ease-in-out infinite alternate;
+    }
+    .floating-card-bg.joker-card { border-color: var(--brand-border); color: var(--brand-ink); }
+    .floating-chip-bg {
+      position: absolute; width: 58px; height: 58px; border-radius: 50%;
+      border: 4px dashed var(--pastel-gold-border); background: var(--pastel-gold-bg);
+      box-shadow: 3px 3px 0px var(--pixel-shadow);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Silkscreen', monospace; font-size: 9px; color: var(--pastel-gold-text);
+      animation: gentleBgFloat 6.8s ease-in-out infinite alternate;
+    }
+    @keyframes gentleBgFloat { 0% { margin-top: 0; } 100% { margin-top: -10px; } }
+
+    /* ===== Deck v3 layout helpers ===== */
+    .slide-inner { max-width: 1040px; margin: auto; width: 100%; }
+    .kicker { font-family: 'Silkscreen', monospace; font-size: 12px; letter-spacing: 0.08em; color: var(--brand-ink); }
+    .headline { font-family: 'Silkscreen', monospace; font-weight: 700; line-height: 1.12; font-size: clamp(28px, 4.4vw, 52px); color: var(--fg-primary); }
+    .sub { font-size: clamp(15px, 1.6vw, 19px); color: var(--fg-muted); line-height: 1.5; }
+    .punch { font-size: clamp(15px, 1.5vw, 18px); color: var(--fg-primary); }
+    .punch em { color: var(--pastel-gold-border); font-style: normal; }
+    .chat-bubble { border: 2px solid var(--border-color); border-radius: 8px; background: var(--bg-canvas); padding: 10px 14px; max-width: 86%; box-shadow: 2px 2px 0 var(--pixel-shadow); }
+    .chat-bubble.friend-msg { align-self: flex-start; background: var(--pastel-sky-bg); border-color: var(--pastel-sky-border); color: var(--pastel-sky-text); }
+    .chat-bubble.mine { align-self: flex-end; background: var(--pastel-mint-bg); border-color: var(--pastel-mint-border); color: var(--pastel-mint-text); }
+    .chat-name { font-family: 'Silkscreen', monospace; font-size: 10px; letter-spacing: 0.06em; opacity: 0.85; }
+    .chat-text { font-size: 15px; }
+    .step-num { font-family: 'Silkscreen', monospace; font-size: 30px; color: var(--brand-ink); line-height: 1; }
+    .step-title { font-family: 'Silkscreen', monospace; font-size: 14px; margin-top: 10px; color: var(--fg-primary); }
+    .step-body { font-size: 13.5px; color: var(--fg-muted); margin-top: 8px; line-height: 1.5; }
+    .big-stat { font-family: 'Silkscreen', monospace; font-weight: 700; font-size: clamp(40px, 6vw, 72px); line-height: 1; }
+    .screenshot-frame { border: 2px solid var(--border-strong); border-radius: 10px; box-shadow: 6px 6px 0 var(--pixel-shadow); overflow: hidden; background: var(--bg-panel); }
+    .screenshot-frame img { display: block; width: 100%; height: auto; }
+
+    /* Match timeline, 0..95 minutes */
+    .timeline-wrap { padding: 64px 0 72px; }
+    .timeline { position: relative; height: 26px; background: var(--bg-panel); border: 2px solid var(--border-color); border-radius: 6px; box-shadow: 3px 3px 0 var(--pixel-shadow); }
+    .timeline-window { position: absolute; top: -2px; bottom: -2px; background: var(--pastel-gold-bg); border: 2px solid var(--pastel-gold-border); }
+    .timeline-window-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; white-space: nowrap; font-family: 'Silkscreen', monospace; font-size: 10px; color: var(--pastel-gold-text); }
+    .tl-mark { position: absolute; top: -50px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .tl-mark .tl-tag { font-size: 12px; white-space: nowrap; padding: 3px 8px; border-radius: 6px; border: 2px solid var(--border-color); background: var(--bg-panel); box-shadow: 2px 2px 0 var(--pixel-shadow); }
+    .tl-mark .tl-stem { width: 2px; height: 26px; background: var(--border-strong); }
+    .tl-mark.voided .tl-tag { border-color: var(--pastel-coral-border); color: var(--pastel-coral-text); background: var(--pastel-coral-bg); text-decoration: line-through; }
+    .tl-mark.win .tl-tag { border-color: var(--pastel-mint-border); color: var(--pastel-mint-text); background: var(--pastel-mint-bg); }
+    .tl-mark.low { top: auto; bottom: -50px; flex-direction: column-reverse; }
+    .tl-axis { position: absolute; top: 100%; margin-top: 4px; font-size: 10px; color: var(--fg-dim); transform: translateX(-50%); }
+
+    @media (max-width: 760px) {
+      .slide { padding: 20px 16px; justify-content: flex-start; }
+      .tl-mark .tl-tag { font-size: 10px; padding: 2px 5px; }
     }
   </style>
 </head>
@@ -542,11 +704,17 @@
 <body class="theme-dark select-none">
   <!-- Dynamic Transition Overlay -->
   <div id="transition-overlay"></div>
+  <div class="bg-betting-decor" aria-hidden="true">
+    <div class="floating-card-bg" style="top: 14%; left: 3%; transform: rotate(-12deg);"><span>A&#9824;</span><span style="align-self:flex-end">A&#9824;</span></div>
+    <div class="floating-chip-bg" style="top: 70%; left: 5%;">CHIP</div>
+    <div class="floating-card-bg joker-card" style="top: 62%; right: 4%; transform: rotate(10deg);"><span>JKR</span><span style="align-self:flex-end">JKR</span></div>
+    <div class="floating-chip-bg" style="top: 18%; right: 6%; animation-delay: 1.4s;">CHIP</div>
+  </div>
 
   <!-- =========================================================================
        TOP HEADER NAV STRIP
        ========================================================================= -->
-  <header class="h-[54px] border-b-2 border-[#2e453d] bg-[#141e1a] px-6 flex items-center justify-between z-10 relative">
+  <header class="h-[54px] border-b-2 border-[var(--border-color)] bg-[var(--bg-panel)] px-6 flex items-center justify-between z-10 relative">
     <div class="flex items-center gap-3">
       <!-- 8-Bit Tuxedo Cat Avatar SVG -->
       <div class="relative w-8 h-8 flex-shrink-0">
@@ -587,18 +755,18 @@
 
       <div>
         <div class="flex items-center gap-2">
-          <span class="pixel-font font-bold text-sm tracking-wider text-[#6bc4a2]">MARKETMATE</span>
-          <span class="chip-badge chip-mint text-[9px]">HACKATHON DECK</span>
+          <span class="pixel-font font-bold text-sm tracking-wider brand-wordmark">MARKETMATE</span>
+          
         </div>
-        <div class="text-[10px] text-gray-400 font-mono">F1 Race Window Market & Traceable Multi-Agent Terminal</div>
+        <div class="text-[10px] text-[var(--fg-muted)] font-mono">Group-chat betting, dealt by a cat</div>
       </div>
     </div>
 
     <!-- Slide Breadcrumb Pill -->
-    <div class="hidden md:flex items-center gap-2 bg-[#22342e] border border-[#2e453d] px-3 py-1 rounded">
-      <span class="pixel-font text-xs text-[#dfc06c]" id="slide-num-pill">01 / 10</span>
-      <span class="text-gray-500 text-xs">|</span>
-      <span class="text-xs font-mono text-gray-200" id="slide-title-pill">Thesis & Executive Overview</span>
+    <div class="hidden md:flex items-center gap-2 bg-[var(--bg-panel)] border border-[var(--border-color)] px-3 py-1 rounded">
+      <span class="pixel-font text-xs text-[var(--pastel-gold-border)]" id="slide-num-pill">01 / 10</span>
+      <span class="text-[var(--fg-dim)] text-xs">|</span>
+      <span class="text-xs font-mono text-[var(--fg-primary)]" id="slide-title-pill">Put your chips where your mouth is</span>
     </div>
 
     <!-- Interactive Header Controls -->
@@ -610,7 +778,7 @@
 
       <!-- Dynamic Transition Mode Dropdown / Button -->
       <button id="trans-cycle-btn" class="btn-8bit" title="Cycle through dynamic slide transitions">
-        <span>✨</span> TRANS: <span id="trans-mode-label" class="text-[#dfc06c]">AUTO</span>
+        <span>✨</span> TRANS: <span id="trans-mode-label" class="text-[var(--pastel-gold-border)]">AUTO</span>
       </button>
 
       <!-- Theme Switcher -->
@@ -630,916 +798,317 @@
        ========================================================================= -->
   <main id="deck-container">
 
-    <!-- -----------------------------------------------------------------------
-         SLIDE 01 // TITLE & EXECUTIVE BRIEF
-         ----------------------------------------------------------------------- -->
-    <section class="slide active" data-slide="0" data-title="Thesis & Executive Overview">
-      <div class="max-w-5xl mx-auto w-full my-auto flex flex-col md:flex-row items-center justify-between gap-10">
-        <div class="flex-1 space-y-5">
-          <div class="inline-flex items-center gap-2">
-            <span class="chip-badge chip-mint">HACKATHON 2026 CRITERIA READY</span>
-            <span class="chip-badge chip-gold">MULTI-AGENT TRACEABLE REASONING</span>
-          </div>
-
-          <h1 class="pixel-font text-3xl md:text-5xl font-bold leading-tight text-[#f4f1ea]">
-            MARKET<span class="text-[#6bc4a2]">MATE</span>
-          </h1>
-
-          <p class="text-lg text-gray-300 leading-relaxed font-mono">
-            The voice-first peer-to-peer prediction exchange and AI risk terminal for friend groups. Turn any high-stakes event into an auction-discovered spread market in seconds with <strong class="text-[#6bc4a2]">traceable AI reasoning</strong> and <strong class="text-[#dfc06c]">verifiable zero-sum settlement</strong>.
-          </p>
-
-          <!-- Core Scenario Highlight Card -->
-          <div class="pastel-card gold-accent bg-[#1c2924]/80 p-4 space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="pixel-font text-xs text-[#dfc06c]">★ CORE DEMO SCENARIO: MONACO GP RACE TIME WINDOW</span>
-              <span class="chip-badge chip-sky text-[9px]">OFFICIAL FIA ORACLE</span>
-            </div>
-            <p class="text-xs text-gray-300 font-mono">
-              Friends bet on the winning race time window in minutes: players auction the window width, the winner becomes Market Maker and picks the time range <code class="text-[#dfc06c]">[L, H] min</code>, and friends bet <strong>UP / ABOVE (&gt; H)</strong> or <strong>BELOW (&lt; L)</strong>.
-            </p>
-          </div>
-
-          <!-- Prominent Side Note -->
-          <div class="sidenote-banner">
-            <span class="text-base">💡</span>
-            <div>
-              <strong class="text-[#dfc06c]">Important Note:</strong> While our presentation and demo focus on this high-frequency continuous F1 race window market, MarketMate handles <em>simple everyday bets</em> just as seamlessly — head-to-head winners, binary Yes/No, weather, trivia, or custom wagers. It all depends on what you ask the agent to make!
-            </div>
-          </div>
-
-          <!-- Interactive SFX & Transition Tester Strip -->
-          <div class="flex items-center gap-3 pt-2">
-            <span class="pixel-font text-[10px] text-gray-400">TEST 8-BIT AUDIO:</span>
-            <button class="btn-8bit text-[10px]" onclick="sound.playVoicePop()">🎤 VOICE POP</button>
-            <button class="btn-8bit text-[10px]" onclick="sound.playCatChirp()">🐱 CAT CHIRP</button>
-            <button class="btn-8bit text-[10px]" onclick="sound.playF1Rev()">🏎️ F1 ENGINE</button>
-            <button class="btn-8bit text-[10px]" onclick="sound.playBetChord()">🪙 BET CHORD</button>
-          </div>
+    <!-- 01 TITLE -->
+    <section class="slide active" data-slide="0" data-title="Put your chips where your mouth is">
+      <div class="slide-inner flex flex-col md:flex-row items-center gap-12">
+        <div class="flex-1 space-y-6">
+          <div class="kicker">AGENTVERSE HACKATHON 2026</div>
+          <h1 class="pixel-font font-bold brand-wordmark" style="font-size: clamp(44px, 7.5vw, 92px); line-height: 1;">MARKETMATE</h1>
+          <p class="headline" style="font-size: clamp(20px, 2.6vw, 30px);">Turn any group-chat argument into a market.</p>
+          <p class="sub">Play money. Real order book. <span style="color: var(--pastel-gold-border)">Very real bragging rights.</span></p>
         </div>
-
-        <!-- Right Stage: Tuxedo Cat Dealer & Voice Orb Mascot Stage -->
-        <div class="w-full md:w-80 flex flex-col items-center justify-center p-6 bg-[#141e1a] border-2 border-[#2e453d] rounded-xl shadow-2xl relative">
-          <div class="absolute -top-3 -right-3">
-            <span class="chip-badge chip-mint">DEALER BOT v2.6</span>
-          </div>
-
-          <!-- Interactive Pulsing Voice Orb -->
-          <div class="voice-orb mb-4" onclick="sound.playVoicePop(); triggerTransitionDemo('cat-run');">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-              <line x1="12" y1="19" x2="12" y2="22"></line>
-            </svg>
-          </div>
-
-          <!-- Tuxedo Cat Dealer Pixel Mascot (Exact SVG from PixelMascot.tsx) -->
-          <div class="my-2">
+        <div class="flex flex-col items-center gap-4">
+          <div class="voice-orb" style="width: 120px; height: 120px;" onclick="sound.playCatChirp(); triggerTransitionDemo('cat-run');">
             <svg width="64" height="64" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
-              <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
-              <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
-              <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
-              <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
-              <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
-              <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
-              <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
-              <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
-              <rect x="2" y="4" width="12" height="6" fill="#14161E" />
-              <rect x="1" y="6" width="1" height="3" fill="#14161E" />
-              <rect x="14" y="6" width="1" height="3" fill="#14161E" />
-              <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
-              <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
-              <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
-              <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
-              <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
-              <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
-              <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
-              <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
-              <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
-              <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
-              <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
-              <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
-              <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
-              <rect x="5" y="10" width="2" height="2" fill="#14161E" />
-              <rect x="9" y="10" width="2" height="2" fill="#14161E" />
-              <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
-              <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
-              <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
-              <rect x="13" y="11" width="2" height="3" fill="#14161E" />
-              <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
-            </svg>
+          <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+          <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+          <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+          <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+          <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+          <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+          <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+          <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+        </svg>
           </div>
+          <div class="chip-badge chip-gold">YOUR DEALER TONIGHT</div>
+          <div class="text-xs text-[var(--fg-muted)]">Yes, it's a cat. No, it doesn't take tips.</div>
+        </div>
+      </div>
+    </section>
 
-          <div class="text-center space-y-1">
-            <div class="pixel-font text-xs font-bold text-[#f4f1ea]">TUXEDO CAT DEALER</div>
-            <div class="text-[11px] text-[#6bc4a2]">"Ready to quote the Monaco GP!"</div>
-          </div>
-
-          <div class="w-full mt-4 pt-3 border-t border-[#2e453d] flex justify-between text-[10px] text-gray-400 font-mono">
-            <span>CURRENCY: SPRD</span>
-            <span class="text-[#6bc4a2]">ZERO-SUM LEDGER</span>
+    <!-- 02 PROBLEM -->
+    <section class="slide" data-slide="1" data-title="The problem">
+      <div class="slide-inner grid md:grid-cols-2 gap-12 items-center">
+        <div class="space-y-5">
+          <div class="kicker">THE PROBLEM</div>
+          <h2 class="headline">Every group chat has this argument.</h2>
+          <p class="sub">And it always ends the same way.</p>
+        </div>
+        <div class="flex flex-col gap-3">
+          <div class="chat-bubble friend-msg"><div class="chat-name">MICHEL</div><div class="chat-text">Arsenal score before half time. Easy.</div></div>
+          <div class="chat-bubble mine"><div class="chat-name">NATHALIE</div><div class="chat-text">Bet?</div></div>
+          <div class="chat-bubble friend-msg"><div class="chat-name">MICHEL</div><div class="chat-text">…</div></div>
+          <div class="text-center text-xs text-[var(--fg-dim)] pt-2">Michel has muted this conversation.</div>
+          <div class="grid grid-cols-3 gap-2 pt-4 text-center text-xs">
+            <div class="pastel-card coral-accent" style="padding: 10px;">Nobody wants to be the bookie</div>
+            <div class="pastel-card coral-accent" style="padding: 10px;">Nobody remembers the terms</div>
+            <div class="pastel-card coral-accent" style="padding: 10px;">Nobody pays up</div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- -----------------------------------------------------------------------
-         SLIDE 02 // THE PROBLEM & HACKATHON CHALLENGE
-         ----------------------------------------------------------------------- -->
-    <section class="slide" data-slide="1" data-title="The Problem & Hackathon Challenge">
-      <div class="max-w-5xl mx-auto w-full my-auto space-y-6">
-        <div>
-          <span class="chip-badge chip-coral">WHY GROUP BETTING BREAKS DOWN</span>
-          <h2 class="pixel-font text-2xl md:text-3xl font-bold mt-2 text-[#f4f1ea]">
-            THE SOCIAL BETTING DILEMMA & THE HACKATHON CHALLENGE
-          </h2>
+    <!-- 03 SOLUTION -->
+    <section class="slide" data-slide="2" data-title="The fix">
+      <div class="slide-inner space-y-6">
+        <div class="text-center space-y-3">
+          <div class="kicker">THE FIX</div>
+          <h2 class="headline">Say it in the chat. The cat deals it.</h2>
         </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-          <!-- Card 1: The Breakdown in Group Chats -->
-          <div class="pastel-card coral-accent flex flex-col justify-between">
-            <div>
-              <div class="flex items-center gap-2 mb-3">
-                <span class="text-xl">❌</span>
-                <span class="pixel-font text-sm text-[#e58585]">THE BREAKDOWN IN MESSENGERS</span>
-              </div>
-              <ul class="space-y-3 text-xs text-gray-300 font-mono leading-relaxed">
-                <li class="flex items-start gap-2">
-                  <span class="text-[#e58585] font-bold">1.</span>
-                  <span><strong>Vague & Disputed Rules:</strong> Bets like <em>"Monaco GP will be under 80 minutes"</em> spark endless arguments over whether red flags, safety car parade laps, or pit exit times count.</span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <span class="text-[#e58585] font-bold">2.</span>
-                  <span><strong>The Unwilling Bookmaker:</strong> Nobody wants to manually hold counterparty risk, track multiple bets, or calculate continuous payouts by hand.</span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <span class="text-[#e58585] font-bold">3.</span>
-                  <span><strong>Counterparty Default:</strong> Losing friends go silent, forget what was agreed, or contest the payoff math.</span>
-                </li>
-              </ul>
-            </div>
-
-            <div class="mt-4 p-3 bg-[#141e1a] border border-[#2e453d] rounded text-[11px] text-gray-400 font-mono">
-              Result: 85% of casual group predictions are abandoned before final settlement.
-            </div>
-          </div>
-
-          <!-- Card 2: The Hackathon Architecture Solution -->
-          <div class="pastel-card mint-accent flex flex-col justify-between">
-            <div>
-              <div class="flex items-center gap-2 mb-3">
-                <span class="text-xl">🛡️</span>
-                <span class="pixel-font text-sm text-[#6bc4a2]">THE HACKATHON AI CHALLENGE</span>
-              </div>
-              <ul class="space-y-3 text-xs text-gray-300 font-mono leading-relaxed">
-                <li class="flex items-start gap-2">
-                  <span class="text-[#6bc4a2] font-bold">1.</span>
-                  <span><strong>Traceable Reasoning:</strong> Autonomous AI agents must parse voice and natural text into rigorous contract parameters, maintaining an auditable trace from prompt to execution.</span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <span class="text-[#6bc4a2] font-bold">2.</span>
-                  <span><strong>Mandatory Risk Guardrails:</strong> The agent must never gamble user funds without explicit confirmation of interpreted strategy, take-profit levels, and maximum drawdown floors.</span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <span class="text-[#6bc4a2] font-bold">3.</span>
-                  <span><strong>Deterministic Zero-Sum Ledger:</strong> AI suggests and lints; deterministic math settles. Points and SPRD in escrow are conserved with zero floating-point leaks.</span>
-                </li>
-              </ul>
-            </div>
-
-            <div class="mt-4 p-3 bg-[#141e1a] border border-[#2e453d] rounded text-[11px] text-[#6bc4a2] font-mono">
-              Solution: MarketMate unites natural voice intake with multi-agent verification and formal zero-sum guarantees.
-            </div>
-          </div>
+        <div class="screenshot-frame max-w-4xl mx-auto">
+          <img src="docs/screenshot.png" alt="MarketMate: group chat in the centre, live bets and the dealer bot on the right">
         </div>
-
-        <!-- Prominent Side Note -->
-        <div class="sidenote-banner">
-          <span class="text-base">💡</span>
-          <div>
-            <strong class="text-[#dfc06c]">Simple vs Complex:</strong> Whether friends are running a high-frequency F1 minute-window spread market with limit orders, or simply betting 5 SPRD on whether it will rain tomorrow, MarketMate's multi-agent pipeline adapts the rules instantly.
-          </div>
-        </div>
+        <p class="sub text-center">Chat in the middle. Live bets and the dealer on the right. No spreadsheet in sight.</p>
       </div>
     </section>
 
-    <!-- -----------------------------------------------------------------------
-         SLIDE 03 // THE CORE SCENARIO: F1 RACE MINUTE WINDOW
-         ----------------------------------------------------------------------- -->
-    <section class="slide" data-slide="2" data-title="Core Scenario: F1 Race Window">
-      <div class="max-w-5xl mx-auto w-full my-auto space-y-5">
-        <div class="flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <span class="chip-badge chip-gold">OUR SINGLE FOCUS SCENARIO</span>
-            <h2 class="pixel-font text-2xl md:text-3xl font-bold mt-1 text-[#f4f1ea]">
-              F1 MONACO GP: RACE TIME WINDOW [L, H] MARKET
-            </h2>
-          </div>
-          <span class="chip-badge chip-sky font-mono">UNIT: MINUTES · LOT: 10 SPRD</span>
+    <!-- 04 HOW A BET WORKS -->
+    <section class="slide" data-slide="3" data-title="How a bet works">
+      <div class="slide-inner space-y-8">
+        <div class="space-y-3">
+          <div class="kicker">HOW A BET WORKS</div>
+          <h2 class="headline">Four moves. No bookie.</h2>
         </div>
-
-        <!-- 4 Step Interactive Lifecycle Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <!-- Step 1: Propose -->
-          <div class="pastel-card p-4 space-y-2 border-t-4 border-t-[#6bc4a2]">
-            <div class="flex items-center justify-between">
-              <span class="pixel-font text-[11px] text-[#6bc4a2]">01 // PROPOSE</span>
-              <span class="text-xs">🎙️</span>
-            </div>
-            <div class="font-bold text-xs text-[#f4f1ea]">Voice Intent Intake</div>
-            <p class="text-[11px] text-gray-300 font-mono leading-relaxed">
-              Player says: <em>"Make a window market on Monaco GP winning race time, bounds 70 to 110 minutes, 10 SPRD per lot."</em>
-            </p>
-            <div class="text-[10px] text-gray-400 bg-[#141e1a] p-2 rounded">
-              Bounds: [70 .. 110] min<br>Oracle: Official FIA Feed
-            </div>
-          </div>
-
-          <!-- Step 2: Width Auction -->
-          <div class="pastel-card p-4 space-y-2 border-t-4 border-t-[#78b7e6]">
-            <div class="flex items-center justify-between">
-              <span class="pixel-font text-[11px] text-[#78b7e6]">02 // WIDTH AUCTION</span>
-              <span class="text-xs">⚡</span>
-            </div>
-            <div class="font-bold text-xs text-[#f4f1ea]">Competitive Narrowing</div>
-            <p class="text-[11px] text-gray-300 font-mono leading-relaxed">
-              Friends bid the width <code class="text-[#78b7e6]">w</code> of the window. Narrowest bid beats the spread:
-            </p>
-            <div class="text-[10px] text-gray-400 bg-[#141e1a] p-2 rounded">
-              Alice: 8m · Bob: 6m<br><strong class="text-[#78b7e6]">Marco: 4m (WINNER!)</strong>
-            </div>
-          </div>
-
-          <!-- Step 3: Winner Chooses Time Range -->
-          <div class="pastel-card p-4 space-y-2 border-t-4 border-t-[#dfc06c]">
-            <div class="flex items-center justify-between">
-              <span class="pixel-font text-[11px] text-[#dfc06c]">03 // WINNER QUOTES</span>
-              <span class="text-xs">🏁</span>
-            </div>
-            <div class="font-bold text-xs text-[#f4f1ea]">Sets Window [L, H]</div>
-            <p class="text-[11px] text-gray-300 font-mono leading-relaxed">
-              Winner (Marco) becomes MM and picks the time range. He sets <code class="text-[#dfc06c]">L = 76.0m</code>:
-            </p>
-            <div class="text-[10px] text-gray-400 bg-[#141e1a] p-2 rounded">
-              L = 76.0 min<br>H = 76 + 4 = <strong class="text-[#dfc06c]">80.0 min</strong>
-            </div>
-          </div>
-
-          <!-- Step 4: Players Take Sides -->
-          <div class="pastel-card p-4 space-y-2 border-t-4 border-t-[#e58585]">
-            <div class="flex items-center justify-between">
-              <span class="pixel-font text-[11px] text-[#e58585]">04 // TAKE SIDES</span>
-              <span class="text-xs">🎯</span>
-            </div>
-            <div class="font-bold text-xs text-[#f4f1ea]">Up / Above vs Below</div>
-            <p class="text-[11px] text-gray-300 font-mono leading-relaxed">
-              Friends bet in 1-tap:
-            </p>
-            <div class="text-[10px] text-gray-400 bg-[#141e1a] p-2 rounded space-y-1">
-              <div><strong class="text-[#6bc4a2]">ABOVE (&gt; 80m):</strong> Rain / Safety Cars</div>
-              <div><strong class="text-[#e58585]">BELOW (&lt; 76m):</strong> Clean sprint</div>
-              <div><strong class="text-[#dfc06c]">INSIDE [76..80]:</strong> MM collects!</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Prominent Side Note -->
-        <div class="sidenote-banner">
-          <span class="text-base">💡</span>
-          <div>
-            <strong class="text-[#dfc06c]">Side Note:</strong> While our walkthrough focuses on this continuous F1 minute-window spread market, MarketMate handles simple everyday bets just as easily (head-to-head winner, binary Yes/No, weather, trivia, custom bets). It all depends on what you ask the agent to make!
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- -----------------------------------------------------------------------
-         SLIDE 04 // HACKATHON CRITERIA: TRACEABLE REASONING WITH AI AGENTS
-         ----------------------------------------------------------------------- -->
-    <section class="slide" data-slide="3" data-title="Traceable AI Reasoning">
-      <div class="max-w-5xl mx-auto w-full my-auto space-y-5">
-        <div class="flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <span class="chip-badge chip-mint">HACKATHON CRITERIA: TRACEABLE REASONING</span>
-            <h2 class="pixel-font text-2xl md:text-3xl font-bold mt-1 text-[#f4f1ea]">
-              HOW AGENTS ARE INTEGRATED & REASON AUDITABLY
-            </h2>
-          </div>
-          <span class="chip-badge chip-gold font-mono">GEMINI 2.0 FLASH & PRO PIPELINE</span>
-        </div>
-
-        <!-- Multi-Agent Integration Diagram -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="pastel-card mint-accent p-3 space-y-1.5">
-            <div class="flex items-center justify-between">
-              <span class="pixel-font text-[10px] text-[#6bc4a2]">AGENT 1 // INTAKE</span>
-              <span class="text-[10px] text-gray-400">Gemini 2.0 Flash</span>
-            </div>
-            <div class="font-bold text-xs">Speech-to-Intent Parser</div>
-            <p class="text-[11px] text-gray-300 font-mono">
-              Extracts target event ("Monaco GP"), numeric unit ("minutes"), bounds [70..110], and lot stake (10 SPRD). Emits structured draft.
-            </p>
-          </div>
-
-          <div class="pastel-card sky-accent p-3 space-y-1.5">
-            <div class="flex items-center justify-between">
-              <span class="pixel-font text-[10px] text-[#78b7e6]">AGENT 2 // CLASSIFIER</span>
-              <span class="text-[10px] text-gray-400">Gemini 2.0 Pro</span>
-            </div>
-            <div class="font-bold text-xs">Contract Linter & Oracle</div>
-            <p class="text-[11px] text-gray-300 font-mono">
-              Validates archetype ("spread window"), lints resolution criteria against Official FIA Timing feed, and guards against ambiguity.
-            </p>
-          </div>
-
-          <div class="pastel-card coral-accent p-3 space-y-1.5">
-            <div class="flex items-center justify-between">
-              <span class="pixel-font text-[10px] text-[#e58585]">AGENT 3 // RISK GATE</span>
-              <span class="text-[10px] text-gray-400">Gemini 2.0 Pro</span>
-            </div>
-            <div class="font-bold text-xs">Strategy & Stop Evaluator</div>
-            <p class="text-[11px] text-gray-300 font-mono">
-              Parses conversational trading mandates into unit-level stop orders while enforcing the mandatory 3-part confirmation gate.
-            </p>
-          </div>
-        </div>
-
-        <!-- Interactive Traceable Reasoning Inspector -->
-        <div class="pastel-card bg-[#141e1a] p-4 space-y-3">
-          <div class="flex items-center justify-between border-b border-[#2e453d] pb-2">
-            <div class="flex items-center gap-2">
-              <span class="pixel-font text-xs text-[#6bc4a2]">★ LIVE TRACEABLE REASONING INSPECTOR</span>
-              <span class="text-[10px] text-gray-400 font-mono">(Click tabs to audit trace)</span>
-            </div>
-            <div class="flex gap-2">
-              <button class="btn-8bit text-[10px] active" id="trace-tab-0" onclick="switchTraceTab(0)">01: RAW AUDIO / INPUT</button>
-              <button class="btn-8bit text-[10px]" id="trace-tab-1" onclick="switchTraceTab(1)">02: MODEL CHAIN-OF-THOUGHT</button>
-              <button class="btn-8bit text-[10px]" id="trace-tab-2" onclick="switchTraceTab(2)">03: STRUCTURED SCHEMA</button>
-              <button class="btn-8bit text-[10px]" id="trace-tab-3" onclick="switchTraceTab(3)">04: SAFETY INVARIANT HASH</button>
-            </div>
-          </div>
-
-          <!-- Trace Viewer Body -->
-          <div id="trace-viewer-content" class="font-mono text-xs text-gray-300 bg-[#101714] p-3 rounded border border-[#2e453d] min-h-[90px]">
-            <!-- Rendered by JS -->
-          </div>
-        </div>
-
-        <!-- Prominent Safety Note -->
-        <div class="sidenote-banner">
-          <span class="text-base">🛡️</span>
-          <div>
-            <strong class="text-[#dfc06c]">Zero Direct Ledger Writes:</strong> AI agents strictly output typed JSON payloads. They have <strong>zero permission to alter financial balances directly</strong>. All point transfers are executed exclusively by the deterministic zero-sum ledger engine.
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- -----------------------------------------------------------------------
-         SLIDE 05 // HACKATHON CRITERIA: AGENT LIMITS, CONTROLS & RISK GATE
-         ----------------------------------------------------------------------- -->
-    <section class="slide" data-slide="4" data-title="Agent Limits & Risk Gate">
-      <div class="max-w-5xl mx-auto w-full my-auto space-y-5">
-        <div>
-          <span class="chip-badge chip-coral">HACKATHON CRITERIA: SAFETY & BOUNDARIES</span>
-          <h2 class="pixel-font text-2xl md:text-3xl font-bold mt-1 text-[#f4f1ea]">
-            AGENT LIMITS, CONTROLS & MANDATORY RISK GATE
-          </h2>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <!-- Gate 1: Mandatory Strategy Recitation -->
-          <div class="pastel-card p-4 space-y-2 border-t-4 border-t-[#6bc4a2]">
-            <div class="flex items-center justify-between">
-              <span class="pixel-font text-xs text-[#6bc4a2]">GATE 1 // STRATEGY</span>
-              <span class="chip-badge chip-mint text-[9px]">CONFIRMED</span>
-            </div>
-            <div class="font-bold text-xs">Strategy Recitation</div>
-            <p class="text-xs text-gray-300 font-mono leading-relaxed">
-              Bot recites the parsed strategy back to the trader in plain language: <em>"You are betting ABOVE 80.0 min (expecting rain/delays) with 10 SPRD lot."</em>
-            </p>
-          </div>
-
-          <!-- Gate 2: Mandatory Take-Profit -->
-          <div class="pastel-card p-4 space-y-2 border-t-4 border-t-[#78b7e6]">
-            <div class="flex items-center justify-between">
-              <span class="pixel-font text-xs text-[#78b7e6]">GATE 2 // TAKE-PROFIT</span>
-              <span class="chip-badge chip-sky text-[9px]">BOUNDED</span>
-            </div>
-            <div class="font-bold text-xs">Mandatory Profit Target</div>
-            <p class="text-xs text-gray-300 font-mono leading-relaxed">
-              Traders must specify an exit level (e.g. cash out when implied race time reaches 84 min or +30 SPRD equity). Prevents round-tripping gains.
-            </p>
-          </div>
-
-          <!-- Gate 3: Mandatory Drawdown Floor -->
-          <div class="pastel-card p-4 space-y-2 border-t-4 border-t-[#e58585]">
-            <div class="flex items-center justify-between">
-              <span class="pixel-font text-xs text-[#e58585]">GATE 3 // STOP FLOOR</span>
-              <span class="chip-badge chip-coral text-[9px]">HARD STOP</span>
-            </div>
-            <div class="font-bold text-xs">Mandatory Drawdown Floor</div>
-            <p class="text-xs text-gray-300 font-mono leading-relaxed">
-              Traders set their hard loss floor (e.g. exit if balance drops below 40% of stake). The bot registers a native unit stop-loss on the ladder.
-            </p>
-          </div>
-        </div>
-
-        <!-- 3rd Party Arbiter Countdown Protocol -->
-        <div class="pastel-card gold-accent p-4 space-y-2 bg-[#1c2924]/70">
-          <div class="flex items-center justify-between">
-            <span class="pixel-font text-xs text-[#dfc06c]">★ THIRD-PARTY ARBITER PROTOCOL (FR-56/57)</span>
-            <span class="chip-badge chip-gold text-[9px]">COUNTDOWN AUTO-LOCK</span>
-          </div>
-          <p class="text-xs text-gray-300 font-mono leading-relaxed">
-            When a market cannot be verified via automated feeds (e.g. custom friend wagers), Agent 2 assigns an independent arbiter (e.g. a neutral friend or boss). The arbiter cannot place bets in that market, and an automated countdown timer locks all betting and withdrawals at <code class="text-[#dfc06c]">00:00:00</code>.
-          </p>
-        </div>
-
-        <!-- Prominent Side Note -->
-        <div class="sidenote-banner">
-          <span class="text-base">💡</span>
-          <div>
-            <strong class="text-[#dfc06c]">Universal Application:</strong> These limits apply across all market styles — whether a friend makes a complex F1 window bet or a simple 5 SPRD bet on a Mario Kart match. The bot always guards your capital.
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- -----------------------------------------------------------------------
-         SLIDE 06 // APP UI & TERMINAL: 8-BIT LIVE RACE TRACK
-         ----------------------------------------------------------------------- -->
-    <section class="slide" data-slide="5" data-title="App UI: Live Race Track">
-      <div class="max-w-5xl mx-auto w-full my-auto space-y-4">
-        <div class="flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <span class="chip-badge chip-mint">AUTHENTIC APP SCREEN: LIVE BETS TAB</span>
-            <h2 class="pixel-font text-2xl md:text-3xl font-bold mt-1 text-[#f4f1ea]">
-              8-BIT RACE TRACK STANDINGS &amp; MASCOT COMMENTARY
-            </h2>
-          </div>
-          <span class="chip-badge chip-gold font-mono">MONACO GP · LAP 24 / 78</span>
-        </div>
-
-        <!-- Segmented 8-Bit Race Track Bar Container -->
-        <div class="race-track-wrap">
-          <div class="flex justify-between items-center text-[10px] text-gray-400 font-mono">
-            <span class="pixel-font text-[#6bc4a2]">LIVE RACE STANDINGS &amp; TARGET FINISH WINDOW</span>
-            <span class="pixel-font text-[#dfc06c]">TARGET WINDOW: [76.0 .. 80.0] MIN</span>
-          </div>
-
-          <!-- Racer 1: You (Marco - Market Maker) -->
-          <div class="race-row">
-            <div>
-              <div class="pixel-font text-xs font-bold text-[#f4f1ea]">MARCO (MM)</div>
-              <div class="text-[9.5px] text-gray-400 font-mono">WINDOW [76..80] · 50 SPRD</div>
-            </div>
-            <div class="race-lane">
-              <div class="race-target-line" style="left: 65%;">
-                <span class="race-target-flag">⚑ [76..80]m</span>
-              </div>
-              <!-- 16 Segmented Blocks -->
-              <div class="race-block filled-mint"></div>
-              <div class="race-block filled-mint"></div>
-              <div class="race-block filled-mint"></div>
-              <div class="race-block filled-mint"></div>
-              <div class="race-block filled-mint"></div>
-              <div class="race-block filled-mint"></div>
-              <div class="race-block filled-mint"></div>
-              <div class="race-block filled-mint"></div>
-              <div class="race-block filled-mint"></div>
-              <div class="race-block filled-mint"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-            </div>
-            <div class="pixel-font text-xs text-right text-[#6bc4a2]">50 SPRD</div>
-          </div>
-
-          <!-- Racer 2: Alice (Taker - ABOVE) -->
-          <div class="race-row">
-            <div>
-              <div class="pixel-font text-xs font-bold text-[#f4f1ea]">ALICE (TAKER)</div>
-              <div class="text-[9.5px] text-gray-400 font-mono">ABOVE &gt; 80m · 20 SPRD</div>
-            </div>
-            <div class="race-lane">
-              <div class="race-target-line" style="left: 65%;"></div>
-              <div class="race-block filled-coral"></div>
-              <div class="race-block filled-coral"></div>
-              <div class="race-block filled-coral"></div>
-              <div class="race-block filled-coral"></div>
-              <div class="race-block filled-coral"></div>
-              <div class="race-block filled-coral"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-            </div>
-            <div class="pixel-font text-xs text-right text-[#e58585]">20 SPRD</div>
-          </div>
-
-          <!-- Racer 3: Bob (Taker - BELOW) -->
-          <div class="race-row">
-            <div>
-              <div class="pixel-font text-xs font-bold text-[#f4f1ea]">BOB (TAKER)</div>
-              <div class="text-[9.5px] text-gray-400 font-mono">BELOW &lt; 76m · 20 SPRD</div>
-            </div>
-            <div class="race-lane">
-              <div class="race-target-line" style="left: 65%;"></div>
-              <div class="race-block filled-sky"></div>
-              <div class="race-block filled-sky"></div>
-              <div class="race-block filled-sky"></div>
-              <div class="race-block filled-sky"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-              <div class="race-block"></div>
-            </div>
-            <div class="pixel-font text-xs text-right text-[#78b7e6]">20 SPRD</div>
-          </div>
-        </div>
-
-        <!-- Tuxedo Cat Live Commentary Card -->
-        <div class="pastel-card p-3 flex items-center gap-4 bg-[#141e1a]">
-          <div class="w-10 h-10 flex-shrink-0">
-            <svg width="40" height="40" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
-              <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
-              <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
-              <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
-              <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
-              <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
-              <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
-              <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
-              <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
-              <rect x="2" y="4" width="12" height="6" fill="#14161E" />
-              <rect x="1" y="6" width="1" height="3" fill="#14161E" />
-              <rect x="14" y="6" width="1" height="3" fill="#14161E" />
-              <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
-              <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
-              <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
-              <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
-              <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
-              <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
-              <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
-              <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
-              <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
-              <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
-              <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
-              <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
-              <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
-              <rect x="5" y="10" width="2" height="2" fill="#14161E" />
-              <rect x="9" y="10" width="2" height="2" fill="#14161E" />
-              <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
-              <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
-              <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
-              <rect x="13" y="11" width="2" height="3" fill="#14161E" />
-              <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
-            </svg>
-          </div>
-          <div>
-            <div class="pixel-font text-xs text-[#6bc4a2]">TUXEDO CAT BOT ALERT</div>
-            <div class="text-xs text-gray-300 font-mono">
-              <em>"Safety car deployed on Lap 18! Implied race time shifted up to 79.2 min. Marco's window [76..80] is under pressure from Alice's ABOVE bet!"</em>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- -----------------------------------------------------------------------
-         SLIDE 07 // CENTER-SPINE BID/ASK & STOP-LOSS DEPTH GRAPH
-         ----------------------------------------------------------------------- -->
-    <section class="slide" data-slide="6" data-title="Center-Spine Depth Graph">
-      <div class="max-w-5xl mx-auto w-full my-auto space-y-4">
-        <div class="flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <span class="chip-badge chip-sky">SCREENSHOT 3 COMPONENT IN ACTION</span>
-            <h2 class="pixel-font text-2xl md:text-3xl font-bold mt-1 text-[#f4f1ea]">
-              CENTER-SPINE DEPTH GRAPH &amp; UNIT-LEVEL STOPS
-            </h2>
-          </div>
-          <span class="chip-badge chip-mint font-mono">CLICK ANY LEVEL TO PLACE ORDER</span>
-        </div>
-
-        <!-- Center-Spine Depth Graph Container -->
-        <div class="depth-grid">
-          <div class="grid grid-cols-3 text-[10px] text-gray-400 font-mono pb-2 border-b border-[#2e453d]">
-            <div class="flex justify-between pr-2">
-              <span>VOLUME (SPRD)</span>
-              <span class="text-[#6bc4a2] font-bold">▲ ABOVE / BID</span>
-            </div>
-            <div class="text-center">UNIT LEVEL (MINUTES)</div>
-            <div class="flex justify-between pl-2">
-              <span class="text-[#e58585] font-bold">▼ BELOW / STOPS</span>
-              <span>VOLUME (SPRD)</span>
-            </div>
-          </div>
-
-          <!-- Level 84m -->
-          <div class="depth-row" onclick="handleDepthClick(84)">
-            <div class="depth-side-bid">
-              <div class="depth-bar-bid" style="width: 75%;"><span>35 SPRD</span><span>●</span></div>
-            </div>
-            <div class="depth-pill">84 MIN</div>
-            <div class="depth-side-ask">
-              <div class="depth-bar-ask" style="width: 20%;"><span>ALICE STOP</span><span>10 SPRD</span></div>
-            </div>
-          </div>
-
-          <!-- Level 82m -->
-          <div class="depth-row" onclick="handleDepthClick(82)">
-            <div class="depth-side-bid">
-              <div class="depth-bar-bid" style="width: 85%;"><span>40 SPRD</span><span>●</span></div>
-            </div>
-            <div class="depth-pill">82 MIN</div>
-            <div class="depth-side-ask">
-              <div class="depth-bar-ask" style="width: 30%;"><span>●</span><span>15 SPRD</span></div>
-            </div>
-          </div>
-
-          <!-- Level 80m (Upper Window Boundary H) -->
-          <div class="depth-row" onclick="handleDepthClick(80)">
-            <div class="depth-side-bid">
-              <div class="depth-bar-bid" style="width: 95%;"><span>50 SPRD</span><span>H BOUND</span></div>
-            </div>
-            <div class="depth-pill is-window">80 MIN (H)</div>
-            <div class="depth-side-ask">
-              <div class="depth-bar-ask" style="width: 45%;"><span>●</span><span>20 SPRD</span></div>
-            </div>
-          </div>
-
-          <!-- Level 78m (Window Center) -->
-          <div class="depth-row" onclick="handleDepthClick(78)">
-            <div class="depth-side-bid">
-              <div class="depth-bar-bid" style="width: 60%;"><span>25 SPRD</span><span>●</span></div>
-            </div>
-            <div class="depth-pill is-window">78 MIN (MM)</div>
-            <div class="depth-side-ask">
-              <div class="depth-bar-ask" style="width: 60%;"><span>●</span><span>25 SPRD</span></div>
-            </div>
-          </div>
-
-          <!-- Level 76m (Lower Window Boundary L) -->
-          <div class="depth-row" onclick="handleDepthClick(76)">
-            <div class="depth-side-bid">
-              <div class="depth-bar-bid" style="width: 45%;"><span>20 SPRD</span><span>●</span></div>
-            </div>
-            <div class="depth-pill is-window">76 MIN (L)</div>
-            <div class="depth-side-ask">
-              <div class="depth-bar-ask" style="width: 90%;"><span>L BOUND</span><span>45 SPRD</span></div>
-            </div>
-          </div>
-
-          <!-- Level 74m -->
-          <div class="depth-row" onclick="handleDepthClick(74)">
-            <div class="depth-side-bid">
-              <div class="depth-bar-bid" style="width: 25%;"><span>10 SPRD</span><span>●</span></div>
-            </div>
-            <div class="depth-pill">74 MIN</div>
-            <div class="depth-side-ask">
-              <div class="depth-bar-ask" style="width: 70%;"><span>BOB STOP</span><span>30 SPRD</span></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Contextual Order Placement Strip -->
-        <div id="depth-order-panel" class="pastel-card p-3 bg-[#141e1a] flex items-center justify-between text-xs font-mono">
-          <div class="flex items-center gap-2">
-            <span class="pixel-font text-[#dfc06c]">SELECTED LEVEL: <span id="selected-level-text">80 MIN</span></span>
-            <span class="text-gray-400">| Place unit-native limit or stop-loss</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <button class="btn-8bit text-[10px]" onclick="sound.playBetChord()">BUY ABOVE (10 SPRD)</button>
-            <button class="btn-8bit text-[10px]" onclick="sound.playBetChord()">STOP-LOSS HERE</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- -----------------------------------------------------------------------
-         SLIDE 08 // CONTINUOUS MARK-TO-MARKET & ANYTIME WITHDRAWALS
-         ----------------------------------------------------------------------- -->
-    <section class="slide" data-slide="7" data-title="Continuous MTM & Withdrawals">
-      <div class="max-w-5xl mx-auto w-full my-auto space-y-5">
-        <div>
-          <span class="chip-badge chip-gold">DUAL EARLY-EXIT PROTOCOL</span>
-          <h2 class="pixel-font text-2xl md:text-3xl font-bold mt-1 text-[#f4f1ea]">
-            CONTINUOUS MARK-TO-MARKET &amp; ANYTIME WITHDRAWALS
-          </h2>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-          <!-- Card 1: Continuous MTM Dynamic Pricing -->
-          <div class="pastel-card p-4 space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="pixel-font text-xs text-[#6bc4a2]">01 // REAL-TIME MARK-TO-MARKET</span>
-              <span class="chip-badge chip-mint text-[9px]">LIVE UPDATES</span>
-            </div>
-            <p class="text-xs text-gray-300 font-mono leading-relaxed">
-              Markets remain continuously live until the chequered flag drops. As lap times, pit stops, and weather telemetry arrive:
-            </p>
-            <ul class="text-xs text-gray-300 font-mono space-y-2 list-disc list-inside">
-              <li>Implied winning time recalculates in real-time.</li>
-              <li>Every trader's unrealized equity is continuously marked to market.</li>
-              <li>Stop-losses trigger automatically when implied time crosses native unit thresholds.</li>
-            </ul>
-          </div>
-
-          <!-- Card 2: Anytime Partial/Full Withdrawal -->
-          <div class="pastel-card p-4 space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="pixel-font text-xs text-[#78b7e6]">02 // ANYTIME WITHDRAWAL</span>
-              <span class="chip-badge chip-sky text-[9px]">ENG-03 PROTOCOL</span>
-            </div>
-            <p class="text-xs text-gray-300 font-mono leading-relaxed">
-              Traders are never locked until final resolution. If your current position has positive equity (<code class="text-[#78b7e6]">equity &gt; 0</code>):
-            </p>
-            <ul class="text-xs text-gray-300 font-mono space-y-2 list-disc list-inside">
-              <li><strong>Quick Cash Out:</strong> Withdraw 25%, 50%, or 100% of your active gains in one tap.</li>
-              <li><strong>Exact SPRD Slicing:</strong> Specify an exact SPRD slice (e.g. withdraw 15 SPRD).</li>
-              <li><strong>Zero-Sum Invariant:</strong> Withdrawn equity is released immediately while integer escrow remains perfectly balanced.</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Prominent Side Note -->
-        <div class="sidenote-banner">
-          <span class="text-base">💡</span>
-          <div>
-            <strong class="text-[#dfc06c]">Universal Flexibility:</strong> Whether you're tracking an F1 race across 78 laps or a 90-minute soccer match, friends can lock in profits halfway through without waiting for final resolution.
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- -----------------------------------------------------------------------
-         SLIDE 09 // BENCHMARK EVALUATION & FORMAL VERIFICATION
-         ----------------------------------------------------------------------- -->
-    <section class="slide" data-slide="8" data-title="Benchmarks & Verification">
-      <div class="max-w-5xl mx-auto w-full my-auto space-y-5">
-        <div>
-          <span class="chip-badge chip-mint">HACKATHON CRITERIA: BENCHMARK EVALUATION</span>
-          <h2 class="pixel-font text-2xl md:text-3xl font-bold mt-1 text-[#f4f1ea]">
-            PROPERTY-BASED TESTING &amp; DETERMINISTIC INVARIANTS
-          </h2>
-        </div>
-
-        <!-- Benchmark Metrics Grid -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="pastel-card p-3 text-center">
-            <div class="pixel-font text-2xl font-bold text-[#6bc4a2]">10,000+</div>
-            <div class="text-[10px] text-gray-400 font-mono mt-1">Property Test Runs</div>
-            <div class="text-[9px] text-[#6bc4a2] mt-1">properties.test.ts</div>
+          <div class="pastel-card">
+            <div class="step-num">01</div>
+            <div class="step-title">PROPOSE</div>
+            <div class="step-body">"First goal minute. 10 chips a lot."</div>
           </div>
-          <div class="pastel-card p-3 text-center">
-            <div class="pixel-font text-2xl font-bold text-[#78b7e6]">&lt;150ms</div>
-            <div class="text-[10px] text-gray-400 font-mono mt-1">Voice-to-Intent Latency</div>
-            <div class="text-[9px] text-[#78b7e6] mt-1">Gemini 2.0 Flash</div>
+          <div class="pastel-card">
+            <div class="step-num">02</div>
+            <div class="step-title">BID IT DOWN</div>
+            <div class="step-body">Jules offers a 12-minute window. Édouard says 8. <em class="text-[var(--fg-primary)] not-italic">Bon courage.</em></div>
           </div>
-          <div class="pastel-card p-3 text-center">
-            <div class="pixel-font text-2xl font-bold text-[#dfc06c]">&lt;15ms</div>
-            <div class="text-[10px] text-gray-400 font-mono mt-1">Settlement Execution</div>
-            <div class="text-[9px] text-[#dfc06c] mt-1">Deterministic Ledger</div>
+          <div class="pastel-card">
+            <div class="step-num">03</div>
+            <div class="step-title">BE THE HOUSE</div>
+            <div class="step-body">Tightest bid becomes market maker and picks the window: <strong class="text-[var(--pastel-gold-border)]">35–43 min</strong>.</div>
           </div>
-          <div class="pastel-card p-3 text-center">
-            <div class="pixel-font text-2xl font-bold text-[#e58585]">100%</div>
-            <div class="text-[10px] text-gray-400 font-mono mt-1">Zero-Sum Integrity</div>
-            <div class="text-[9px] text-[#e58585] mt-1">Σ Payouts = Σ Stakes</div>
-          </div>
-        </div>
-
-        <!-- Invariant Checklist Table -->
-        <div class="pastel-card p-4 space-y-3 bg-[#141e1a]">
-          <div class="pixel-font text-xs text-[#dfc06c]">★ FORMAL VERIFICATION & INVARIANT CHECKLIST</div>
-          <div class="space-y-2 text-xs font-mono text-gray-300">
-            <div class="flex items-center justify-between border-b border-[#2e453d] pb-1.5">
-              <span>1. Zero-Sum Conservation (Total Escrow = Total Trader Payouts)</span>
-              <span class="chip-badge chip-mint text-[9px]">VERIFIED (0 LEAK)</span>
-            </div>
-            <div class="flex items-center justify-between border-b border-[#2e453d] pb-1.5">
-              <span>2. Monotonic State Machine (Created → Quoted → Locked → Settled)</span>
-              <span class="chip-badge chip-mint text-[9px]">VERIFIED (NO ROLLBACK)</span>
-            </div>
-            <div class="flex items-center justify-between border-b border-[#2e453d] pb-1.5">
-              <span>3. Solvency Invariant (No negative trader balances permitted)</span>
-              <span class="chip-badge chip-mint text-[9px]">VERIFIED (STRICT FLOOR)</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span>4. Anti-Hallucination Contract Linting (Invalid FIA timing criteria rejected)</span>
-              <span class="chip-badge chip-mint text-[9px]">VERIFIED (LINTER PASS)</span>
-            </div>
+          <div class="pastel-card">
+            <div class="step-num">04</div>
+            <div class="step-title">PICK A SIDE</div>
+            <div class="step-body">Everyone else bets <strong class="text-[var(--pastel-mint-border)]">above 43</strong> or <strong class="text-[var(--pastel-coral-border)]">below 35</strong>.</div>
           </div>
         </div>
-
-        <!-- Prominent Side Note -->
-        <div class="sidenote-banner">
-          <span class="text-base">🛡️</span>
-          <div>
-            <strong class="text-[#dfc06c]">Deterministic Core:</strong> Regardless of network hiccups or complex market branches, the deterministic ledger guarantees that every single SPRD point is accounted for to the exact integer.
-          </div>
+        <div class="sidenote-banner" style="font-size: 14px;">
+          <span>🎯</span><div>Goal lands inside the window? The house wins. The house is Édouard. Édouard is insufferable about it.</div>
         </div>
       </div>
     </section>
 
-    <!-- -----------------------------------------------------------------------
-         SLIDE 10 // FULL STACK ARCHITECTURE & HACKATHON SUMMARY
-         ----------------------------------------------------------------------- -->
-    <section class="slide" data-slide="9" data-title="System Architecture & Links">
-      <div class="max-w-5xl mx-auto w-full my-auto space-y-5">
-        <div class="flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <span class="chip-badge chip-mint">PRODUCTION READY ARCHITECTURE</span>
-            <h2 class="pixel-font text-2xl md:text-3xl font-bold mt-1 text-[#f4f1ea]">
-              SYSTEM TOPOLOGY &amp; LIVE DEMO REPOSITORIES
-            </h2>
-          </div>
-          <span class="chip-badge chip-gold font-mono">MIT LICENSE · OPEN SOURCE</span>
+    <!-- 05 MATCH NIGHT -->
+    <section class="slide" data-slide="4" data-title="Match night">
+      <div class="slide-inner space-y-4">
+        <div class="space-y-3">
+          <div class="kicker">MATCH NIGHT · ARSENAL v CHELSEA</div>
+          <h2 class="headline">Then football happens.</h2>
         </div>
+        <div class="timeline-wrap"><div class="timeline">
+          <div class="timeline-window" style="left: 36.84%; width: 8.42%;"><div class="timeline-window-label">35–43</div></div>
+          <div class="tl-mark" style="left: 18.95%;"><span class="tl-tag">18' Saka hits the bar</span><span class="tl-stem"></span></div>
+          <div class="tl-mark voided low" style="left: 40.00%;"><span class="tl-tag">38' Havertz!</span><span class="tl-stem"></span></div>
+          <div class="tl-mark" style="left: 42.11%;"><span class="tl-tag">40' VAR: offside</span><span class="tl-stem"></span></div>
+          <div class="tl-mark win low" style="left: 52.63%;"><span class="tl-tag">50' Ødegaard ✓</span><span class="tl-stem"></span></div>
+          <span class="tl-axis" style="left: 0; transform: none;">0'</span>
+          <span class="tl-axis" style="left: 47.37%;">HT</span>
+          <span class="tl-axis" style="right: 0; left: auto; transform: none;">95'</span>
+        </div></div>
+        <div class="grid md:grid-cols-2 gap-4 pt-2">
+          <div class="pastel-card mint-accent"><div class="pixel-font text-sm">ABOVE WINS</div><div class="text-sm mt-1">Nathalie and André get paid. Automatically.</div></div>
+          <div class="pastel-card"><div class="pixel-font text-sm text-[var(--fg-primary)]">NOBODY ARGUED</div><div class="text-sm mt-1 text-[var(--fg-muted)]">The engine settled it on the official result. (Michel argued.)</div></div>
+        </div>
+      </div>
+    </section>
 
-        <!-- System Architecture Flow Diagram -->
-        <div class="pastel-card p-4 bg-[#141e1a] space-y-3">
-          <div class="pixel-font text-xs text-[#6bc4a2]">★ END-TO-END DATA &amp; AGENT EXECUTION FLOW</div>
-          <div class="grid grid-cols-1 md:grid-cols-5 gap-2 text-center text-xs font-mono">
-            <div class="p-2.5 bg-[#22342e] border border-[#2e453d] rounded">
-              <div class="text-[#6bc4a2] font-bold">1. FRONTEND</div>
-              <div class="text-[10px] text-gray-400 mt-1">React 18 + Vite</div>
-              <div class="text-[9px] text-[#78b7e6] mt-1">Web Audio Synth</div>
-            </div>
-            <div class="p-2.5 bg-[#22342e] border border-[#2e453d] rounded">
-              <div class="text-[#78b7e6] font-bold">2. GATEWAY</div>
-              <div class="text-[10px] text-gray-400 mt-1">FastAPI + Keycloak</div>
-              <div class="text-[9px] text-[#dfc06c] mt-1">Auth &amp; JWT Sessions</div>
-            </div>
-            <div class="p-2.5 bg-[#22342e] border border-[#2e453d] rounded">
-              <div class="text-[#dfc06c] font-bold">3. REAL-TIME BUS</div>
-              <div class="text-[10px] text-gray-400 mt-1">Redis + Postgres</div>
-              <div class="text-[9px] text-[#6bc4a2] mt-1">WebSocket Sync</div>
-            </div>
-            <div class="p-2.5 bg-[#22342e] border border-[#2e453d] rounded">
-              <div class="text-[#e58585] font-bold">4. AI AGENTS</div>
-              <div class="text-[10px] text-gray-400 mt-1">Gemini 2.0 Flash/Pro</div>
-              <div class="text-[9px] text-[#e58585] mt-1">Traceable Linter</div>
-            </div>
-            <div class="p-2.5 bg-[#22342e] border border-[#2e453d] rounded">
-              <div class="text-[#6bc4a2] font-bold">5. LEDGER</div>
-              <div class="text-[10px] text-gray-400 mt-1">Zero-Sum Engine</div>
-              <div class="text-[9px] text-[#6bc4a2] mt-1">Deterministic Math</div>
-            </div>
+    <!-- 06 PAYOUT MODES -->
+    <section class="slide" data-slide="5" data-title="Payout modes">
+      <div class="slide-inner space-y-8">
+        <div class="space-y-3">
+          <div class="kicker">PAYOUT MODES</div>
+          <h2 class="headline">Pick your poison.</h2>
+          <p class="sub">The creator picks how winners get paid.</p>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="pastel-card mint-accent"><div class="pixel-font text-base">BINARY</div><div class="text-sm mt-3">Right? Win your stake. Wrong? Lose it. Sleep well.</div></div>
+          <div class="pastel-card sky-accent"><div class="pixel-font text-base">LINEAR</div><div class="text-sm mt-3">The more right you are, the more you win. Capped, so nobody bets the car.</div></div>
+          <div class="pastel-card gold-accent"><div class="pixel-font text-base">LOG</div><div class="text-sm mt-3">Linear, for things that grow by ratio. Crypto bros, this one's yours.</div></div>
+          <div class="pastel-card coral-accent"><div class="pixel-font text-base">POT</div><div class="text-sm mt-3">Everyone chips in. Winners split it. The pub classic.</div></div>
+        </div>
+        <p class="text-xs text-[var(--fg-dim)]">Landing exactly on the edge of the window counts as inside. We don't make the rules. (We do. That's the rule.)</p>
+      </div>
+    </section>
+
+    <!-- 07 AI + ENGINE -->
+    <section class="slide" data-slide="6" data-title="The cat and the engine">
+      <div class="slide-inner space-y-8">
+        <div class="space-y-3">
+          <div class="kicker">THE AI BIT</div>
+          <h2 class="headline">The cat talks. The maths pays.</h2>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="pastel-card sky-accent space-y-3">
+            <div class="flex items-center gap-3"><svg width="36" height="36" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+          <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+          <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+          <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+          <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+          <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+          <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+          <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+          <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+        </svg><span class="pixel-font text-base">THE CAT (GEMINI)</span></div>
+            <ul class="text-sm space-y-1.5">
+              <li>▸ Spots a bet hiding in the chat</li>
+              <li>▸ Drafts the market for you</li>
+              <li>▸ Checks what the internet thinks the odds are</li>
+              <li>▸ Won't place a strategy until you confirm the stop-loss</li>
+            </ul>
+          </div>
+          <div class="pastel-card gold-accent space-y-3">
+            <div class="flex items-center gap-3"><span class="text-3xl">🧮</span><span class="pixel-font text-base">THE ENGINE</span></div>
+            <ul class="text-sm space-y-1.5">
+              <li>▸ Holds every chip in escrow</li>
+              <li>▸ Runs the auction and the order book</li>
+              <li>▸ Settles every bet to the chip</li>
+              <li>▸ Has never hallucinated. Not once.</li>
+            </ul>
           </div>
         </div>
+        <div class="sidenote-banner" style="font-size: 14px;"><span>🔒</span><div>The AI can't move a single chip. It suggests; the engine decides. No API key? The cat falls back to built-in rules.</div></div>
+      </div>
+    </section>
 
-        <!-- Live Links & Repository Card -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="pastel-card mint-accent p-4 flex flex-col justify-between">
-            <div>
-              <div class="pixel-font text-xs text-[#6bc4a2] mb-1">GITHUB REPOSITORY</div>
-              <div class="font-bold text-sm text-[#f4f1ea]">znats / MarketMate</div>
-              <p class="text-xs text-gray-300 font-mono mt-2 leading-relaxed">
-                Full open-source codebase, multi-agent pipeline, test suites, and interactive pitch deck.
-              </p>
-            </div>
-            <a href="https://github.com/znats/MarketMate" target="_blank" class="btn-8bit mt-4 inline-flex justify-center text-xs text-[#6bc4a2]">
-              VIEW ON GITHUB ↗
-            </a>
-          </div>
-
-          <div class="pastel-card sky-accent p-4 flex flex-col justify-between">
-            <div>
-              <div class="pixel-font text-xs text-[#78b7e6] mb-1">LIVE INTERACTIVE PRESENTATION</div>
-              <div class="font-bold text-sm text-[#f4f1ea]">znats.github.io / MarketMate</div>
-              <p class="text-xs text-gray-300 font-mono mt-2 leading-relaxed">
-                Live GitHub Pages deployment featuring 8-bit sound effects, 6 dynamic slide transitions, and interactive simulators.
-              </p>
-            </div>
-            <a href="https://znats.github.io/MarketMate/" target="_blank" class="btn-8bit mt-4 inline-flex justify-center text-xs text-[#78b7e6]">
-              OPEN LIVE DECK ↗
-            </a>
-          </div>
+    <!-- 08 PROOF -->
+    <section class="slide" data-slide="7" data-title="Every chip accounted for">
+      <div class="slide-inner space-y-10">
+        <div class="space-y-3 text-center">
+          <div class="kicker">TRUST ISSUES? GOOD.</div>
+          <h2 class="headline">Every chip accounted for.</h2>
         </div>
+        <div class="grid md:grid-cols-3 gap-6 text-center">
+          <div class="pastel-card mint-accent py-8"><div class="big-stat">0</div><div class="text-sm mt-3">chips created or lost, in any settlement. Property-tested.</div></div>
+          <div class="pastel-card sky-accent py-8"><div class="big-stat">50+</div><div class="text-sm mt-3">automated tests across the engine and the gateway</div></div>
+          <div class="pastel-card gold-accent py-8"><div class="big-stat">ℤ</div><div class="text-sm mt-3">Integers only. No 0.1 + 0.2 drama. Leftover chips go to the market maker.</div></div>
+        </div>
+      </div>
+    </section>
 
-        <!-- Prominent Finale Banner -->
-        <div class="sidenote-banner">
-          <span class="text-base">🏁</span>
-          <div>
-            <strong class="text-[#dfc06c]">Ready for Judging:</strong> MarketMate meets all hackathon criteria — traceable reasoning, unbreachable agent risk gates, formal zero-sum testing, and authentic 8-bit arcade UX. Let's make trading with friends fun and mathematically fair!
-          </div>
+    <!-- 09 STACK -->
+    <section class="slide" data-slide="8" data-title="Under the hood">
+      <div class="slide-inner space-y-10">
+        <div class="space-y-3">
+          <div class="kicker">UNDER THE HOOD</div>
+          <h2 class="headline">One command. Whole casino.</h2>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
+          <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">UI</div><div class="text-sm mt-2">React + Vite</div></div>
+          <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">GATEWAY</div><div class="text-sm mt-2">FastAPI + Keycloak</div></div>
+          <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">LIVE</div><div class="text-sm mt-2">Redis + WebSockets</div></div>
+          <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">AGENTS</div><div class="text-sm mt-2">Gemini</div></div>
+          <div class="pastel-card col-span-2 md:col-span-1"><div class="pixel-font text-xs text-[var(--brand-ink)]">ENGINE</div><div class="text-sm mt-2">TypeScript + Postgres</div></div>
+        </div>
+        <div class="pastel-card max-w-md mx-auto text-center" style="background: var(--bg-canvas);">
+          <code class="text-lg" style="color: var(--pastel-mint-border);">$ make dev</code>
+          <div class="text-xs text-[var(--fg-muted)] mt-2">That's it. That's the setup slide.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 NEXT + CLOSE -->
+    <section class="slide" data-slide="9" data-title="What's next">
+      <div class="slide-inner grid md:grid-cols-2 gap-12 items-center">
+        <div class="space-y-5">
+          <div class="kicker">WHAT'S NEXT</div>
+          <ul class="space-y-3 text-base">
+            <li class="flex gap-3"><span class="text-[var(--pastel-gold-border)]">▸</span>Teach the cat that "hi!" is not a bet</li>
+            <li class="flex gap-3"><span class="text-[var(--pastel-gold-border)]">▸</span>Office bets, with the boss as referee</li>
+            <li class="flex gap-3"><span class="text-[var(--pastel-gold-border)]">▸</span>Stop-losses in real units: minutes, °C, rank</li>
+            <li class="flex gap-3"><span class="text-[var(--pastel-gold-border)]">▸</span>Cash out an exact number of chips</li>
+          </ul>
+        </div>
+        <div class="flex flex-col items-center text-center gap-5">
+          <div class="voice-orb" style="width: 110px; height: 110px;" onclick="sound.playBetChord(); triggerTransitionDemo('chips-falling');"><svg width="56" height="56" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+          <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+          <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+          <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+          <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+          <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+          <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+          <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+          <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+        </svg></div>
+          <h2 class="headline">Settle it.</h2>
+          <a href="https://github.com/Edgshirley/Agentverse_2026" target="_blank" class="btn-8bit active text-sm">github.com/Edgshirley/Agentverse_2026 ↗</a>
         </div>
       </div>
     </section>
@@ -1549,7 +1118,7 @@
   <!-- =========================================================================
        BOTTOM NAVIGATION & TRANSITION CONTROLS STRIP
        ========================================================================= -->
-  <footer class="h-[44px] border-t-2 border-[#2e453d] bg-[#141e1a] px-6 flex items-center justify-between z-10 relative">
+  <footer class="h-[44px] border-t-2 border-[var(--border-color)] bg-[var(--bg-panel)] px-6 flex items-center justify-between z-10 relative">
     <div class="flex items-center gap-2">
       <button id="prev-slide-btn" class="btn-8bit text-xs" onclick="navigateSlide(-1)">
         ◀ PREV
@@ -1564,16 +1133,6 @@
       <!-- Injected by JS -->
     </div>
 
-    <!-- Quick Transition Switcher Strip -->
-    <div class="hidden lg:flex items-center gap-1.5 text-[10px] font-mono">
-      <span class="text-gray-400">TRY TRANSITION:</span>
-      <button class="btn-8bit text-[9px] py-1 px-1.5" onclick="triggerTransitionDemo('cat-run')">🐱 CAT RUN</button>
-      <button class="btn-8bit text-[9px] py-1 px-1.5" onclick="triggerTransitionDemo('chips-falling')">🪙 CHIPS</button>
-      <button class="btn-8bit text-[9px] py-1 px-1.5" onclick="triggerTransitionDemo('f1-speed')">🏎️ F1 SPEED</button>
-      <button class="btn-8bit text-[9px] py-1 px-1.5" onclick="triggerTransitionDemo('pixel-blinds')">🏁 BLINDS</button>
-      <button class="btn-8bit text-[9px] py-1 px-1.5" onclick="triggerTransitionDemo('card-fan')">🃏 CARDS</button>
-      <button class="btn-8bit text-[9px] py-1 px-1.5" onclick="triggerTransitionDemo('scanline-matrix')">📟 SCANLINE</button>
-    </div>
   </footer>
 
   <!-- =========================================================================
@@ -1767,26 +1326,26 @@
               <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
             </svg>
             <div class="trans-cat-dust"></div>
-            <div class="pixel-font text-xs text-[#dfc06c] font-bold">10 SPRD ★</div>
+            <div class="pixel-font text-xs text-[var(--pastel-gold-border)] font-bold">10 CHIP ★</div>
           </div>
         `;
       } else if (effectType === 'chips-falling') {
         sound.playChipClink();
-        const colors = ['#6bc4a2', '#78b7e6', '#e58585', '#dfc06c'];
+        const colors = ['var(--pastel-mint-border)', 'var(--pastel-sky-border)', 'var(--pastel-coral-border)', 'var(--pastel-gold-border)'];
         let chipsHtml = '';
         for (let i = 0; i < 16; i++) {
           const leftPct = Math.random() * 90 + 5;
           const delay = Math.random() * 0.35;
           const col = colors[i % colors.length];
-          chipsHtml += `<div class="trans-chip" style="left: ${leftPct}%; background: ${col}; animation-delay: ${delay}s;">SPRD</div>`;
+          chipsHtml += `<div class="trans-chip" style="left: ${leftPct}%; background: ${col}; animation-delay: ${delay}s;">CHIP</div>`;
         }
         overlay.innerHTML = chipsHtml;
       } else if (effectType === 'f1-speed') {
         sound.playF1Rev();
         overlay.innerHTML = `
           <div class="trans-f1-banner">
-            <span class="pixel-font text-2xl font-bold text-[#141e1a] bg-[#f4f1ea] px-4 py-2 rounded">
-              🏎️ MONACO GP // GREEN FLAG
+            <span class="pixel-font text-2xl font-bold text-[var(--bg-panel)] bg-[var(--fg-primary)] px-4 py-2 rounded">
+              ⚽ KICK-OFF
             </span>
           </div>
         `;
@@ -1850,7 +1409,7 @@
       dotsContainer.innerHTML = '';
       slides.forEach((_, idx) => {
         const dot = document.createElement('button');
-        dot.className = `w-2 h-2 rounded-full transition-all ${idx === currentSlide ? 'bg-[#6bc4a2] w-6' : 'bg-[#2e453d] hover:bg-gray-400'}`;
+        dot.className = `w-2 h-2 rounded-full transition-all ${idx === currentSlide ? 'bg-[var(--pastel-mint-border)] w-6' : 'bg-[var(--border-color)] hover:bg-[var(--fg-muted)]'}`;
         dot.title = `Go to Slide ${idx + 1}`;
         dot.onclick = () => goToSlide(idx);
         dotsContainer.appendChild(dot);
@@ -1937,75 +1496,6 @@
       sound.playBlindsClick();
     });
 
-    // =========================================================================
-    // 5. TRACEABLE REASONING INSPECTOR DATA & TAB HANDLER
-    // =========================================================================
-    const TRACE_STEPS = [
-      {
-        title: "STEP 1 // RAW USER VOICE & AUDIO INTAKE",
-        content: `INPUT_STREAM: Audio PCM 16kHz · Transcription Engine (Gemini 2.0 Flash)
-PROMPT: "Make a window market on the Monaco GP winning time, bounds 70 to 110 minutes, 10 SPRD per lot."
-CONFIDENCE_SCORE: 0.984
-RAW_TOKENS: ["Make", "a", "window", "market", "Monaco", "GP", "70", "110", "minutes"]`
-      },
-      {
-        title: "STEP 2 // GEMINI 2.0 CHAIN-OF-THOUGHT REASONING",
-        content: `AGENT_THOUGHT:
-1. Target event identified: "Monaco Grand Prix - Race Winner Total Elapsed Time".
-2. Unit detected: "minutes" (continuous numeric scale).
-3. Candidate archetype: "spread" (explicit request for window bounds [70..110]).
-4. Verification route: Official FIA Race Timing Feed (live telemetry).
-5. Stake specification: 10 SPRD per lot.
-6. Linter check: Non-overlapping window invariants hold (L >= 70, H <= 110, w_min = 2m).`
-      },
-      {
-        title: "STEP 3 // EXTRACTED STRUCTURED TOOL CALL SCHEMA",
-        content: `{
-  "action": "create_market_draft",
-  "question": "Monaco GP Winning Race Time Window (Minutes)",
-  "archetype": "spread",
-  "unit": "minutes",
-  "bounds": [70, 110],
-  "lot_stake": 10,
-  "payoff_mode": "linear",
-  "resolution_source": "Official FIA Formula 1 Race Timing Feed",
-  "boundary_rule": "Inside window [L, H] pays Market Maker; Above (>H) & Below (<L) pay Takers"
-}`
-      },
-      {
-        title: "STEP 4 // DETERMINISTIC SAFETY & INVARIANT AUDIT",
-        content: `VERIFICATION_PIPELINE:
-[PASS] Zero Direct Ledger Writes (Agent only returns schema payload)
-[PASS] Escrow Solvency Invariant: sum(payouts) == sum(stakes) verified
-[PASS] Archetype Linter: Validated against 'spread' state machine (FR-15)
-SHA-256 AUDIT HASH: e4b29c884210a4f5c9e29a3b8d147cf8190d7e231bc5694a11b6fa204e38910a`
-      }
-    ];
-
-    function switchTraceTab(tabIdx) {
-      for (let i = 0; i < 4; i++) {
-        const btn = document.getElementById(`trace-tab-${i}`);
-        if (btn) btn.classList.toggle('active', i === tabIdx);
-      }
-      const data = TRACE_STEPS[tabIdx];
-      const viewer = document.getElementById('trace-viewer-content');
-      viewer.innerHTML = `
-        <div class="text-[#6bc4a2] font-bold mb-1">${data.title}</div>
-        <pre class="whitespace-pre-wrap leading-relaxed">${data.content}</pre>
-      `;
-      sound.playVoicePop();
-    }
-
-    // Initialize Trace Tab 0 on load
-    switchTraceTab(0);
-
-    // =========================================================================
-    // 6. DEPTH GRAPH CLICK HANDLER
-    // =========================================================================
-    function handleDepthClick(level) {
-      document.getElementById('selected-level-text').textContent = `${level} MIN`;
-      sound.playChipClink();
-    }
 
     // Initial Nav Setup
     updateNavUI();

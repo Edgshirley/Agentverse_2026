@@ -4,6 +4,8 @@ Turn any argument in your group chat into a market. Friends bet play-money `CHIP
 
 ![MarketMate: group chat in the centre, live bets and the bot in the right rail](docs/screenshot.png)
 
+> ⚠️ **Before committing, read [INSTRUCTIONS.md](INSTRUCTIONS.md)** — API keys must never be pushed to GitHub.
+
 ## How a bet works
 
 ```mermaid
@@ -64,7 +66,7 @@ cd backend && npm test
 make api-test
 ```
 
-The bot runs on Gemini with Google Search: it drafts bets from plain text, briefs bidders with web facts and settles bets from published results. Set `GEMINI_API_KEY` in `prod.env` on the server. Without a key the bot reports that it's unavailable and never invents anything.
+The bot runs on Gemini with Google Search: it drafts bets from plain text, briefs bidders with web facts and settles bets from published results. Put `GEMINI_API_KEY` in `secrets.env` for dev (copy `secrets.env.example`) or `prod.env` for production. Both are git-ignored; see `INSTRUCTIONS.md`. Without a key the bot reports that it's unavailable and never invents anything.
 
 ## Dev tools
 
@@ -78,7 +80,7 @@ cd backend && npm install && npm run dev
 cd frontend && npm install && npm run dev
 ```
 
-`npm run dev` sets `DEV_TOOLS=1`, which enables the dev and simulation routes. They return 404 in production. For a local key, put `GEMINI_API_KEY=...` in `backend/.env`, which git ignores.
+`npm run dev` sets `DEV_TOOLS=1`, which enables the dev and simulation routes. They return 404 in production.
 
 - **Real or preset:** typed bets always call Gemini. The `PRESET` buttons use offline keyword rules and are labelled everywhere; they never call the AI.
 

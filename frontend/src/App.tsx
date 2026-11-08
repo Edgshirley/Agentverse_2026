@@ -1,5 +1,7 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useMarketSync } from './hooks/useMarketSync';
+import { useActivePlayerId } from './hooks/useActivePlayerId';
+import { PlayerSwitcher } from './dev/PlayerSwitcher';
 import { HeaderBar } from './components/HeaderBar';
 import { AskBotPanel } from './components/askbot/AskBotPanel';
 import { ChatFeed, MascotWidgetAlert } from './components/chat/ChatFeed';
@@ -24,10 +26,10 @@ export const App: React.FC = () => {
     loading,
     errorBanner,
     setErrorBanner,
-    setSelectedMarketId,
-    activePlayerId,
+        setSelectedMarketId,
     dispatchAction,
   } = useMarketSync();
+  const [activePlayerId, setActivePlayerId] = useActivePlayerId();
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [showUnitLadder, setShowUnitLadder] = useState<boolean>(true);
@@ -37,6 +39,13 @@ export const App: React.FC = () => {
 
   const [chatMascotAlert, setChatMascotAlert] = useState<MascotWidgetAlert | null>(null);
   const [forwardedChatPrompt, setForwardedChatPrompt] = useState<string | null>(null);
+
+    // Dev only: keep the personas registered, including after a reset
+  const personasMissing =
+    import.meta.env.DEV && data != null && !data.players.some((p) => p.id === 'edouard');
+  useEffect(() => {
+    if (personasMissing) void dispatchAction('/api/dev/personas', {});
+  }, [personasMissing, dispatchAction]);
 
   const closeBetDrawer = useCallback(() => setBetDrawerOpen(false), []);
 
@@ -132,7 +141,16 @@ export const App: React.FC = () => {
         activePlayer={activePlayer}
         theme={theme}
         onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-        onResetDemo={async () => {
+        playerSwitcher={
+          import.meta.env.DEV ? (
+            <PlayerSwitcher
+              players={players}
+              activePlayerId={activePlayer.id}
+              onChange={setActivePlayerId}
+            />
+          ) : null
+        }
+        onResetDemo={!import.meta.env.DEV ? undefined : async () => {
           await dispatchAction('/api/demo/reset', {});
           setChatMascotAlert(null);
           setForwardedChatPrompt(null);

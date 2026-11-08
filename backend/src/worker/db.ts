@@ -15,6 +15,7 @@ export interface Env {
   OPENAI_API_KEY?: string;
   OPENAI_BASE_URL?: string;
   OPENAI_MODEL?: string;
+  DEV_TOOLS?: string;
 }
 
 export interface StateUpdateNotification {

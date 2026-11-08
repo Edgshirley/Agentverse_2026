@@ -5,6 +5,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { streamSSE } from 'hono/streaming';
+import { createMiddleware } from 'hono/factory';
 import { Env, globalStore } from './db';
 import { Market, OrderType, PositionSide, StrategyMandate } from '../shared/types';
 import {
@@ -54,6 +55,21 @@ function ensurePlayerRegistered(rawIdOrNick: string): string {
   }
   return cleanId;
 }
+
+function devToolsEnabled(env?: Env): boolean {
+  const flag = env?.DEV_TOOLS ?? (typeof process !== 'undefined' ? process.env.DEV_TOOLS : undefined);
+  return flag === '1';
+}
+
+// Off unless DEV_TOOLS=1 (set by `npm run dev`), so these routes do not exist in production.
+const devToolsOnly = createMiddleware<{ Bindings: Env }>(async (c, next) => {
+  if (!devToolsEnabled(c.env)) {
+    return c.json({ error: 'Not found' }, 404);
+  }
+  await next();
+});
+app.use('/api/dev/*', devToolsOnly);
+app.use('/api/demo/*', devToolsOnly);
 
 // 0. Healthcheck & SQLite / D1 Database Inspector
 app.get('/api/health', async (c) => {
@@ -1103,6 +1119,35 @@ app.post('/api/markets/:id/replay/feed-delayed', async (c) => {
   } catch (err: any) {
     return c.json({ error: err.message }, 400);
   }
+});
+
+// 11d. Dev personas: the team's names in French
+const DEV_PERSONAS = [
+  { id: 'edouard', nickname: 'ÉDOUARD' },
+  { id: 'jules', nickname: 'JULES' },
+  { id: 'andre', nickname: 'ANDRÉ' },
+  { id: 'michel', nickname: 'MICHEL' },
+  { id: 'nathalie', nickname: 'NATHALIE' },
+];
+
+app.post('/api/dev/personas', async (c) => {
+  const ledger = globalStore.engine.ledger;
+  const existing = new Set(ledger.getAllPlayers().map((p) => p.id));
+  const missing = DEV_PERSONAS.filter((p) => !existing.has(p.id));
+  for (const persona of missing) {
+    ledger.registerPlayer({
+      ...persona,
+      group_id: globalStore.group.id,
+      is_admin: false,
+      wallet_balance_toks: 1000,
+      escrow_balance_toks: 0,
+    });
+  }
+  if (missing.length > 0) {
+    globalStore.bumpVersion();
+    await globalStore.persistToD1(c.env);
+  }
+  return c.json({ players: ledger.getAllPlayers(), stateVersion: globalStore.stateVersion });
 });
 
 // 12. Reset Demo State

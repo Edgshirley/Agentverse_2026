@@ -3,6 +3,7 @@ import { Icon } from '../Icon';
 import { Player } from '../../shared/types';
 import { PixelMascot } from '../PixelMascot';
 import { MarketView } from './marketView';
+import { pickFriends } from '../../shared/friends';
 
 interface AuctionStepCardProps {
   view: MarketView;
@@ -42,18 +43,19 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({ view, activePl
   // Step 2 Agent-Guided Handler: Locks window [L, H], seeds one friend bet per side and goes live
   const handleStep2LockWindowAndGoLive = async () => {
     const lVal = Number(quoteLInput) || 3;
+    const [friendAbove, friendBelow] = pickFriends(2, [activePlayer.id, market.mm_player_id]);
     await onDispatch(`/api/markets/${market.id}/auction/quote`, {
       playerId: market.mm_player_id || activePlayer.id,
       L: lVal,
     });
     // Seed a friend on each side, since a market with no takers voids when it locks
     await onDispatch(`/api/markets/${market.id}/take`, {
-      playerId: 'alex',
+      playerId: friendAbove,
       side: 'OVER',
       amount: 1,
     });
     await onDispatch(`/api/markets/${market.id}/take`, {
-      playerId: 'sam',
+      playerId: friendBelow,
       side: 'UNDER',
       amount: 1,
     });

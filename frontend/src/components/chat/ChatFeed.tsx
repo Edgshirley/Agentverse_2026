@@ -69,9 +69,9 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
 
   const handleSimulateFriendReply = async () => {
     const friendSamples = [
-      { playerId: 'alex', text: 'I want to make a market for pit stops in the F1 race tomorrow, 25 CHIP!' },
-      { playerId: 'sam', text: "I'm down! Let's bet 50 CHIP on whether it hits 24°C tomorrow." },
-      { playerId: 'jordan', text: 'Are we doing the Q4 team ranking bet with the boss as arbiter?' },
+      { playerId: 'michel', text: 'I want to make a market for pit stops in the F1 race tomorrow, 25 CHIP!' },
+      { playerId: 'nathalie', text: "I'm down! Let's bet 50 CHIP on whether it hits 24°C tomorrow." },
+      { playerId: 'andre', text: 'Are we doing the Q4 team ranking bet with the boss as arbiter?' },
     ];
     const pick = friendSamples[chatMessages.length % friendSamples.length];
     await onDispatch('/api/chat', pick);
@@ -94,6 +94,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
           {chatMessages.length}
         </span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {import.meta.env.DEV && (
           <button
             className="btn-sky"
             style={{ padding: '3px 8px' }}
@@ -103,6 +104,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
           >
             <Icon name="user-plus" size={14} />
           </button>
+          )}
           <span className="badge-outline" title="Invite code">
             <Icon name="link" size={12} />
             MARKETMATE-2026

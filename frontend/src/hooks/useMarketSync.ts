@@ -51,7 +51,7 @@ export interface TerminalStatePayload {
 export function useMarketSync() {
   const [data, setData] = useState<TerminalStatePayload | null>(null);
   const [selectedMarketId, setSelectedMarketId] = useState<string>('');
-  const [activePlayerId, setActivePlayerId] = useState<string>('you');
+  
   const [loading, setLoading] = useState<boolean>(true);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
 
@@ -118,8 +118,7 @@ export function useMarketSync() {
       setSelectedMarketId(id);
       fetchState(id);
     },
-    activePlayerId,
-    setActivePlayerId,
+    
     refresh: fetchState,
     dispatchAction,
   };

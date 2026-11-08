@@ -7,16 +7,20 @@ interface HeaderBarProps {
   group: Group;
   activePlayer: Player;
   theme: 'dark' | 'light';
-  onToggleTheme: () => void;
-  onResetDemo: () => void;
+    onToggleTheme: () => void;
+  playerSwitcher?: React.ReactNode;
+  onResetDemo?: () => void;
+
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
   group,
   activePlayer,
   theme,
-  onToggleTheme,
+    onToggleTheme,
+  playerSwitcher,
   onResetDemo,
+
 }) => {
   return (
     <header className="terminal-header">
@@ -31,6 +35,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
       {/* Your CHIP Balance & Theme */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {playerSwitcher}
+
         <div className="chip-wallet-badge">
           <Icon name="coins" size={15} />
           <span className="pixel-font">{activePlayer.wallet_balance_toks.toLocaleString()}</span>
@@ -53,6 +59,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         >
           <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
         </button>
+        {onResetDemo && (
         <button
           onClick={onResetDemo}
           style={{ padding: '6px 8px', color: 'var(--fg-muted)' }}
@@ -61,6 +68,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         >
           <Icon name="reload" />
         </button>
+        )}
       </div>
     </header>
   );

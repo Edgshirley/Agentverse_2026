@@ -5,7 +5,7 @@
   "type": "module",
   "description": "MarketMate — Deterministic Rules Engine, AI Pipeline & Hono API Server",
   "scripts": {
-    "dev": "npm run build && node scripts/run_server.mjs",
+    "dev": "npm run build && DEV_TOOLS=1 node scripts/run_server.mjs",
     "build": "tsc --noEmit && esbuild src/worker/index.ts --bundle --platform=node --format=esm --outfile=dist/worker.mjs && esbuild src/worker/sqlite_d1.ts --bundle --platform=node --format=esm --external:better-sqlite3 --outfile=dist/sqlite_d1.mjs",
     "start": "node scripts/run_server.mjs",
     "test": "vitest run",

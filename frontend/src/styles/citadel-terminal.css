@@ -384,6 +384,12 @@ button:disabled {
   background-color: var(--bg-panel);
 }
 
+.dev-player-switcher select {
+  padding: 4px 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .brand-lockup {
   display: inline-flex;
   align-items: center;

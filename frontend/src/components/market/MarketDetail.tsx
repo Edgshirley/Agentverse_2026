@@ -7,6 +7,7 @@ import { DepthGraph } from './DepthGraph';
 import { MarketActions } from './MarketActions';
 import { RaceTrack } from './RaceTrack';
 import { deriveMarketView } from './marketView';
+import { pickFriends } from '../../shared/friends';
 
 interface MarketDetailProps {
   activeBundle: ActiveMarketBundle;
@@ -69,8 +70,8 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
 
   // Simulate friend activity when requested
   const handleSimulateFriendActivity = async () => {
-    const friendNames = ['ALEX', 'SAM', 'JORDAN'];
-    const friendId = friendNames[Math.floor(Math.random() * friendNames.length)].toLowerCase();
+    const friendIds = pickFriends(3, [activePlayer.id, market.mm_player_id]);
+    const friendId = friendIds[Math.floor(Math.random() * friendIds.length)];
     const side = isSpread
       ? Math.random() > 0.5
         ? 'OVER'
@@ -179,9 +180,11 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
             }}
           >
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button style={{ fontSize: 11 }} onClick={handleSimulateFriendActivity}>
-                <Icon name="user-plus" size={13} /> FRIEND BET
-              </button>
+              {import.meta.env.DEV && (
+                <button style={{ fontSize: 11 }} onClick={handleSimulateFriendActivity}>
+                  <Icon name="user-plus" size={13} /> FRIEND BET
+                </button>
+              )}
               {isMarketCreator && (
                 <button style={{ fontSize: 11 }} onClick={handleCreatorToggleVisibility}>
                   {isGraphVisibleToGroup ? 'HIDE DEPTH GRAPH FOR ALL' : 'SHOW DEPTH GRAPH FOR ALL'}

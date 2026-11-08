@@ -4,6 +4,7 @@ import { Player } from '../../shared/types';
 import { PixelMascot } from '../PixelMascot';
 import { MarketView } from './marketView';
 import { pickFriends } from '../../shared/friends';
+import { OutsideOddsPanel } from './OutsideOddsPanel';
 
 interface AuctionStepCardProps {
   view: MarketView;
@@ -163,6 +164,8 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({
             <Icon name="arrow-down" size={14} /> {best ? 'UNDERCUT' : 'BID'}
           </button>
         </div>
+
+        <OutsideOddsPanel marketId={market.id} />
       </div>
     );
   }
@@ -222,6 +225,8 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({
             <Icon name="play" size={14} /> OPEN BETS
           </button>
         </div>
+
+        <OutsideOddsPanel marketId={market.id} />
       </div>
     );
   }

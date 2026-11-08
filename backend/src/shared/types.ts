@@ -187,6 +187,14 @@ export interface OutcomeProposal {
   created_at: number;
 }
 
+export interface OutsideOdds {
+  status: 'ok' | 'no_data' | 'unconfigured' | 'error';
+  summary?: string;
+  quotes: { source: string; value: string; detail?: string }[];
+  sources: { title: string; url: string }[];
+  fetched_at: number;
+}
+
 export interface ChatMessage {
   id: string;
   player_id: string;

@@ -32,8 +32,6 @@ The market's creator picks the payout mode. `k` is the stake per lot, `w = H - L
 
 An outcome exactly on `L` or `H` counts as inside the window. Yes/no and stacked markets skip the auction and go straight to betting.
 
-**Not yet in the UI:** bidding down (the first width confirmed wins, though the engine and `/sim` support the full auction) and choosing the log payout mode.
-
 ## Run it
 
 Needs Docker.
@@ -66,7 +64,7 @@ cd backend && npm test
 make api-test
 ```
 
-The bot works without keys using built-in rules. Set `GEMINI_API_KEY` or `OPENAI_API_KEY` on the engine for LLM parsing.
+The bot works without keys using built-in rules. Set `GEMINI_API_KEY` in `dev.env` or `prod.env` for LLM parsing and the outside-odds panel, which uses Google Search to show what other sites say about a market.
 
 ## Dev tools
 

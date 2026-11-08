@@ -118,6 +118,8 @@ services:
       - REDIS_HOST=${REDIS_HOST}
       - MESSAGE_BUS=${MESSAGE_BUS}
       - BUS_CHANNEL=${BUS_CHANNEL}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
     volumes:
       - ./backend:/app
       - /app/node_modules

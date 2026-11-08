@@ -9,6 +9,7 @@ import { ChatFeed, MascotWidgetAlert } from './components/chat/ChatFeed';
 import { LiveBetsList } from './components/chat/LiveBetsList';
 import { BetDrawer } from './components/market/BetDrawer';
 import { MarketDetail } from './components/market/MarketDetail';
+import { OutsideOddsPanel } from './components/market/OutsideOddsPanel';
 import {
   CAT_AVATAR_OPTIONS,
   CatAvatarId,
@@ -387,6 +388,9 @@ export const App: React.FC = () => {
               onOpenPanel={openPanel}
               onNewBet={startNewBet}
             />
+            {activeBundle && !['settled', 'void'].includes(activeBundle.market.state) && (
+              <OutsideOddsPanel marketId={activeBundle.market.id} />
+            )}
           </section>
           <section className="rail-bot" aria-label="Ask bot">
             <AskBotPanel

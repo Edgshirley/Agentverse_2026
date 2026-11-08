@@ -15,6 +15,7 @@ import {
   parseStrategyRuleWithRiskGate,
   runAgent1Intake,
   runAgent2Classifier,
+  getOutsideOdds,
 } from './agents';
 import { stepDeterministicReplay, toggleFeedDelayedStatus } from './replay';
 import { config } from '../config';
@@ -1124,6 +1125,16 @@ app.post('/api/agents/parse-strategy', async (c) => {
       advisoryFairValue: estimateAdvisoryFairValue(market),
       playerId: playerId || 'ana',
     });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+app.post('/api/agents/outside-odds', async (c) => {
+  try {
+    const { marketId, refresh } = await c.req.json<{ marketId: string; refresh?: boolean }>();
+    const market = globalStore.engine.getMarket(marketId);
+    return c.json(await getOutsideOdds(market, c.env, refresh === true));
   } catch (err: any) {
     return c.json({ error: err.message }, 400);
   }

@@ -7,7 +7,7 @@ import { DepthGraph } from './DepthGraph';
 import { MarketActions } from './MarketActions';
 import { RaceTrack } from './RaceTrack';
 import { deriveMarketView } from './marketView';
-import { pickFriends } from '../../shared/friends';
+import { OutcomePanel } from './OutcomePanel';
 
 interface MarketDetailProps {
   activeBundle: ActiveMarketBundle;
@@ -20,7 +20,6 @@ interface MarketDetailProps {
   onToggleUnitLadder: (show: boolean) => void;
   onSelectMarket: (marketId: string) => void;
   onDispatch: (path: string, body?: Record<string, any>) => Promise<any>;
-  standInFriends: boolean;
 }
 
 export const MarketDetail: React.FC<MarketDetailProps> = ({
@@ -34,10 +33,9 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
   onToggleUnitLadder,
   onSelectMarket,
   onDispatch,
-  standInFriends,
 }) => {
   const [showAdminDrawer, setShowAdminDrawer] = useState<boolean>(false);
-  const [outcomeInput, setOutcomeInput] = useState<string>('5');
+  const [outcomeInput, setOutcomeInput] = useState<string>('');
 
   const view = useMemo(
     () => deriveMarketView(activeBundle, activePlayer),
@@ -46,14 +44,8 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
   const { market, isSpread, unitLabel, totalPotChip } = view;
 
   useEffect(() => {
-    if (market.unit === 'pit stops' || market.unit === 'laps') {
-      setOutcomeInput('5');
-    } else if (market.unit === 'min') {
-      setOutcomeInput('48');
-    } else {
-      setOutcomeInput('24');
-    }
-  }, [market.id, market.unit]);
+    setOutcomeInput('');
+  }, [market.id]);
 
   // Only the market creator can toggle whether everyone sees the depth graph
   const isMarketCreator = market.proposer_id === activePlayer.id;
@@ -72,33 +64,6 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
     });
   };
 
-  // Simulate friend activity when requested
-  const handleSimulateFriendActivity = async () => {
-    const friendIds = pickFriends(3, [activePlayer.id, market.mm_player_id]);
-    const friendId = friendIds[Math.floor(Math.random() * friendIds.length)];
-    const side = isSpread
-      ? Math.random() > 0.5
-        ? 'OVER'
-        : 'UNDER'
-      : Math.random() > 0.45
-        ? 'NO'
-        : 'YES';
-    await onDispatch(`/api/markets/${market.id}/take`, {
-      playerId: friendId,
-      side,
-      amount: isSpread ? 1 : market.lot_stake_k,
-    });
-    const center = isSpread ? market.L ?? 3 : 24;
-    const lvl = side === 'YES' || side === 'OVER' ? center + 1 : Math.max(1, center - 1);
-    await onDispatch(`/api/markets/${market.id}/orders`, {
-      playerId: friendId,
-      side,
-      type: side === 'YES' || side === 'OVER' ? 'limit_buy' : 'stop_loss',
-      triggerLevel: lvl,
-      sizeToks: market.lot_stake_k,
-    });
-  };
-
   if (isSpread && (market.state === 'width_auction' || market.state === 'quoting')) {
     return (
       <AuctionStepCard
@@ -107,7 +72,6 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
         players={players}
         wallClockMs={wallClockMs}
         onDispatch={onDispatch}
-        standInFriends={standInFriends}
       />
     );
   }
@@ -141,9 +105,10 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
           <div>
             <div className="pixel-font" style={{ fontSize: 10, color: 'var(--fg-muted)' }}>
               {isSpread
-                ? `WINDOW MARKET [${market.L ?? 3} .. ${market.H ?? 5}] ${unitLabel.toUpperCase()}`
+                ? `WINDOW MARKET [${market.L} .. ${market.H}] ${unitLabel.toUpperCase()}`
                 : `${market.archetype.toUpperCase()} MARKET`}{' '}
               · POT: {totalPotChip} CHIP
+              {market.origin === 'preset' && <span className="source-badge preset">PRESET</span>}
             </div>
             <div style={{ fontSize: 17, fontWeight: 700, marginTop: 2 }}>
               {market.question.replace(/TOKS/gi, 'CHIP')}
@@ -164,6 +129,7 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
                 ))}
               </select>
             )}
+            {(isMarketCreator || import.meta.env.DEV) && (
             <button
               style={{ padding: '5px 8px' }}
               onClick={() => setShowAdminDrawer((v) => !v)}
@@ -174,6 +140,7 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
               <Icon name="sliders" size={14} />
               <Icon name={showAdminDrawer ? 'chevron-up' : 'chevron-down'} size={14} />
             </button>
+            )}
           </div>
         </div>
 
@@ -193,11 +160,6 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
             }}
           >
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {import.meta.env.DEV && standInFriends && (
-                <button style={{ fontSize: 11 }} onClick={handleSimulateFriendActivity}>
-                  <Icon name="user-plus" size={13} /> FRIEND BET
-                </button>
-              )}
               {isMarketCreator && (
                 <button style={{ fontSize: 11 }} onClick={handleCreatorToggleVisibility}>
                   {isGraphVisibleToGroup ? 'HIDE DEPTH GRAPH FOR ALL' : 'SHOW DEPTH GRAPH FOR ALL'}
@@ -211,23 +173,31 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
                   TIMER 00:{mins}:{secs}
                 </span>
               )}
-              <input
-                type="number"
-                value={outcomeInput}
-                onChange={(e) => setOutcomeInput(e.target.value)}
-                style={{ width: 60, padding: '4px 6px', fontSize: 11 }}
-              />
-              <button
-                className="btn-inverted pixel-font"
-                style={{ fontSize: 10, padding: '5px 10px' }}
-                onClick={() =>
-                  onDispatch(`/api/markets/${market.id}/resolve/settle`, {
-                    outcomeX: Number(outcomeInput),
-                  })
-                }
-              >
-                <Icon name="flag" size={12} /> {outcomeInput} {unitLabel}
-              </button>
+              {import.meta.env.DEV && (
+                <>
+                  <span className="source-badge preset">DEV</span>
+                  <input
+                    type="number"
+                    value={outcomeInput}
+                    onChange={(e) => setOutcomeInput(e.target.value)}
+                    placeholder="result"
+                    style={{ width: 70, padding: '4px 6px', fontSize: 11 }}
+                  />
+                  <button
+                    className="btn-inverted pixel-font"
+                    style={{ fontSize: 10, padding: '5px 10px' }}
+                    disabled={outcomeInput.trim() === ''}
+                    title="Settle by hand (dev only)"
+                    onClick={() =>
+                      onDispatch(`/api/markets/${market.id}/resolve/settle`, {
+                        outcomeX: Number(outcomeInput),
+                      })
+                    }
+                  >
+                    <Icon name="flag" size={12} /> SETTLE
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -251,6 +221,14 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
             onDispatch={onDispatch}
           />
         )}
+
+        <OutcomePanel
+          market={market}
+          proposal={activeBundle.proposal}
+          activePlayer={activePlayer}
+          serverClockMs={serverClockMs}
+          onDispatch={onDispatch}
+        />
       </div>
     </div>
   );

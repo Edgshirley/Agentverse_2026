@@ -119,7 +119,7 @@ services:
       - MESSAGE_BUS=${MESSAGE_BUS}
       - BUS_CHANNEL=${BUS_CHANNEL}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash}
     volumes:
       - ./backend:/app
       - /app/node_modules

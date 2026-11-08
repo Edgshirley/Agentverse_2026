@@ -34,6 +34,7 @@ import { Trophy } from 'pixelarticons/react/Trophy.js';
 import { Undo } from 'pixelarticons/react/Undo.js';
 import { User } from 'pixelarticons/react/User.js';
 import { UserPlus } from 'pixelarticons/react/UserPlus.js';
+import { Users } from 'pixelarticons/react/Users.js';
 import { Wallet } from 'pixelarticons/react/Wallet.js';
 import { Zap } from 'pixelarticons/react/Zap.js';
 
@@ -73,6 +74,7 @@ const ICONS = {
   undo: Undo,
   user: User,
   'user-plus': UserPlus,
+  users: Users,
   wallet: Wallet,
   zap: Zap,
 };

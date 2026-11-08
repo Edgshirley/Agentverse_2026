@@ -2,6 +2,12 @@ import React from 'react';
 import { Icon } from '../Icon';
 import { AskBot } from '../../hooks/useAskBot';
 
+const PRESET_BETS = [
+  { label: 'F1 pit stops', icon: 'car', text: 'How many pit stops will the F1 race winner make, 25 chips' },
+  { label: 'Temperature', icon: 'thermometer', text: 'I bet it will be 24°C tomorrow, 50 chips' },
+  { label: 'Company', icon: 'building', text: 'Internal company bet: Q4 team ranking, boss decides, 40 chips' },
+] as const;
+
 export const BotPromptBox: React.FC<{ bot: AskBot }> = ({ bot }) => {
   const {
     intentMode,
@@ -9,95 +15,32 @@ export const BotPromptBox: React.FC<{ bot: AskBot }> = ({ bot }) => {
     setProposeInput,
     strategyInput,
     setStrategyInput,
-    allMarkets,
-    activeMarket,
-    betUnitLabel,
     handleSendToBot,
     isProcessing,
   } = bot;
 
   return (
     <div className="pastel-card" style={{ width: '100%' }}>
-      <div
-        style={{
-          display: 'flex',
-          gap: 8,
-          flexWrap: 'wrap',
-          marginBottom: 14,
-          alignItems: 'center',
-        }}
-      >
-        <span className="preset-label-badge">
-          <Icon name="star" size={12} />
-        </span>
-        {intentMode === 'propose' ? (
-          <>
+      {import.meta.env.DEV && intentMode === 'propose' && (
+        <div className="preset-row">
+          <span className="preset-label-badge" title="Dev only. Keyword rules, no AI call.">
+            PRESET
+          </span>
+          {PRESET_BETS.map((preset) => (
             <button
+              key={preset.label}
               className="preset-pill-btn"
-              onClick={() =>
-                setProposeInput(
-                  'I want to make a market for pit stops in the f1 race tomorrow'
-                )
-              }
+              disabled={isProcessing}
+              onClick={() => {
+                setProposeInput(preset.text);
+                handleSendToBot('propose', preset.text, true);
+              }}
             >
-              <Icon name="car" size={13} /> F1 pit stops
+              <Icon name={preset.icon} size={13} /> {preset.label}
             </button>
-            <button
-              className="preset-pill-btn"
-              onClick={() => setProposeInput('I bet it will be 24°C tomorrow, 50 CHIP')}
-            >
-              <Icon name="thermometer" size={13} /> 24°C
-            </button>
-            <button
-              className="preset-pill-btn"
-              onClick={() =>
-                setProposeInput(
-                  'Internal company bet: Q4 team performance ranking, boss inputs answer after countdown, 40 CHIP'
-                )
-              }
-            >
-              <Icon name="building" size={13} /> Company
-            </button>
-            {allMarkets.length > 0 && (
-              <button
-                className="preset-pill-btn"
-                onClick={() =>
-                  setProposeInput(
-                    `Stacked bet: Will "${allMarkets[0].question}" hit 26? 30 CHIP`
-                  )
-                }
-              >
-                <Icon name="link" size={13} /> Stack
-              </button>
-            )}
-          </>
-        ) : (
-          <>
-            <button
-              className="preset-pill-btn"
-              onClick={() =>
-                setStrategyInput(
-                  `Bet 50 CHIP on ${
-                    activeMarket?.archetype === 'spread' ? 'ABOVE' : 'YES'
-                  }, sell at ${
-                    betUnitLabel === 'pit stops' ? '6' : '27'
-                  } ${betUnitLabel}, stop me out if it drops to ${
-                    betUnitLabel === 'pit stops' ? '2' : '21'
-                  } ${betUnitLabel}`
-                )
-              }
-            >
-              <Icon name="zap" size={13} /> Full plan
-            </button>
-            <button
-              className="preset-pill-btn"
-              onClick={() => setStrategyInput('Put 100 CHIP in right now with no stops')}
-            >
-              <Icon name="shield" size={13} /> No stops
-            </button>
-          </>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 10 }}>
         <textarea
@@ -111,7 +54,7 @@ export const BotPromptBox: React.FC<{ bot: AskBot }> = ({ bot }) => {
           }
           placeholder={
             intentMode === 'propose'
-              ? 'Describe your bet...'
+              ? 'Describe a bet, e.g. minutes to the first pit stop today, spread 10'
               : 'Strategy, sell level, stop level...'
           }
           style={{ flex: 1, padding: '10px 12px', fontSize: 13.5 }}

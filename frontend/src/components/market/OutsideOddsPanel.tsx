@@ -1,15 +1,17 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '../Icon';
-import { OutsideOdds } from '../../shared/types';
+import { Market, OutsideOdds } from '../../shared/types';
 
 const MESSAGES: Record<Exclude<OutsideOdds['status'], 'ok'>, string> = {
-  no_data: 'No odds found elsewhere for this one.',
-  unconfigured: 'Add a Gemini key on the engine to see odds from other sites.',
-  error: "Couldn't search for odds. Try again in a minute.",
+  no_data: 'Nothing useful found on the web for this one.',
+  unconfigured: 'The bot needs a Gemini key on the server to search the web.',
+  error: "Couldn't search the web. Try again in a minute.",
 };
 
-/** What the rest of the web thinks, so friends can price a bet with some context. */
-export const OutsideOddsPanel: React.FC<{ marketId: string }> = ({ marketId }) => {
+/** The bot's web briefing, so every bidder decides with the same facts. */
+export const OutsideOddsPanel: React.FC<{ market: Market }> = ({ market }) => {
+  const marketId = market.id;
+  const isPreset = market.origin === 'preset';
   const [odds, setOdds] = useState<OutsideOdds | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const latestRequest = useRef(0);
@@ -40,15 +42,23 @@ export const OutsideOddsPanel: React.FC<{ marketId: string }> = ({ marketId }) =
   );
 
   useEffect(() => {
-    void load(false);
-  }, [load]);
+    if (!isPreset) void load(false);
+  }, [load, isPreset]);
+
+  if (isPreset) {
+    return (
+      <section className="pastel-card odds-panel" aria-label="Bot briefing">
+        <span className="source-badge preset">PRESET · NO WEB SEARCH</span>
+      </section>
+    );
+  }
 
   return (
-    <section className="pastel-card odds-panel" aria-label="Odds from other sites">
+    <section className="pastel-card odds-panel" aria-label="Bot briefing">
       <div className="odds-panel-head">
         <span className="pixel-font icon-label">
           <Icon name="zap" size={13} />
-          OUTSIDE ODDS
+          BOT BRIEFING
         </span>
         <button
           onClick={() => load(true)}
@@ -60,13 +70,20 @@ export const OutsideOddsPanel: React.FC<{ marketId: string }> = ({ marketId }) =
         </button>
       </div>
 
-      {loading && !odds && <p className="auction-hint">Checking other sites...</p>}
+      {loading && !odds && <p className="auction-hint">Searching the web...</p>}
 
       {odds && odds.status !== 'ok' && <p className="auction-hint">{MESSAGES[odds.status]}</p>}
 
       {odds?.status === 'ok' && (
         <>
           {odds.summary && <p className="odds-summary">{odds.summary}</p>}
+          {odds.facts && odds.facts.length > 0 && (
+            <ul className="odds-facts">
+              {odds.facts.map((fact) => (
+                <li key={fact}>{fact}</li>
+              ))}
+            </ul>
+          )}
           {odds.quotes.length > 0 && (
             <ul className="odds-quotes">
               {odds.quotes.map((quote) => (

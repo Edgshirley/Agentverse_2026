@@ -24,7 +24,7 @@ export const MarketActions: React.FC<MarketActionsProps> = ({
     players.find((p) => p.id === market.mm_player_id)?.nickname ?? 'The market maker';
 
   const [showCustomWithdraw, setShowCustomWithdraw] = useState<boolean>(false);
-  const [withdrawValue, setWithdrawValue] = useState<string>('25');
+  const [withdrawValue, setWithdrawValue] = useState<string>('');
   const [withdrawMode, setWithdrawMode] = useState<'CHIP' | '%'>('CHIP');
 
   useEffect(() => {
@@ -84,7 +84,7 @@ export const MarketActions: React.FC<MarketActionsProps> = ({
                 })
               }
             >
-              <Icon name="arrow-up" size={15} /> &gt; {market.H ?? 5} {unitLabel} · {market.lot_stake_k} CHIP
+              <Icon name="arrow-up" size={15} /> &gt; {market.H} {unitLabel} · {market.lot_stake_k} CHIP
             </button>
             <button
               className="btn-coral pixel-font"
@@ -97,7 +97,7 @@ export const MarketActions: React.FC<MarketActionsProps> = ({
                 })
               }
             >
-              <Icon name="arrow-down" size={15} /> &lt; {market.L ?? 3} {unitLabel} · {market.lot_stake_k} CHIP
+              <Icon name="arrow-down" size={15} /> &lt; {market.L} {unitLabel} · {market.lot_stake_k} CHIP
             </button>
           </>
         ) : (

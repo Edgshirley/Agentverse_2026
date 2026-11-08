@@ -11,7 +11,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
-import { app, closeExpiredAuctions, globalStore } from '../dist/worker.mjs';
+import { app, globalStore, runMarketTimers } from '../dist/worker.mjs';
 import { createSqliteD1Database } from '../dist/sqlite_d1.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -38,9 +38,10 @@ const hydrated =
   (await globalStore.hydrateFromPostgresOrRedis()) ||
   (await globalStore.hydrateFromD1({ ...process.env, DB: sqliteDb }));
 
-// Auctions end on a real-time deadline, even when nobody is polling
+// Auctions, challenge windows and bot checks run on real time, even when nobody is polling
+globalStore.enableWallClock();
 setInterval(() => {
-  closeExpiredAuctions({ ...process.env, DB: sqliteDb }).catch(() => undefined);
+  runMarketTimers({ ...process.env, DB: sqliteDb }).catch(() => undefined);
 }, 1000);
 
 const server = http.createServer(async (req, res) => {

@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useServerCountdown } from '../../hooks/useServerCountdown';
 import { Icon } from '../Icon';
 import { Player } from '../../shared/types';
 import { PixelMascot } from '../PixelMascot';
 import { MarketView } from './marketView';
-import { pickFriends } from '../../shared/friends';
 import { OutsideOddsPanel } from './OutsideOddsPanel';
 
 interface AuctionStepCardProps {
@@ -12,18 +12,6 @@ interface AuctionStepCardProps {
   players: Player[];
   wallClockMs: number;
   onDispatch: (path: string, body?: Record<string, any>) => Promise<any>;
-  /** False behind the gateway: real friends bet, and the market stays open for them. */
-  standInFriends: boolean;
-}
-
-function defaultWidth(unit: string): number {
-  if (unit === 'pit stops' || unit === 'laps') return 2;
-  return unit === 'min' ? 8 : 4;
-}
-
-function defaultStart(unit: string): number {
-  if (unit === 'pit stops' || unit === 'laps') return 3;
-  return unit === 'min' ? 35 : 22;
 }
 
 /** The two steps a window market goes through before friends can bet. */
@@ -33,7 +21,6 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({
   players,
   wallClockMs,
   onDispatch,
-  standInFriends,
 }) => {
   const { market, unitLabel, widthBids } = view;
 
@@ -45,36 +32,20 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({
   const nameOf = (id: string | null | undefined) =>
     players.find((p) => p.id === id)?.nickname ?? (id ?? '').toUpperCase();
 
-  const [widthInput, setWidthInput] = useState<string>(String(defaultWidth(market.unit)));
-  const [startInput, setStartInput] = useState<string>(String(defaultStart(market.unit)));
+  const [widthInput, setWidthInput] = useState<string>('');
+  const [startInput, setStartInput] = useState<string>('');
 
   // Offer the next undercut as soon as someone narrows the window
   useEffect(() => {
-    if (best) setWidthInput(String(Math.max(1, best.width - 1)));
-    else setWidthInput(String(defaultWidth(market.unit)));
-  }, [best?.width, market.id, market.unit]);
+    setWidthInput(best ? String(Math.max(1, best.width - 1)) : '');
+  }, [best?.width, market.id]);
 
   useEffect(() => {
-    setStartInput(String(defaultStart(market.unit)));
-  }, [market.id, market.unit]);
+    setStartInput('');
+  }, [market.id]);
 
   // The deadline is server time, so everyone at the table sees the same countdown
-  const clockOffsetRef = useRef(0);
-  useEffect(() => {
-    clockOffsetRef.current = wallClockMs - Date.now();
-  }, [wallClockMs]);
-
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => setTick((t) => t + 1), 250);
-    return () => clearInterval(timer);
-  }, []);
-
-  const deadline = market.auction_closes_at_wall_ms ?? null;
-  const secondsLeft =
-    deadline == null
-      ? null
-      : Math.max(0, Math.ceil((deadline - (Date.now() + clockOffsetRef.current)) / 1000));
+  const secondsLeft = useServerCountdown(market.auction_closes_at_wall_ms ?? null, wallClockMs);
 
   const parsedWidth = Math.floor(Number(widthInput));
   const canBid =
@@ -86,27 +57,11 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({
       width: parsedWidth,
     });
 
-  const setWindow = async () => {
-    const lower = Number(startInput) || 0;
-    await onDispatch(`/api/markets/${market.id}/auction/quote`, {
+  const setWindow = () =>
+    onDispatch(`/api/markets/${market.id}/auction/quote`, {
       playerId: activePlayer.id,
-      L: lower,
+      L: Number(startInput),
     });
-    if (!standInFriends) return;
-    // Without the gateway there is nobody else here, so seed one bet per side and go live
-    const [friendAbove, friendBelow] = pickFriends(2, [activePlayer.id, market.mm_player_id]);
-    await onDispatch(`/api/markets/${market.id}/take`, {
-      playerId: friendAbove,
-      side: 'OVER',
-      amount: 1,
-    });
-    await onDispatch(`/api/markets/${market.id}/take`, {
-      playerId: friendBelow,
-      side: 'UNDER',
-      amount: 1,
-    });
-    await onDispatch(`/api/markets/${market.id}/lock-takes`, { playerId: activePlayer.id });
-  };
 
   if (market.state === 'width_auction') {
     return (
@@ -165,14 +120,15 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({
           </button>
         </div>
 
-        <OutsideOddsPanel marketId={market.id} />
+        <OutsideOddsPanel market={market} />
       </div>
     );
   }
 
   if (market.state === 'quoting') {
     const width = market.active_width_w ?? 0;
-    const lower = Number(startInput) || 0;
+    const hasStart = startInput.trim() !== '' && Number.isFinite(Number(startInput));
+    const lower = Number(startInput);
     const upper = lower + width;
 
     if (!isMarketMaker) {
@@ -205,7 +161,9 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({
         </div>
 
         <p className="auction-hint">
-          Friends bet above {upper} or below {lower}. Anything inside pays you.
+          {hasStart
+            ? `Friends bet above ${upper} or below ${lower}. Anything inside pays you.`
+            : `Allowed range: ${market.bounds[0]} to ${market.bounds[1]} ${unitLabel}.`}
         </p>
 
         <div className="auction-form">
@@ -219,14 +177,14 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({
             onChange={(e) => setStartInput(e.target.value)}
           />
           <span className="badge-outline pixel-font">
-            [{lower} .. {upper}] {unitLabel}
+            {hasStart ? `[${lower} .. ${upper}]` : '[L .. H]'} {unitLabel}
           </span>
-          <button className="btn-mint pixel-font" onClick={setWindow}>
+          <button className="btn-mint pixel-font" disabled={!hasStart} onClick={setWindow}>
             <Icon name="play" size={14} /> OPEN BETS
           </button>
         </div>
 
-        <OutsideOddsPanel marketId={market.id} />
+        <OutsideOddsPanel market={market} />
       </div>
     );
   }

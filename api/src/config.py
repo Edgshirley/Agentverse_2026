@@ -27,7 +27,7 @@ class Configuration:
 
     # Internal URL of the TypeScript rules engine (never exposed publicly)
     ENGINE_URL: str = os.getenv("ENGINE_URL", "http://engine:4000")
-    ENGINE_TIMEOUT_SECONDS: float = float(os.getenv("ENGINE_TIMEOUT_SECONDS") or 30)
+    ENGINE_TIMEOUT_SECONDS: float = float(os.getenv("ENGINE_TIMEOUT_SECONDS") or 150)
 
     # Database Configuration
     POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "localhost")

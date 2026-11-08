@@ -37,7 +37,7 @@ describe('Outside odds', () => {
   });
 
   it('asks Gemini with search grounding and keeps the key out of the URL', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(geminiReply(grounded, [chunk]));
+    const fetchMock = vi.fn().mockImplementation(async () => geminiReply(grounded, [chunk]));
     vi.stubGlobal('fetch', fetchMock);
 
     const result = await getOutsideOdds(market(), env);
@@ -49,21 +49,27 @@ describe('Outside odds', () => {
     expect(body.tools).toEqual([{ google_search: {} }]);
     expect(body.generationConfig.responseMimeType).toBeUndefined();
 
+    const formatting = JSON.parse(fetchMock.mock.calls[1][1].body);
+    expect(formatting.tools).toBeUndefined();
+    expect(formatting.generationConfig.responseMimeType).toBe('application/json');
+
     expect(result.status).toBe('ok');
     expect(result.quotes).toEqual([{ source: 'Polymarket', value: '58%', detail: undefined }]);
     expect(result.sources).toEqual([{ title: 'example.com', url: 'https://example.com/odds' }]);
   });
 
   it('refuses to show numbers that have no web sources behind them', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(geminiReply(grounded, [])));
+    const fetchMock = vi.fn().mockImplementation(async () => geminiReply(grounded, []));
+    vi.stubGlobal('fetch', fetchMock);
     const result = await getOutsideOdds(market(), env);
+    expect(fetchMock).toHaveBeenCalledTimes(1); // no point formatting unsourced notes
     expect(result.status).toBe('no_data');
     expect(result.quotes).toEqual([]);
   });
 
   it('drops source links that are not plain https', async () => {
     const bad = { web: { uri: 'javascript:alert(1)', title: 'bad' } };
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(geminiReply(grounded, [bad, chunk])));
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => geminiReply(grounded, [bad, chunk])));
     const result = await getOutsideOdds(market(), env);
     expect(result.sources.map((s) => s.url)).toEqual(['https://example.com/odds']);
   });
@@ -75,10 +81,10 @@ describe('Outside odds', () => {
     await Promise.all([getOutsideOdds(market(), env), getOutsideOdds(market(), env)]);
     await getOutsideOdds(market(), env);
     await getOutsideOdds(market(), env, true); // too soon to refresh
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2); // research, then formatting
 
     await getOutsideOdds(market('m2'), env);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
   it('reports Gemini failures as an error', async () => {

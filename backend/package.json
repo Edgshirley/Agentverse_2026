@@ -5,7 +5,7 @@
   "type": "module",
   "description": "MarketMate — Deterministic Rules Engine, internal Hono service behind the FastAPI gateway",
   "scripts": {
-    "dev": "npm run build && DEV_TOOLS=1 node scripts/run_server.mjs",
+    "dev": "npm run build && DEV_TOOLS=1 node --env-file-if-exists=.env scripts/run_server.mjs",
     "build": "tsc --noEmit && esbuild src/worker/index.ts --bundle --platform=node --packages=external --format=esm --outfile=dist/worker.mjs && esbuild src/worker/sqlite_d1.ts --bundle --platform=node --packages=external --format=esm --outfile=dist/sqlite_d1.mjs",
     "start": "node scripts/run_server.mjs",
     "test": "vitest run",

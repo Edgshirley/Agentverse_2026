@@ -88,7 +88,8 @@ export class ResolutionEngine {
     market: Market,
     proposerId: string,
     proposedX: number,
-    sourceUrl: string = 'internal://oracle'
+    sourceUrl: string = 'internal://oracle',
+    details: Pick<OutcomeProposal, 'explanation' | 'sources'> = {}
   ): { market: Market; proposal: OutcomeProposal; readyToSettleImmediately: boolean } {
     if (market.state === 'settled' || market.state === 'void') {
       throw new ResolutionError(`Market ${market.id} is already ${market.state}`);
@@ -141,6 +142,7 @@ export class ResolutionEngine {
       status: 'pending',
       votes: { [proposerId]: proposedX },
       created_at: now,
+      ...details,
     };
 
     this.proposalsByMarket.set(market.id, proposal);

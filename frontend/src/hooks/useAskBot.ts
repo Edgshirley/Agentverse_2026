@@ -46,33 +46,32 @@ export function useAskBot({
   const [gateError, setGateError] = useState<string | null>(null);
 
   // Market Creation (Agent 1 Intake -> Agent 2 Classifier)
-  const [proposeInput, setProposeInput] = useState<string>(
-    'I want to make a market for pit stops in the f1 race tomorrow'
-  );
+  const [proposeInput, setProposeInput] = useState<string>('');
   const [draft, setDraft] = useState<DraftMarketProposal | null>(null);
   const [classification, setClassification] = useState<ClassifyMarketProposal | null>(null);
+  const [draftSource, setDraftSource] = useState<'gemini' | 'preset'>('gemini');
+  const [draftSources, setDraftSources] = useState<{ title: string; url: string }[]>([]);
+  const [openingWidth, setOpeningWidth] = useState<string>('');
 
   // In-House Rules for Linear / Window (Spread) Markets & Creator Visibility Option
   const [inHousePayoffMode, setInHousePayoffMode] = useState<PayoffMode>('linear');
   const [inHouseCapC, setInHouseCapC] = useState<string>('3');
   const [inHouseLotStake, setInHouseLotStake] = useState<string>('25');
-  const [inHouseUnit, setInHouseUnit] = useState<string>('pit stops');
+  const [inHouseUnit, setInHouseUnit] = useState<string>('');
   const [creatorShowPositionsToAll, setCreatorShowPositionsToAll] = useState<boolean>(true);
   const [showCustomizeRules, setShowCustomizeRules] = useState<boolean>(false);
 
   // Custom Arbiter & Stacked Options
-  const [arbiterName, setArbiterName] = useState<string>('BOSS');
+  const [arbiterName, setArbiterName] = useState<string>('');
   const [countdownMins, setCountdownMins] = useState<string>('15');
   const [parentMarketId, setParentMarketId] = useState<string>(activeMarket?.id ?? '');
 
   // Strategy & Mandatory Risk Gate (in terms of the unit being bet)
-  const [strategyInput, setStrategyInput] = useState<string>(
-    'Bet 50 CHIP on ABOVE, sell at 6 pit stops, stop me out if it drops to 2 pit stops'
-  );
+  const [strategyInput, setStrategyInput] = useState<string>('');
   const [parsedRule, setParsedRule] = useState<ParseRuleProposal | null>(null);
   const [showRiskGateCard, setShowRiskGateCard] = useState<boolean>(false);
   const [summaryField, setSummaryField] = useState<string>('');
-  const [stakeField, setStakeField] = useState<string>('50');
+  const [stakeField, setStakeField] = useState<string>('');
   const [sideField, setSideField] = useState<string>('OVER');
   const [tpField, setTpField] = useState<string>('');
   const [floorField, setFloorField] = useState<string>('');
@@ -126,9 +125,11 @@ export function useAskBot({
 
   const handleSendToBot = async (
     modeOverride?: 'propose' | 'strategy',
-    textOverride?: string
+    textOverride?: string,
+    preset: boolean = false
   ) => {
     const mode = modeOverride ?? intentMode;
+    if (!(textOverride ?? (mode === 'propose' ? proposeInput : strategyInput)).trim()) return;
     setGateError(null);
     setIsProcessing(true);
 
@@ -139,6 +140,7 @@ export function useAskBot({
         const res = await onDispatch('/api/agents/intake', {
           prompt: rawText,
           playerId: activePlayer.id,
+          preset,
         });
         const d: DraftMarketProposal = res.draft;
         const c: ClassifyMarketProposal = res.classification;
@@ -147,17 +149,10 @@ export function useAskBot({
         sfx.playCatAlert();
         setInHousePayoffMode(c.archetype === 'spread' ? 'linear' : d.payoff_mode || 'pot');
         setInHouseLotStake(String(d.lot_stake_k || 25));
-        setInHouseUnit(
-          d.unit && d.unit !== '%'
-            ? d.unit
-            : /pit|f1|race/i.test(rawText)
-              ? 'pit stops'
-              : /°c|deg|temp/i.test(rawText)
-                ? '°C'
-                : /min|goal|score/i.test(rawText)
-                  ? 'min'
-                  : 'units'
-        );
+        setInHouseUnit(d.unit);
+        setOpeningWidth(d.opening_width != null ? String(d.opening_width) : '');
+        setDraftSource(res.source === 'preset' ? 'preset' : 'gemini');
+        setDraftSources(res.sources ?? []);
       } else {
         if (!activeMarket) {
           setIntentMode('propose');
@@ -180,7 +175,7 @@ export function useAskBot({
         const prop: ParseRuleProposal = res.proposal;
         setParsedRule(prop);
         setSummaryField((prop.parsed_strategy_summary || '').replace(/TOKS/g, 'CHIP'));
-        setStakeField(String(prop.stake_toks || 50));
+        setStakeField(String(prop.stake_toks));
         setSideField(prop.side);
         setTpField(prop.take_profit_level != null ? String(prop.take_profit_level) : '');
         setFloorField(prop.min_balance_floor != null ? String(prop.min_balance_floor) : '');
@@ -198,25 +193,10 @@ export function useAskBot({
     setGateError(null);
     setIsProcessing(true);
     try {
-      const q = draft.question;
-      const finalUnit =
-        inHouseUnit.trim() ||
-        (/pit|f1/i.test(q)
-          ? 'pit stops'
-          : /°c|deg/i.test(q)
-            ? '°C'
-            : /min|goal/i.test(q)
-              ? 'min'
-              : draft.unit);
-
-      const finalBounds: [number, number] =
-        finalUnit === 'pit stops'
-          ? [0, 12]
-          : finalUnit === '°C'
-            ? [15, 32]
-            : finalUnit === 'min'
-              ? [0, 95]
-              : draft.bounds;
+      if (classification.route === 'arbiter' && !arbiterName.trim()) {
+        setGateError('Name who decides this bet.');
+        return;
+      }
 
       // Apply the Market Creator's visibility choice globally & on the market object
       onToggleUnitLadder(creatorShowPositionsToAll);
@@ -225,17 +205,23 @@ export function useAskBot({
         proposer_id: activePlayer.id,
         archetype: classification.archetype,
         question: draft.question.replace(/TOKS/gi, 'CHIP'),
-        unit: finalUnit,
-        bounds: finalBounds,
+        unit: inHouseUnit.trim() || draft.unit,
+        bounds: draft.bounds,
+        origin: draftSource === 'preset' ? 'preset' : 'live',
+        resolves_at_ms: draft.resolves_at_ms ?? null,
+        opening_width:
+          classification.archetype === 'spread' && Number(openingWidth) > 0
+            ? Number(openingWidth)
+            : undefined,
         no_event_value: draft.no_event_value,
         criteria: draft.criteria,
         resolution_source: draft.resolution_source,
         payoff_mode: classification.archetype === 'spread' ? inHousePayoffMode : draft.payoff_mode,
-        lot_stake_k: Number(inHouseLotStake) || draft.lot_stake_k || 25,
+        lot_stake_k: Number(inHouseLotStake) || draft.lot_stake_k,
         cap_widths_c: Number(inHouseCapC) || 3,
         verifiability: classification.verifiability,
         route: classification.route,
-        arbiter_id: classification.route === 'arbiter' ? arbiterName.trim() || 'boss' : null,
+        arbiter_id: classification.route === 'arbiter' ? arbiterName.trim() : null,
         countdown_ends_at:
           classification.route === 'arbiter'
             ? Date.now() + Number(countdownMins || 15) * 60 * 1000
@@ -249,7 +235,9 @@ export function useAskBot({
         parent_trigger_target:
           classification.archetype === 'stacked' ? draft.parent_trigger_target ?? 75 : null,
         live_implied_value:
-          finalUnit === 'pit stops' ? 4 : finalUnit === '°C' ? 24 : 50,
+          classification.archetype === 'spread'
+            ? (draft.bounds[0] + draft.bounds[1]) / 2
+            : 50,
         toggles: {
           max_lots: 3,
           forced_trading: false,
@@ -268,22 +256,8 @@ export function useAskBot({
       setDraft(null);
       setClassification(null);
 
-      // A Linear Window (Spread) market opens its bet drawer so friends can bid
-      // on the Window Width [L, H], the Window Winner selects the window, and players bet Above & Below!
-      if (createdMarket?.archetype === 'spread') {
-        onOpenPanel('bet');
-        return;
-      }
-
-      // Otherwise for a Simple/Stacked market, flow into the 3-Part Strategy & Risk Tolerance Confirmation Card
-      setIntentMode('strategy');
-      const isDeg = createdMarket?.unit === '°C';
-      setSummaryField(`YES ${createdMarket?.lot_stake_k ?? 50} CHIP`);
-      setStakeField(String(createdMarket?.lot_stake_k ?? 50));
-      setSideField('YES');
-      setTpField(isDeg ? '27' : '70');
-      setFloorField(isDeg ? '21' : '35');
-      setShowRiskGateCard(true);
+      setProposeInput('');
+      onOpenPanel('bet');
     } catch (err: any) {
       setGateError(err.message);
     } finally {
@@ -356,6 +330,10 @@ export function useAskBot({
     setDraft,
     classification,
     setClassification,
+    draftSource,
+    draftSources,
+    openingWidth,
+    setOpeningWidth,
     inHousePayoffMode,
     setInHousePayoffMode,
     inHouseCapC,

@@ -64,7 +64,7 @@ cd backend && npm test
 make api-test
 ```
 
-The bot works without keys using built-in rules. Set `GEMINI_API_KEY` in `dev.env` or `prod.env` for LLM parsing and the outside-odds panel, which uses Google Search to show what other sites say about a market.
+The bot runs on Gemini with Google Search: it drafts bets from plain text, briefs bidders with web facts and settles bets from published results. Set `GEMINI_API_KEY` in `prod.env` on the server. Without a key the bot reports that it's unavailable and never invents anything.
 
 ## Dev tools
 
@@ -78,7 +78,9 @@ cd backend && npm install && npm run dev
 cd frontend && npm install && npm run dev
 ```
 
-`npm run dev` sets `DEV_TOOLS=1`, which enables `/api/dev/*` and `/api/demo/*`. Both return 404 in production.
+`npm run dev` sets `DEV_TOOLS=1`, which enables the dev and simulation routes. They return 404 in production. For a local key, put `GEMINI_API_KEY=...` in `backend/.env`, which git ignores.
+
+- **Real or preset:** typed bets always call Gemini. The `PRESET` buttons use offline keyword rules and are labelled everywhere; they never call the AI.
 
 - **Personas:** play as Édouard, Jules, André, Michel or Nathalie from the header. The choice is per browser tab.
 - **Simulator:** http://localhost:5173/sim steps or skips through a scripted betting session. Opening it resets local data.

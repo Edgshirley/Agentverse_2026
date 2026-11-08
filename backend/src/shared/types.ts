@@ -88,6 +88,10 @@ export interface Market {
   outcome_x?: number | null;
   toggles: MarketToggles;
   auction_quiet_Ends_at?: number | null;
+  /** When the result should be public; the bot starts checking then. */
+  resolves_at_ms?: number | null;
+  /** 'preset' markets exist only in dev and never call the AI. */
+  origin?: 'live' | 'preset';
   /** Real time the auction closes; resets on every bid. */
   auction_closes_at_wall_ms?: number | null;
   quote_deadline_at?: number | null;
@@ -184,12 +188,15 @@ export interface OutcomeProposal {
   challenge_deadline: number;
   status: 'pending' | 'accepted' | 'challenged' | 'withdrawn_by_correction' | 'rejected';
   votes: Record<string, number>; // player_id -> voted outcome X
+  explanation?: string;
+  sources?: { title: string; url: string }[];
   created_at: number;
 }
 
 export interface OutsideOdds {
   status: 'ok' | 'no_data' | 'unconfigured' | 'error';
   summary?: string;
+  facts?: string[];
   quotes: { source: string; value: string; detail?: string }[];
   sources: { title: string; url: string }[];
   fetched_at: number;
@@ -199,6 +206,8 @@ export interface ChatMessage {
   id: string;
   player_id: string;
   text: string;
+  /** Set when this message announces a new bet. */
+  market_id?: string | null;
   created_at: number;
 }
 
@@ -291,6 +300,9 @@ export interface DraftMarketProposal {
   resolution_source: string;
   criteria: string;
   deadline_hours: number;
+  /** Opening spread, only if the proposer named one. */
+  opening_width?: number | null;
+  resolves_at_ms?: number | null;
   payoff_mode: PayoffMode;
   lot_stake_k: number;
   no_event_value: number;

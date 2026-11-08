@@ -96,6 +96,7 @@ describe('SQLite / D1 Relational Persistence, Full API Routes & Real-Time Pub/Su
 
       const inspectRes = await app.fetch(new Request('http://localhost:4000/api/db/inspect'), {
         DB: db,
+        DEV_TOOLS: '1',
       });
       expect(inspectRes.status).toBe(200);
       const inspectJson: any = await inspectRes.json();

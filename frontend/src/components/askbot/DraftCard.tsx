@@ -11,6 +11,10 @@ export const DraftCard: React.FC<{ bot: AskBot }> = ({ bot }) => {
     setDraft,
     classification,
     setClassification,
+    draftSource,
+    draftSources,
+    openingWidth,
+    setOpeningWidth,
     showCustomizeRules,
     setShowCustomizeRules,
     inHouseUnit,
@@ -51,8 +55,10 @@ export const DraftCard: React.FC<{ bot: AskBot }> = ({ bot }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <PixelMascot size={32} />
           <span className="pixel-font" style={{ fontSize: 11, color: 'var(--pastel-mint-text)' }}>
-            {classification.archetype === 'spread'
-              ? 'WINDOW [L, H]' : classification.archetype.toUpperCase()}
+            {classification.archetype === 'spread' ? 'SPREAD BET' : 'YES / NO BET'}
+          </span>
+          <span className={`source-badge ${draftSource}`}>
+            {draftSource === 'preset' ? 'PRESET · NO AI' : 'GEMINI'}
           </span>
         </div>
         <button
@@ -71,6 +77,49 @@ export const DraftCard: React.FC<{ bot: AskBot }> = ({ bot }) => {
       <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>
         &ldquo;{draft.question.replace(/TOKS/gi, 'CHIP')}&rdquo;
       </div>
+
+      <dl className="draft-facts">
+        {classification.archetype === 'spread' && (
+          <>
+            <dt>Range</dt>
+            <dd>
+              {draft.bounds[0]} to {draft.bounds[1]} {inHouseUnit}
+            </dd>
+          </>
+        )}
+        <dt>Settles</dt>
+        <dd>
+          {classification.route === 'auto' ? `Bot, from ${draft.resolution_source}` : 'The group decides'}
+          {draft.resolves_at_ms != null &&
+            `, ${new Date(draft.resolves_at_ms).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}`}
+        </dd>
+        <dt>Rule</dt>
+        <dd>{draft.criteria}</dd>
+      </dl>
+
+      {draftSources.length > 0 && (
+        <p className="odds-sources">
+          {draftSources.map((source) => (
+            <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer">
+              {source.title}
+            </a>
+          ))}
+        </p>
+      )}
+
+      {classification.archetype === 'spread' && (
+        <label className="opening-spread">
+          <span>Opening spread</span>
+          <input
+            type="number"
+            min={0}
+            value={openingWidth}
+            onChange={(e) => setOpeningWidth(e.target.value)}
+            placeholder="optional"
+          />
+          <span className="pixel-font auction-unit">{inHouseUnit}</span>
+        </label>
+      )}
 
       {classification.archetype === 'spread' && (
         <div className="payout-picker">

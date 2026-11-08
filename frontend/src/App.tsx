@@ -5,7 +5,7 @@ import { PlayerSwitcher } from './dev/PlayerSwitcher';
 import { HeaderBar } from './components/HeaderBar';
 import { ProfileModal, generateThemedGamerName } from './components/ProfileModal';
 import { AskBotPanel } from './components/askbot/AskBotPanel';
-import { ChatFeed, MascotWidgetAlert } from './components/chat/ChatFeed';
+import { ChatFeed } from './components/chat/ChatFeed';
 import { LiveBetsList } from './components/chat/LiveBetsList';
 import { BetDrawer } from './components/market/BetDrawer';
 import { MarketDetail } from './components/market/MarketDetail';
@@ -122,12 +122,10 @@ export const App: React.FC = () => {
     });
   }, [selectedAvatar, customName, defaultGeneratedName, showProfileOnboardingBadge]);
 
-  const [chatMascotAlert, setChatMascotAlert] = useState<MascotWidgetAlert | null>(null);
   const [forwardedChatPrompt, setForwardedChatPrompt] = useState<string | null>(null);
 
-  // Behind the gateway every action is bound to the signed-in user, so stand-in
-  // friends, personas and the simulator only make sense without it.
-  const standInFriends = authStatus !== 'authenticated';
+  // Behind the gateway every action is bound to the signed-in user, so personas
+  // and the simulator only make sense without it.
   const devPlayerTools = import.meta.env.DEV && authStatus === 'disabled';
 
   // Dev only: keep the personas registered, including after a reset
@@ -334,7 +332,6 @@ export const App: React.FC = () => {
           await dispatchAction('/api/demo/reset', {});
           // The reset empties the ring: re-seat the logged-in player
           if (authStatus === 'authenticated') await refreshAuth();
-          setChatMascotAlert(null);
           setForwardedChatPrompt(null);
           setBetDrawerOpen(false);
           setMobilePane('chat');
@@ -345,14 +342,17 @@ export const App: React.FC = () => {
         <div
           className="pastel-card coral"
           style={{
+            position: 'fixed',
+            top: 12,
+            left: '50%',
+            transform: 'translateX(-50%)',
             maxWidth: 820,
             width: '92%',
-            margin: '16px auto 0',
             padding: '10px 16px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            zIndex: 2,
+            zIndex: 60,
           }}
         >
           <span>
@@ -370,12 +370,14 @@ export const App: React.FC = () => {
             activePlayer={activePlayer}
             chatMessages={chatMessages}
             players={playersWithProfileName}
-            mascotAlert={chatMascotAlert}
-            setMascotAlert={setChatMascotAlert}
+            markets={markets}
             onForwardChatPrompt={setForwardedChatPrompt}
             onDispatch={handleDispatchWithSound}
             onOpenPanel={openPanel}
-            standInFriends={standInFriends}
+            onOpenMarket={(marketId) => {
+              setSelectedMarketId(marketId);
+              openPanel('bet');
+            }}
           />
         </section>
 
@@ -389,7 +391,7 @@ export const App: React.FC = () => {
               onNewBet={startNewBet}
             />
             {activeBundle && !['settled', 'void'].includes(activeBundle.market.state) && (
-              <OutsideOddsPanel marketId={activeBundle.market.id} />
+              <OutsideOddsPanel market={activeBundle.market} />
             )}
           </section>
           <section className="rail-bot" aria-label="Ask bot">
@@ -449,7 +451,6 @@ export const App: React.FC = () => {
             onToggleUnitLadder={setShowUnitLadder}
             onSelectMarket={setSelectedMarketId}
             onDispatch={handleDispatchWithSound}
-            standInFriends={standInFriends}
           />
         </BetDrawer>
       )}

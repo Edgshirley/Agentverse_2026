@@ -211,6 +211,7 @@ export class EdgeStateStore {
   private defaultDb?: D1Database;
   private listeners: Set<StateChangeListener> = new Set();
   private seedDemoFixtures: boolean;
+  private wallClockEnabled: boolean = false;
 
   constructor(defaultDb?: D1Database, seedDemoFixtures: boolean = true) {
     this.defaultDb = defaultDb;
@@ -231,6 +232,18 @@ export class EdgeStateStore {
   }
 
   /** Toggle whether reset() seeds the demo syndicate fixtures or a clean single-player start. */
+  /** Run the engine on real time. Tests and replays keep the deterministic clock. */
+  public enableWallClock(): void {
+    this.wallClockEnabled = true;
+    this.syncWallClock();
+  }
+
+  public syncWallClock(): void {
+    if (this.wallClockEnabled && Date.now() > this.clock.now()) {
+      this.clock.set(Date.now());
+    }
+  }
+
   public setSeedDemoFixtures(enabled: boolean): void {
     this.seedDemoFixtures = enabled;
   }
@@ -312,11 +325,12 @@ export class EdgeStateStore {
     this.notifyListeners('DEMO_RESET');
   }
 
-  public addChatMessage(playerId: string, text: string): ChatMessage {
+  public addChatMessage(playerId: string, text: string, marketId?: string): ChatMessage {
     const message: ChatMessage = {
       id: crypto.randomUUID(),
       player_id: playerId,
       text,
+      market_id: marketId ?? null,
       created_at: Date.now(),
     };
     this.chatMessages = [...this.chatMessages, message].slice(-MAX_CHAT_MESSAGES);
@@ -330,6 +344,8 @@ export class EdgeStateStore {
   }
 
   private seedCleanFirstPersonState(): void {
+    // Real deployments start empty; players appear when they sign in.
+    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') return;
     this.engine.ledger.registerPlayer({
       id: 'you',
       group_id: this.group.id,

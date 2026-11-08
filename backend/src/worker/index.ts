@@ -15,7 +15,12 @@ import {
   parseStrategyRuleWithRiskGate,
   runAgent1Intake,
   runAgent2Classifier,
+  BotUnavailableError,
+  BotVerdict,
+  draftBetFromText,
+  findMarketResult,
   getOutsideOdds,
+  isLiveAiConfigured,
 } from './agents';
 import { stepDeterministicReplay, toggleFeedDelayedStatus } from './replay';
 import { config } from '../config';
@@ -29,6 +34,10 @@ export { config, PostgresConnectionSingleton, REDIS, MESSAGE_BUS };
 export const app = new Hono<{ Bindings: Env }>();
 
 app.use('/api/*', cors());
+app.use('/api/*', async (_c, next) => {
+  globalStore.syncWallClock();
+  await next();
+});
 
 // Root status endpoint when visiting http://localhost:4000/ directly in a browser
 app.get('/', async (c) => {
@@ -77,6 +86,17 @@ const devToolsOnly = createMiddleware<{ Bindings: Env }>(async (c, next) => {
 });
 app.use('/api/dev/*', devToolsOnly);
 app.use('/api/demo/*', devToolsOnly);
+// Simulation and manual overrides: real games settle through the bot or the group.
+for (const path of [
+  '/api/db/inspect',
+  '/api/markets/:id/replay/*',
+  '/api/markets/:id/resolve/settle',
+  '/api/markets/:id/resolve/finalize',
+  '/api/markets/:id/resolve/lock-countdown',
+  '/api/markets/:id/void',
+]) {
+  app.use(path, devToolsOnly);
+}
 
 // 0. Healthcheck, Dependency Status (Postgres / Redis / Bus) & Database Inspector
 // Authentication, sessions and client WebSockets are handled by the FastAPI
@@ -248,7 +268,7 @@ app.post('/api/chat', async (c) => {
 // 3. Create new market (from confirmed Agent 1 + Agent 2 Draft Card)
 app.post('/api/markets', async (c) => {
   try {
-    const body = await c.req.json<Partial<Market> & { proposer_id: string; question: string }>();
+    const body = await c.req.json<Partial<Market> & { proposer_id: string; question: string; opening_width?: number }>();
     const now = globalStore.clock.now();
     const id = body.id || `mkt_${now}_${Math.floor(Math.random() * 1000)}`;
     const archetype = body.archetype || 'simple';
@@ -284,6 +304,8 @@ app.post('/api/markets', async (c) => {
       parent_metric: body.parent_metric || null,
       parent_trigger_target: body.parent_trigger_target ?? null,
       parent_target_player_id: body.parent_target_player_id || null,
+      resolves_at_ms: body.resolves_at_ms ?? null,
+      origin: body.origin === 'preset' && devToolsEnabled(c.env) ? 'preset' : 'live',
       live_implied_value: body.live_implied_value ?? 50,
       live_fair_value_toks: body.live_fair_value_toks ?? Number(body.lot_stake_k || 25),
       fair_value_source: body.fair_value_source || 'AI_ADVISORY',
@@ -304,7 +326,19 @@ app.post('/api/markets', async (c) => {
       market = globalStore.engine.auction.startAuction(market);
     }
 
-    const created = globalStore.engine.createMarket(market);
+    let created = globalStore.engine.createMarket(market);
+
+    // The proposer's opening spread is the first bid, so the clock starts straight away.
+    const openingWidth = Number(body.opening_width);
+    if (archetype === 'spread' && openingWidth > 0) {
+      const bid = globalStore.engine.auction.placeWidthBid(created, proposerId, openingWidth);
+      created = globalStore.engine.createMarket({
+        ...bid.market,
+        auction_closes_at_wall_ms: Date.now() + AUCTION_QUIET_PERIOD_MS,
+      });
+    }
+
+    globalStore.addChatMessage(proposerId, created.question, created.id);
     globalStore.bumpVersion(created.id);
     await globalStore.persistToD1(c.env);
 
@@ -903,14 +937,18 @@ app.post('/api/markets/:id/resolve/lock-countdown', async (c) => {
 app.post('/api/markets/:id/resolve/propose', async (c) => {
   try {
     const marketId = c.req.param('id');
-    const { proposerId, outcomeX, sourceUrl, settleImmediately } = await c.req.json<{
-      proposerId: string;
+    const { playerId, outcomeX, sourceUrl, settleImmediately } = await c.req.json<{
+      playerId: string;
       outcomeX: number;
       sourceUrl?: string;
       settleImmediately?: boolean;
     }>();
-    globalStore.clock.advance(250);
+    const proposerId = ensurePlayerRegistered(playerId);
     const mkt = globalStore.engine.getMarket(marketId);
+    if (mkt.route === 'auto' && !devToolsEnabled(c.env)) {
+      return c.json({ error: 'The bot settles this bet from public data' }, 403);
+    }
+    globalStore.clock.advance(250);
     const propRes = globalStore.engine.resolution.proposeOutcome(
       mkt,
       proposerId,
@@ -941,6 +979,127 @@ app.post('/api/markets/:id/resolve/propose', async (c) => {
     return c.json({ error: err.message }, 400);
   }
 });
+
+const BOT_RECHECK_MS = 60 * 1000;
+const BOT_AUTO_RETRY_MS = 15 * 60 * 1000;
+const lastBotCheck = new Map<string, number>();
+
+function isAwaitingResult(market: Market): boolean {
+  return ['open', 'live', 'countdown_locked'].includes(market.state);
+}
+
+async function runBotResolution(marketId: string, env?: Env): Promise<BotVerdict> {
+  lastBotCheck.set(marketId, Date.now());
+  const verdict = await findMarketResult(globalStore.engine.getMarket(marketId), env);
+  if (verdict.status !== 'resolved' || verdict.outcome == null) return verdict;
+
+  // The market may have moved on during the search
+  const market = globalStore.engine.getMarket(marketId);
+  if (!isAwaitingResult(market)) return verdict;
+
+  const proposed = globalStore.engine.resolution.proposeOutcome(
+    market,
+    'AGENT_FEED',
+    verdict.outcome,
+    verdict.sources[0]?.url ?? 'gemini://search',
+    { explanation: verdict.explanation, sources: verdict.sources }
+  );
+  globalStore.engine.createMarket(proposed.market);
+  globalStore.engine.emitWireTrace(
+    marketId,
+    'ORACLE_AGENT',
+    'MARKET_ENGINE',
+    'OUTCOME_PROPOSED',
+    `Bot found X=${verdict.outcome}: ${verdict.explanation}`
+  );
+  globalStore.addChatMessage(
+    'marketmate',
+    `Result: ${verdict.outcome} ${market.unit}. ${verdict.explanation} Challenge it within 30 minutes if that's wrong.`,
+    marketId
+  );
+  globalStore.bumpVersion(marketId);
+  await globalStore.persistToD1(env);
+  return verdict;
+}
+
+app.post('/api/markets/:id/resolve/bot', async (c) => {
+  try {
+    const marketId = c.req.param('id');
+    const market = globalStore.engine.getMarket(marketId);
+    if (market.origin === 'preset') {
+      return c.json({ error: 'Preset bets are settled by hand' }, 409);
+    }
+    if (market.route !== 'auto') {
+      return c.json({ error: 'The group decides this bet' }, 409);
+    }
+    if (!isAwaitingResult(market)) {
+      return c.json({ error: 'This bet is not waiting for a result' }, 409);
+    }
+    const last = lastBotCheck.get(marketId) ?? 0;
+    if (Date.now() - last < BOT_RECHECK_MS) {
+      return c.json({ status: 'not_yet', explanation: 'The bot just checked. Try again in a minute.', sources: [] });
+    }
+    return c.json(await runBotResolution(marketId, c.env));
+  } catch (err: any) {
+    if (err instanceof BotUnavailableError) {
+      return c.json({ error: err.message, code: 'bot_unavailable' }, 503);
+    }
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+function settleFromProposal(marketId: string): void {
+  const market = globalStore.engine.getMarket(marketId);
+  const result = globalStore.engine.resolution.finalizeProposal(market);
+  const key = `timer_settle_${marketId}_${globalStore.clock.now()}`;
+  if (result.status === 'settle' && result.outcomeX != null) {
+    globalStore.engine.settleMarket(marketId, result.outcomeX, key);
+    globalStore.addChatMessage('marketmate', `Settled at ${result.outcomeX} ${market.unit}.`, marketId);
+  } else {
+    globalStore.engine.voidMarket(marketId, key);
+    globalStore.addChatMessage('marketmate', 'The vote tied, so this bet is void and stakes are returned.', marketId);
+  }
+  globalStore.bumpVersion(marketId);
+}
+
+/** Runs everything that happens on real time: auctions, challenge windows and bot checks. */
+export async function runMarketTimers(env?: Env): Promise<void> {
+  globalStore.syncWallClock();
+  await closeExpiredAuctions(env);
+
+  let settled = false;
+  for (const market of globalStore.engine.getAllMarkets()) {
+    if (market.state !== 'outcome_proposed') continue;
+    const proposal = globalStore.engine.resolution.getProposal(market.id);
+    if (!proposal || !['pending', 'challenged'].includes(proposal.status)) continue;
+    if (globalStore.clock.now() < proposal.challenge_deadline) continue;
+    try {
+      settleFromProposal(market.id);
+      settled = true;
+    } catch (err) {
+      console.warn(`Could not settle ${market.id}:`, err);
+    }
+  }
+  if (settled) await globalStore.persistToD1(env);
+
+  if (!isLiveAiConfigured(env)) return;
+  const now = Date.now();
+  for (const market of globalStore.engine.getAllMarkets()) {
+    if (
+      market.origin === 'preset' ||
+      market.route !== 'auto' ||
+      !isAwaitingResult(market) ||
+      market.resolves_at_ms == null ||
+      now < market.resolves_at_ms ||
+      now - (lastBotCheck.get(market.id) ?? 0) < BOT_AUTO_RETRY_MS
+    ) {
+      continue;
+    }
+    void runBotResolution(market.id, env).catch((err) =>
+      console.warn(`Bot could not check ${market.id}:`, err?.name ?? err)
+    );
+  }
+}
 
 app.post('/api/markets/:id/resolve/challenge', async (c) => {
   try {
@@ -1051,45 +1210,34 @@ app.post('/api/markets/:id/void', async (c) => {
 // 11b. Multi-Agent Pipeline Endpoints (Agent 1 Intake -> Agent 2 Classifier, 3-Part Risk Gate, Recap)
 app.post('/api/agents/intake', async (c) => {
   try {
-    const { prompt, playerId } = await c.req.json<{ prompt: string; playerId?: string }>();
+    const { prompt, preset } = await c.req.json<{ prompt: string; preset?: boolean }>();
     if (!prompt || !prompt.trim()) {
-      return c.json({ error: 'Prompt is required for Agent 1 Intake' }, 400);
-    }
-    const { draft, lint, widthSuggestion } = await runAgent1Intake(prompt, c.env);
-    const classification = await runAgent2Classifier(prompt, draft, c.env);
-
-    const activeMarkets = globalStore.engine.getAllMarkets();
-    const targetMarketId = activeMarkets[0]?.id || 'mkt_draft';
-    globalStore.engine.recordClassificationLog({
-      id: `clog_${globalStore.clock.now()}_${Math.floor(Math.random() * 1000)}`,
-      market_id: targetMarketId,
-      agent1_parsed_payload: draft,
-      agent2_archetype: classification.archetype,
-      agent2_verifiability: classification.verifiability,
-      agent2_route: classification.route,
-      confidence: classification.confidence,
-      created_at: globalStore.clock.now(),
-    });
-
-    if (activeMarkets[0]) {
-      globalStore.engine.emitWireTrace(
-        activeMarkets[0].id,
-        'PLAYER',
-        'ORACLE_AGENT',
-        'AGENT1_2_INTAKE_PIPELINE',
-        `${(playerId || 'ana').toUpperCase()} prompt -> Agent 1 drafted "${draft.question}" | Agent 2 classified [${classification.archetype.toUpperCase()} / ${classification.route.toUpperCase()}] (conf=${Math.round(classification.confidence * 100)}%)`
-      );
-      globalStore.bumpVersion(activeMarkets[0].id);
-      await globalStore.persistToD1(c.env);
+      return c.json({ error: 'Tell the bot what the bet is' }, 400);
     }
 
+    if (preset) {
+      if (!devToolsEnabled(c.env)) {
+        return c.json({ error: 'Presets are only available in development' }, 403);
+      }
+      const { draft } = await runAgent1Intake(prompt);
+      const classification = await runAgent2Classifier(prompt, draft);
+      return c.json({ source: 'preset', draft, classification, sources: [] });
+    }
+
+    const result = await draftBetFromText(prompt.trim(), c.env);
+    if (result.kind === 'clarify') {
+      return c.json({ error: result.question, code: 'needs_clarification' }, 422);
+    }
     return c.json({
-      draft,
-      lint,
-      widthSuggestion,
-      classification,
+      source: 'gemini',
+      draft: result.draft,
+      classification: result.classification,
+      sources: result.sources,
     });
   } catch (err: any) {
+    if (err instanceof BotUnavailableError) {
+      return c.json({ error: err.message, code: 'bot_unavailable' }, 503);
+    }
     return c.json({ error: err.message }, 400);
   }
 });

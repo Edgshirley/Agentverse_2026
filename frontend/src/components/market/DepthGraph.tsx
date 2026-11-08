@@ -23,27 +23,15 @@ export const DepthGraph: React.FC<DepthGraphProps> = ({ view, players, activePla
 
   const [selectedGraphLevel, setSelectedGraphLevel] = useState<number | null>(null);
   const [orderType, setOrderType] = useState<OrderType>('stop_loss');
-  const [orderSizeChip, setOrderSizeChip] = useState<string>('25');
+  const [orderSizeChip, setOrderSizeChip] = useState<string>(String(market.lot_stake_k));
 
   useEffect(() => {
     setSelectedGraphLevel(null);
   }, [market.id]);
 
-  const ladderStep =
-    market.unit === 'pit stops' || market.unit === 'laps' ? 1 : isSpread ? 3 : 1;
-
-  const baseLevels = [
-    currentUnitCenter + ladderStep * 3,
-    currentUnitCenter + ladderStep * 2,
-    currentUnitCenter + ladderStep * 1,
-    currentUnitCenter,
-    Math.max(0, currentUnitCenter - ladderStep * 1),
-    Math.max(0, currentUnitCenter - ladderStep * 2),
-    Math.max(0, currentUnitCenter - ladderStep * 3),
-  ];
   const allUnitLevels = Array.from(
     new Set([
-      ...baseLevels,
+      currentUnitCenter,
       ...(market.L != null ? [market.L] : []),
       ...(market.H != null ? [market.H] : []),
       ...openOrders.map((o) => o.trigger_level),
@@ -89,13 +77,8 @@ export const DepthGraph: React.FC<DepthGraphProps> = ({ view, players, activePla
             .reduce((acc, p) => acc + p.live_equity_toks, 0)
         : 0;
 
-    // Give subtle baseline visual depth around the center so the Bid/Ask ladder always looks rich like Screenshot 3
-    const dist = Math.abs(lvl - currentUnitCenter);
-    const baselineBid = lvl >= currentUnitCenter ? Math.max(10, 45 - dist * 10) : 0;
-    const baselineAsk = lvl <= currentUnitCenter ? Math.max(10, 45 - dist * 10) : 0;
-
-    const totalBidVol = bidOrdersVol + activeLongVol + baselineBid;
-    const totalAskVol = askOrdersVol + activeShortVol + baselineAsk;
+    const totalBidVol = bidOrdersVol + activeLongVol;
+    const totalAskVol = askOrdersVol + activeShortVol;
 
     const stopLabels = ordersAtLvl.map((o) => {
       const nick =
@@ -114,7 +97,7 @@ export const DepthGraph: React.FC<DepthGraphProps> = ({ view, players, activePla
   });
 
   const maxBarVol = Math.max(
-    60,
+    1,
     ...rowsData.map((r) => Math.max(r.totalBidVol, r.totalAskVol))
   );
 
@@ -155,10 +138,10 @@ export const DepthGraph: React.FC<DepthGraphProps> = ({ view, players, activePla
             >
               {/* LEFT BAR: Green BID / BUY / ABOVE Volume */}
               <div className="depth-side-bid">
-                <div className="depth-bar-bid" style={{ width: `${bidWidthPct}%` }}>
+                {row.totalBidVol > 0 && (<div className="depth-bar-bid" style={{ width: `${bidWidthPct}%` }}>
                   <span>{row.totalBidVol} CHIP</span>
                   
-                </div>
+                </div>)}
               </div>
 
               {/* CENTER SPINE: Unit Level Pill */}
@@ -174,12 +157,12 @@ export const DepthGraph: React.FC<DepthGraphProps> = ({ view, players, activePla
 
               {/* RIGHT BAR: Coral ASK / STOP-LOSS / BELOW Volume */}
               <div className="depth-side-ask">
-                <div className="depth-bar-ask" style={{ width: `${askWidthPct}%` }}>
+                {row.totalAskVol > 0 && (<div className="depth-bar-ask" style={{ width: `${askWidthPct}%` }}>
                   <span style={{ opacity: 0.85, fontSize: 9.5 }}>
                     {row.stopLabels[0] ?? ''}
                   </span>
                   <span>{row.totalAskVol} CHIP</span>
-                </div>
+                </div>)}
               </div>
             </div>
           );

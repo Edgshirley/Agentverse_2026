@@ -1,21 +1,21 @@
 /* ============================================================================
  * 8-Bit Casino UI with a bright, Luma-inspired accent palette
- * Green (Us / Yes), Blue (Friends), Red (No / Stops), Yellow (Chips), Cranberry (Brand)
+ * Green (Us / Yes), Blue (Friends), Red (No / Stops), Yellow (Chips), Casino Red (Brand)
  * Saturated values live on the *-border tokens; *-text tokens stay on light tints
  * so body copy remains readable.
  * ============================================================================ */
 
 :root,
 [data-theme='dark'] {
-  --bg-canvas: #181a20;
-  --bg-panel: #20232b;
-  --bg-elevated: #272b35;
-  --fg-primary: #f2efe9;
-  --fg-muted: #9da1b0;
-  --fg-dim: #686c7a;
-  --border-color: #343946;
-  --border-strong: #e2dec9;
-  --pixel-shadow: #101116;
+  --bg-canvas: #0d0f12;
+  --bg-panel: #15181c;
+  --bg-elevated: #1c2025;
+  --fg-primary: #e6edf3;
+  --fg-muted: #8b949e;
+  --fg-dim: #6e7681;
+  --border-color: #292e36;
+  --border-strong: #d7dde3;
+  --pixel-shadow: #050607;
 
   /* Green — "You" & YES/OVER */
   --pastel-mint-bg: #143018;
@@ -37,32 +37,33 @@
   --pastel-gold-border: #edb541;
   --pastel-gold-text: #fbe8bb;
 
-  /* Cranberry — brand & primary actions */
-  --brand-bg: #3d1029;
-  --brand-border: #f6539d;
-  --brand-text: #ffd5e8;
+  /* Casino red — brand & primary actions. --brand-ink is the shade for text on panels. */
+  --brand-bg: #3a0d12;
+  --brand-border: #e3212f;
+  --brand-text: #ffd8da;
+  --brand-ink: #ff5a60;
 
   /* Calm Dark Felt Surface */
   --felt-bg: #1c2924;
   --felt-inner: #18231f;
   --felt-border: #4d8a70;
 
-  --badge-bg: #e2dec9;
-  --badge-fg: #181a20;
+  --badge-bg: #d7dde3;
+  --badge-fg: #0d0f12;
   --accent-pos: #54c546;
   --accent-neg: #f9524e;
 }
 
 [data-theme='light'] {
-  --bg-canvas: #f4f1ea;
-  --bg-panel: #fffdf9;
-  --bg-elevated: #eae5db;
-  --fg-primary: #22232a;
-  --fg-muted: #666874;
-  --fg-dim: #989aa6;
-  --border-color: #d5cfc2;
-  --border-strong: #2c2d35;
-  --pixel-shadow: #cfc8b8;
+  --bg-canvas: #edeff1;
+  --bg-panel: #fafbfc;
+  --bg-elevated: #dfe2e6;
+  --fg-primary: #1a1e23;
+  --fg-muted: #59636e;
+  --fg-dim: #8a939d;
+  --border-color: #cdd2d8;
+  --border-strong: #1f2328;
+  --pixel-shadow: #c5cad1;
 
   --pastel-mint-bg: #e3f7df;
   --pastel-mint-border: #35a527;
@@ -80,16 +81,17 @@
   --pastel-gold-border: #d69712;
   --pastel-gold-text: #573b04;
 
-  --brand-bg: #ffe1ef;
-  --brand-border: #d5176d;
-  --brand-text: #7a0b3e;
+  --brand-bg: #fde3e4;
+  --brand-border: #c8102e;
+  --brand-text: #7a0a1c;
+  --brand-ink: #c8102e;
 
   --felt-bg: #dcefe4;
   --felt-inner: #d0e7da;
   --felt-border: #559e7a;
 
-  --badge-bg: #2c2d35;
-  --badge-fg: #fffdf9;
+  --badge-bg: #1f2328;
+  --badge-fg: #fafbfc;
   --accent-pos: #237a18;
   --accent-neg: #cf2c31;
 }
@@ -484,7 +486,7 @@ button:disabled {
 .brand-wordmark {
   font-size: 17px;
   font-weight: 700;
-  color: var(--brand-border);
+  color: var(--brand-ink);
 }
 
 .nav-pill-btn {
@@ -975,7 +977,7 @@ button:disabled {
   font-family: 'Silkscreen', monospace;
   font-size: 9px;
   white-space: nowrap;
-  color: var(--brand-border);
+  color: var(--brand-ink);
 }
 
 /* Center-Spine BID (Left / Green) vs ASK & STOP-LOSS (Right / Coral) Graph (Screenshot 3 Style) */

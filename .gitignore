@@ -14,3 +14,7 @@ __pycache__/
 *.log
 .DS_Store
 coverage/
+backend/data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

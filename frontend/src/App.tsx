@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { useMarketSync } from './hooks/useMarketSync';
 import { HeaderBar } from './components/HeaderBar';
 import { AskBotPanel } from './components/askbot/AskBotPanel';
-import { ChatFeed, LocalChatMessage, MascotWidgetAlert } from './components/chat/ChatFeed';
+import { ChatFeed, MascotWidgetAlert } from './components/chat/ChatFeed';
 import { LiveBetsList } from './components/chat/LiveBetsList';
 import { BetDrawer } from './components/market/BetDrawer';
 import { MarketDetail } from './components/market/MarketDetail';
@@ -34,7 +34,6 @@ export const App: React.FC = () => {
   const [betDrawerOpen, setBetDrawerOpen] = useState<boolean>(false);
   const [newBetRequest, setNewBetRequest] = useState<number>(0);
 
-  const [chatMessages, setChatMessages] = useState<LocalChatMessage[]>([]);
   const [chatMascotAlert, setChatMascotAlert] = useState<MascotWidgetAlert | null>(null);
   const [forwardedChatPrompt, setForwardedChatPrompt] = useState<string | null>(null);
 
@@ -62,7 +61,7 @@ export const App: React.FC = () => {
     );
   }
 
-  const { group, players, markets, activeBundle, serverClockMs } = data;
+  const { group, players, markets, activeBundle, chatMessages, serverClockMs } = data;
   const activePlayer =
     players.find((p) => p.id === activePlayerId) ??
     players[0] ?? {
@@ -134,7 +133,6 @@ export const App: React.FC = () => {
         onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
         onResetDemo={async () => {
           await dispatchAction('/api/demo/reset', {});
-          setChatMessages([]);
           setChatMascotAlert(null);
           setForwardedChatPrompt(null);
           setBetDrawerOpen(false);
@@ -168,10 +166,11 @@ export const App: React.FC = () => {
           <ChatFeed
             activePlayer={activePlayer}
             chatMessages={chatMessages}
-            setChatMessages={setChatMessages}
+            players={players}
             mascotAlert={chatMascotAlert}
             setMascotAlert={setChatMascotAlert}
             onForwardChatPrompt={setForwardedChatPrompt}
+            onDispatch={dispatchAction}
             onOpenPanel={openPanel}
           />
         </section>

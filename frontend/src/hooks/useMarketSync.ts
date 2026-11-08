@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
+  ChatMessage,
   Group,
   LedgerEntry,
   LiveEvent,
@@ -43,6 +44,7 @@ export interface TerminalStatePayload {
   players: Player[];
   markets: Market[];
   activeBundle: ActiveMarketBundle | null;
+  chatMessages: ChatMessage[];
   ledgerEntries: LedgerEntry[];
 }
 

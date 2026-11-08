@@ -1,15 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Player } from '../../shared/types';
+import { ChatMessage, Player } from '../../shared/types';
 import { PixelMascot } from '../PixelMascot';
 import { AppPanel } from '../../App';
-
-export interface LocalChatMessage {
-  id: string;
-  sender: string;
-  text: string;
-  time: string;
-  isMine: boolean;
-}
 
 export interface MascotWidgetAlert {
   question: string;
@@ -17,21 +9,23 @@ export interface MascotWidgetAlert {
 
 interface ChatFeedProps {
   activePlayer: Player;
-  chatMessages: LocalChatMessage[];
-  setChatMessages: React.Dispatch<React.SetStateAction<LocalChatMessage[]>>;
+  chatMessages: ChatMessage[];
+  players: Player[];
   mascotAlert: MascotWidgetAlert | null;
   setMascotAlert: React.Dispatch<React.SetStateAction<MascotWidgetAlert | null>>;
   onForwardChatPrompt: (promptText: string) => void;
+  onDispatch: (path: string, body?: Record<string, any>) => Promise<any>;
   onOpenPanel: (panel: AppPanel) => void;
 }
 
 export const ChatFeed: React.FC<ChatFeedProps> = ({
   activePlayer,
   chatMessages,
-  setChatMessages,
+  players,
   mascotAlert,
   setMascotAlert,
   onForwardChatPrompt,
+  onDispatch,
   onOpenPanel,
 }) => {
   const [chatInput, setChatInput] = useState('');
@@ -59,45 +53,27 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
     const trimmed = chatInput.trim();
     if (!trimmed) return;
 
-    const nowStr = new Date().toTimeString().slice(0, 5);
-    setChatMessages((prev) => [
-      ...prev,
-      {
-        id: `usr_${Date.now()}`,
-        sender: activePlayer.nickname,
-        text: trimmed,
-        time: nowStr,
-        isMine: true,
-      },
-    ]);
     setChatInput('');
+    try {
+      await onDispatch('/api/chat', { playerId: activePlayer.id, text: trimmed });
+    } catch {
+      setChatInput(trimmed); // keep the draft so a failed send can be retried
+      return;
+    }
 
     if (looksLikeBetProposal(trimmed)) {
       setMascotAlert({ question: trimmed });
     }
   };
 
-  const handleSimulateFriendReply = () => {
-    const nowStr = new Date().toTimeString().slice(0, 5);
+  const handleSimulateFriendReply = async () => {
     const friendSamples = [
-      {
-        sender: 'ALEX',
-        text: 'I want to make a market for pit stops in the F1 race tomorrow, 25 CHIP!',
-      },
-      { sender: 'SAM', text: "I'm down! Let's bet 50 CHIP on whether it hits 24°C tomorrow." },
-      { sender: 'JORDAN', text: 'Are we doing the Q4 team ranking bet with the boss as arbiter?' },
+      { playerId: 'alex', text: 'I want to make a market for pit stops in the F1 race tomorrow, 25 CHIP!' },
+      { playerId: 'sam', text: "I'm down! Let's bet 50 CHIP on whether it hits 24°C tomorrow." },
+      { playerId: 'jordan', text: 'Are we doing the Q4 team ranking bet with the boss as arbiter?' },
     ];
     const pick = friendSamples[chatMessages.length % friendSamples.length];
-    setChatMessages((prev) => [
-      ...prev,
-      {
-        id: `fr_${Date.now()}`,
-        sender: pick.sender,
-        text: pick.text,
-        time: nowStr,
-        isMine: false,
-      },
-    ]);
+    await onDispatch('/api/chat', pick);
     setMascotAlert({ question: pick.text });
   };
 
@@ -135,27 +111,29 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
           </div>
         )}
 
-        {chatMessages.map((m) => (
-          <div
-            key={m.id}
-            className={`chat-bubble ${m.isMine ? 'mine' : 'friend-msg'}`}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                gap: 12,
-                fontSize: 10,
-                opacity: 0.8,
-                marginBottom: 4,
-              }}
-            >
-              <strong className="pixel-font">{m.sender}</strong>
-              <span>{m.time}</span>
+        {chatMessages.map((m) => {
+          const isMine = m.player_id === activePlayer.id;
+          const sender =
+            players.find((p) => p.id === m.player_id)?.nickname ?? m.player_id.toUpperCase();
+          return (
+            <div key={m.id} className={`chat-bubble ${isMine ? 'mine' : 'friend-msg'}`}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  fontSize: 10,
+                  opacity: 0.8,
+                  marginBottom: 4,
+                }}
+              >
+                <strong className="pixel-font">{sender}</strong>
+                <span>{new Date(m.created_at).toTimeString().slice(0, 5)}</span>
+              </div>
+              <div>{m.text}</div>
             </div>
-            <div>{m.text}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Bottom-right tuxedo cat offer to turn a chat message into a bet */}

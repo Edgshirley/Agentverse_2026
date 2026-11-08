@@ -4,7 +4,7 @@
 
 import { DeterministicClock } from '../engine/clock';
 import { SpreadEngine } from '../engine/state_machine';
-import { Group, Market } from '../shared/types';
+import { ChatMessage, Group, Market } from '../shared/types';
 
 export interface Env {
   DB?: D1Database;
@@ -193,12 +193,15 @@ const INITIAL_SCHEMA_STATEMENTS: string[] = [
   )`,
 ];
 
+export const MAX_CHAT_MESSAGES = 200;
+
 export class EdgeStateStore {
   public clock: DeterministicClock;
   public engine: SpreadEngine;
   public group: Group;
   public stateVersion: number = 1;
   public replayIndexByMarket: Map<string, number> = new Map();
+  public chatMessages: ChatMessage[] = [];
   private d1Initialized: boolean = false;
   private defaultDb?: D1Database;
   private listeners: Set<StateChangeListener> = new Set();
@@ -266,6 +269,7 @@ export class EdgeStateStore {
     this.clock = new DeterministicClock(1762542000000);
     this.engine = new SpreadEngine(this.clock);
     this.replayIndexByMarket.clear();
+    this.chatMessages = [];
     this.stateVersion += 1;
     this.group = {
       ...this.group,
@@ -277,6 +281,17 @@ export class EdgeStateStore {
       this.seedCleanFirstPersonState();
     }
     this.notifyListeners('DEMO_RESET');
+  }
+
+  public addChatMessage(playerId: string, text: string): ChatMessage {
+    const message: ChatMessage = {
+      id: crypto.randomUUID(),
+      player_id: playerId,
+      text,
+      created_at: Date.now(),
+    };
+    this.chatMessages = [...this.chatMessages, message].slice(-MAX_CHAT_MESSAGES);
+    return message;
   }
 
   public bumpVersion(marketId?: string): number {
@@ -957,6 +972,7 @@ export class EdgeStateStore {
         group: this.group,
         stateVersion: this.stateVersion,
         replayIndices,
+        chatMessages: this.chatMessages,
         engineSnapshot: this.engine.exportSnapshot(),
       });
 
@@ -1005,6 +1021,7 @@ export class EdgeStateStore {
           for (const [k, v] of Object.entries(parsed.replayIndices ?? {})) {
             this.replayIndexByMarket.set(k, Number(v));
           }
+          this.chatMessages = parsed.chatMessages ?? [];
           this.engine.importSnapshot(parsed.engineSnapshot);
           return true;
         }
@@ -1124,6 +1141,7 @@ export class EdgeStateStore {
       players: this.engine.ledger.getAllPlayers(),
       markets,
       activeBundle,
+      chatMessages: this.chatMessages,
       ledgerEntries: activeMarketId
         ? this.engine.ledger.getEntries(activeMarketId)
         : [],

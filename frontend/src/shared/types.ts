@@ -185,6 +185,13 @@ export interface OutcomeProposal {
   created_at: number;
 }
 
+export interface ChatMessage {
+  id: string;
+  player_id: string;
+  text: string;
+  created_at: number;
+}
+
 export interface LiveEvent {
   id: string;
   market_id: string;

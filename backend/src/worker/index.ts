@@ -181,6 +181,26 @@ app.post('/api/groups/join', async (c) => {
   }
 });
 
+// 2b. Group chat
+app.post('/api/chat', async (c) => {
+  try {
+    const body = await c.req.json<{ playerId: string; text: string }>();
+    const text = (body.text || '').trim();
+    if (!text) {
+      return c.json({ error: 'Message is empty' }, 400);
+    }
+    if (text.length > 1000) {
+      return c.json({ error: 'Message is too long (1000 characters max)' }, 400);
+    }
+    const message = globalStore.addChatMessage(ensurePlayerRegistered(body.playerId), text);
+    globalStore.bumpVersion();
+    await globalStore.persistToD1(c.env);
+    return c.json({ message, stateVersion: globalStore.stateVersion });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
 // 3. Create new market (from confirmed Agent 1 + Agent 2 Draft Card)
 app.post('/api/markets', async (c) => {
   try {

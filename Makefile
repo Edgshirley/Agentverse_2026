@@ -45,7 +45,7 @@ api-test:
 	cd api && python3 -m pytest -q
 
 # Production env file (copy prod.env.example); override with `make prod PROD_ENV=/path/prod.env`
-PROD_ENV ?= prod.env
+PROD_ENV ?= .env
 
 prod:
 	@if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then \

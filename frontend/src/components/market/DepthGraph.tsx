@@ -149,7 +149,8 @@ export const DepthGraph: React.FC<DepthGraphProps> = ({ view, players, activePla
               key={row.lvl}
               className="depth-row-grid"
               onClick={() =>
-                setSelectedGraphLevel((prev) => (prev === row.lvl ? null : row.lvl))
+                // Window stops are set in CHIP via the bot box, not at a unit level
+                !isSpread && setSelectedGraphLevel((prev) => (prev === row.lvl ? null : row.lvl))
               }
               title={`Click ${row.lvl} ${unitLabel} to place a stop-loss or limit order at this level`}
             >

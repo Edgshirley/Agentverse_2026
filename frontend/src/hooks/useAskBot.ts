@@ -89,12 +89,22 @@ export function useAskBot({
 
   // Window bets move in the market's unit (pit stops, min...). Yes/no bets trade the
   // chance of YES (0-100%), whatever the topic is, so their stops are in %.
+  // Window stops/targets are what the bet is worth in CHIP (it's priced live by the money on each side)
   const isWindowMarket = activeMarket?.archetype === 'spread';
-  const betUnitLabel = !isWindowMarket
-    ? '% chance of YES'
-    : activeMarket?.unit && activeMarket.unit !== 'binary' && activeMarket.unit !== '%'
-      ? activeMarket.unit
-      : 'units';
+  const betUnitLabel = !isWindowMarket ? '% chance of YES' : 'CHIP bet value';
+
+  /** A window bet's value when placed = its escrowed stake (mirrors the engine's lot maths). */
+  const windowWorthFor = (stake: number): number => {
+    if (!activeMarket || !isWindowMarket) return 0;
+    const k = activeMarket.lot_stake_k || 25;
+    const lots = Math.max(1, Math.min(activeMarket.toggles?.max_lots ?? 3, Math.round(stake / k)));
+    const perLot =
+      activeMarket.payoff_mode === 'pot' || activeMarket.payoff_mode === 'binary'
+        ? k
+        : k * (activeMarket.cap_widths_c ?? 3);
+    return lots * perLot;
+  };
+  const [levelNote, setLevelNote] = useState<string | null>(null);
 
   // When a chat message is turned into a bet, load it here and classify it straight away
   useEffect(() => {
@@ -208,8 +218,23 @@ export function useAskBot({
         setSummaryField((prop.parsed_strategy_summary || '').replace(/TOKS/g, 'CHIP'));
         setStakeField(String(prop.stake_toks || 50));
         setSideField(prop.side);
-        setTpField(prop.take_profit_level != null ? String(prop.take_profit_level) : '');
-        setFloorField(prop.min_balance_floor != null ? String(prop.min_balance_floor) : '');
+        let tp = prop.take_profit_level;
+        let sl = prop.min_balance_floor;
+        setLevelNote(null);
+        if (isWindowMarket) {
+          // Numbers like "sell at 6, stop at 2" are pit stops, not CHIP: use CHIP levels instead
+          const worth = windowWorthFor(Number(prop.stake_toks) || 50);
+          if (tp == null || tp <= worth || sl == null || sl >= worth) {
+            // If one number is clearly a unit level, the other one is too: replace both
+            tp = Math.round(worth * 1.4);
+            sl = Math.round(worth * 0.6);
+            setLevelNote(
+              `Window stops are what your bet is worth in CHIP (it starts at ${worth}), so I set them for you. Change them if you like.`
+            );
+          }
+        }
+        setTpField(tp != null ? String(tp) : '');
+        setFloorField(sl != null ? String(sl) : '');
         setShowRiskGateCard(true);
       }
     } catch (err: any) {
@@ -377,6 +402,9 @@ export function useAskBot({
 
   return {
     askBot,
+    isWindowMarket,
+    windowWorthFor,
+    levelNote,
     closeInHours,
     setCloseInHours,
     activeMarket,

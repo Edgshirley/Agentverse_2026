@@ -17,7 +17,11 @@ export const RiskGateCard: React.FC<{ bot: AskBot }> = ({ bot }) => {
     setFloorField,
     setShowRiskGateCard,
     handleConfirmStrategyAndRisk,
+    isWindowMarket,
+    windowWorthFor,
+    levelNote,
   } = bot;
+  const startWorth = isWindowMarket ? windowWorthFor(Number(stakeField) || 0) : 0;
 
   if (!activeMarket) return null;
 
@@ -37,6 +41,13 @@ export const RiskGateCard: React.FC<{ bot: AskBot }> = ({ bot }) => {
           <Icon name="shield" size={13} /> RISK GATE · {betUnitLabel.toUpperCase()}
         </span>
       </div>
+
+      {isWindowMarket && (
+        <p className="auction-hint" style={{ marginTop: 0 }}>
+          {levelNote ??
+            `Your bet starts worth ${startWorth} CHIP and moves with the money on each side. Set a target above that and a stop below it.`}
+        </p>
+      )}
 
       <div
         style={{
@@ -79,7 +90,9 @@ export const RiskGateCard: React.FC<{ bot: AskBot }> = ({ bot }) => {
 
         <div>
           <label style={{ fontSize: 11, color: 'var(--fg-muted)', display: 'block', marginBottom: 4 }}>
-            2. Take-Profit ({betUnitLabel}) *
+            {isWindowMarket
+              ? '2. Cash out when it’s worth (CHIP) *'
+              : `2. Take-Profit (${betUnitLabel}) *`}
           </label>
           <input
             type="number"
@@ -92,7 +105,9 @@ export const RiskGateCard: React.FC<{ bot: AskBot }> = ({ bot }) => {
 
         <div>
           <label style={{ fontSize: 11, color: 'var(--fg-muted)', display: 'block', marginBottom: 4 }}>
-            3. Stop-Loss ({betUnitLabel}) *
+            {isWindowMarket
+              ? '3. Stop: cash out if it drops to (CHIP) *'
+              : `3. Stop-Loss (${betUnitLabel}) *`}
           </label>
           <input
             type="number"

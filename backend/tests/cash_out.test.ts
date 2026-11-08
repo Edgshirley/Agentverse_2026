@@ -142,3 +142,70 @@ describe('No cashing out once betting closes', () => {
     }
   });
 });
+
+describe('Window stops and targets fire on the bet value', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  const strategy = (id: string, player_id: string, side: string, tp: number | null, sl: number | null) =>
+    call(`/api/markets/${id}/strategy/activate`, {
+      player_id,
+      parsed_strategy_summary: `${side} 25 CHIP`,
+      side,
+      stake_toks: 25,
+      take_profit_level: tp,
+      min_balance_floor: sl,
+      confirmed_at: Date.now(),
+    });
+  const myOrders = (b: any, pid: string) =>
+    b.orders.filter((o: any) => o.player_id === pid).map((o: any) => `${o.type}:${o.status}`).sort();
+
+  it('take-profit sells the bet once friends push its value up to the target', async () => {
+    const { id } = await windowMarket();
+    const r = await strategy(id, 's_a', 'ABOVE', 30, 10);
+    expect(r.status, JSON.stringify(r.json)).toBe(200);
+    expect(myOrders(r.json, 's_a')).toEqual(['stop_loss:open', 'take_profit:open']);
+    let b: any;
+    for (const f of ['s_b', 's_c', 's_d']) b = await take(id, f, 'OVER');
+    expect(b.positions.filter((p: any) => p.player_id === 's_a' && p.lots > 0)).toHaveLength(0);
+    expect(myOrders(b, 's_a')).toEqual(['stop_loss:cancelled', 'take_profit:filled']);
+  });
+
+  it('stop-loss sells the bet once money on the other side drags it down', async () => {
+    const { id } = await windowMarket();
+    const r = await strategy(id, 's_e', 'ABOVE', 60, 20);
+    expect(r.status, JSON.stringify(r.json)).toBe(200);
+    let b: any;
+    for (const f of ['s_f', 's_g', 's_h']) b = await take(id, f, 'UNDER');
+    expect(b.positions.filter((p: any) => p.player_id === 's_e' && p.lots > 0)).toHaveLength(0);
+    expect(myOrders(b, 's_e')).toEqual(['stop_loss:filled', 'take_profit:cancelled']);
+  });
+
+  it('refuses levels that would fire straight away, without placing the bet', async () => {
+    const { id } = await windowMarket();
+    const r = await strategy(id, 's_i', 'ABOVE', 6, 2); // "sell at 6 pit stops" read as CHIP
+    expect(r.status).toBe(400);
+    expect(r.json.error).toMatch(/above what the bet is worth/);
+    const { json } = await call(`/api/state?marketId=${id}`);
+    expect(json.activeBundle.positions.some((p: any) => p.player_id === 's_i')).toBe(false);
+  });
+});
+
+describe('Window bets placed before live pricing', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('start from the current price (worth = stake) and move from there', async () => {
+    const { globalStore } = await import('../src/worker/db');
+    const { id } = await windowMarket();
+    await take(id, 'old_a', 'OVER');
+    await take(id, 'old_b', 'UNDER');
+    // Simulate bets saved before live pricing: no entry_chance
+    const book = globalStore.engine.spreadBook;
+    book.setPositions(id, book.getPositions(id).map(({ entry_chance, ...p }) => p as any));
+    const { json } = await call(`/api/state?marketId=${id}`);
+    const old = json.activeBundle.positions.find((p: any) => p.player_id === 'old_a');
+    expect(old.entry_chance).toBeGreaterThan(0);
+    expect(old.live_equity_toks).toBe(old.staked_toks);
+    const after = await take(id, 'old_c', 'OVER');
+    expect(worth(after, 'old_a')).toBeGreaterThan(old.staked_toks);
+  });
+});

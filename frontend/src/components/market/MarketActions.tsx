@@ -17,7 +17,10 @@ export const MarketActions: React.FC<MarketActionsProps> = ({
   players,
   onDispatch,
 }) => {
-  const { market, positions, isSpread, unitLabel, myActivePos, myLiveBalance } = view;
+  const { market, positions, isSpread, unitLabel, myActivePos, myLiveBalance, betValueOrders } = view;
+  const myAutoExits = betValueOrders.filter((o) => o.player_id === activePlayer.id);
+  const myTarget = myAutoExits.find((o) => o.type !== 'stop_loss')?.trigger_level;
+  const myStop = myAutoExits.find((o) => o.type === 'stop_loss')?.trigger_level;
   const isMarketMaker = isSpread && market.mm_player_id === activePlayer.id;
   const hasBets = positions.some((p) => p.lots > 0);
   const marketMakerName =
@@ -170,6 +173,10 @@ export const MarketActions: React.FC<MarketActionsProps> = ({
           {isSpread
             ? 'It goes up as more money backs your side and down as it backs the other side; cashing out sells it back to the market maker.'
             : 'It moves with the chance of YES as people bet.'}
+          {isSpread && (myTarget != null || myStop != null) &&
+            ` Auto cash-out: ${[myTarget != null ? `at ${myTarget}+` : '', myStop != null ? `stop at ${myStop}` : '']
+              .filter(Boolean)
+              .join(' · ')} CHIP.`}
         </p>
       )}
 

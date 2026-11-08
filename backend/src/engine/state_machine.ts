@@ -433,6 +433,53 @@ export class SpreadEngine {
   /**
    * Executes a 1-tap manual take or pool entry (bypasses conversational Risk Gate per SPEC §3.3).
    */
+  /**
+   * Window bets: fire stop-loss / take-profit orders whose level (bet value in CHIP)
+   * has been reached, selling those bets back to the market maker. Repeats because one
+   * cash-out moves the price for everyone else. Returns how many fired.
+   */
+  public runWindowStops(marketId: string, idempotencyKey: string): number {
+    const m = this.getMarket(marketId);
+    if (m.archetype !== 'spread' || (m.state !== 'open' && m.state !== 'live')) return 0;
+    let fired = 0;
+    for (let round = 0; round < 10; round++) {
+      this.spreadBook.markToMarket(m);
+      const positions = this.spreadBook.getPositions(marketId);
+      const orders = this.poolBook
+        .getOrders(marketId)
+        .filter((o) => o.status === 'open' && o.valuation === 'bet_value')
+        .sort((a, b) => a.created_at - b.created_at);
+      const worthOf = (pid: string, side: string) =>
+        positions
+          .filter((p) => p.player_id === pid && p.side === side && p.lots > 0)
+          .reduce((acc, p) => acc + p.live_equity_toks, 0);
+      const hit = orders.find((o) => {
+        const worth = worthOf(o.player_id, o.side);
+        if (worth <= 0) return false;
+        return o.type === 'stop_loss' ? worth <= o.trigger_level : worth >= o.trigger_level;
+      });
+      // Orders whose bet is gone (cashed out by hand) are cancelled
+      for (const o of orders) {
+        if (worthOf(o.player_id, o.side) <= 0) this.poolBook.setOrderStatus(marketId, o.id, 'cancelled');
+      }
+      if (!hit) break;
+      const worth = worthOf(hit.player_id, hit.side);
+      const side = hit.side === 'UNDER' ? 'UNDER' : 'OVER';
+      const { paidOut } = this.spreadBook.cashOut(m, hit.player_id, side, 1, `${idempotencyKey}:stop_${hit.id}`);
+      this.poolBook.setOrderStatus(marketId, hit.id, 'filled');
+      for (const o of orders) {
+        if (o.id !== hit.id && o.player_id === hit.player_id && o.side === hit.side) {
+          this.poolBook.setOrderStatus(marketId, o.id, 'cancelled');
+        }
+      }
+      const label = hit.type === 'stop_loss' ? 'Stop-loss' : 'Take-profit';
+      this.recordSwimlane(marketId, hit.player_id, 'LIVE', 'X', `${label} hit at ${worth} CHIP: cashed out ${paidOut}`, paidOut);
+      this.emitWireTrace(marketId, 'MARKET_ENGINE', 'PLAYER', 'WINDOW_STOP_FIRED', `${hit.player_id} ${label} @ ${hit.trigger_level} CHIP -> cashed out ${paidOut} CHIP`);
+      fired += 1;
+    }
+    return fired;
+  }
+
   public executeOneTapTake(
     marketId: string,
     playerId: string,

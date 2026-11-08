@@ -5,7 +5,9 @@ import { Player } from '../../shared/types';
 export function deriveMarketView(bundle: ActiveMarketBundle, activePlayer: Player) {
   const { market, positions, orders, mmEscrowToks, widthBids } = bundle;
   const isSpread = market.archetype === 'spread';
-  const openOrders = orders.filter((o) => o.status === 'open');
+  // Window-bet stops are in CHIP bet value, not on the unit ladder: kept separately
+  const openOrders = orders.filter((o) => o.status === 'open' && o.valuation !== 'bet_value');
+  const betValueOrders = orders.filter((o) => o.status === 'open' && o.valuation === 'bet_value');
   // Yes/no bets are priced as the chance of YES in %; window bets use their own unit
   const unitLabel = !isSpread
     ? '%'
@@ -29,6 +31,7 @@ export function deriveMarketView(bundle: ActiveMarketBundle, activePlayer: Playe
     widthBids,
     isSpread,
     openOrders,
+    betValueOrders,
     unitLabel,
     myActivePos,
     myLiveBalance,

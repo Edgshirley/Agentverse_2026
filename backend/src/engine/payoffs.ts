@@ -381,7 +381,10 @@ export class SpreadMarketBook {
   public markToMarket(market: Market): void {
     const positions = this.positionsByMarket.get(market.id) ?? [];
     for (const p of positions) {
-      if (p.lots > 0) p.live_equity_toks = this.quoteCashOut(market, p, p.lots).value;
+      if (p.lots <= 0) continue;
+      // Bets placed before live pricing existed start from today's price
+      if (p.entry_chance == null) p.entry_chance = this.crowdChance(market, p.side === 'UNDER' ? 'UNDER' : 'OVER');
+      p.live_equity_toks = this.quoteCashOut(market, p, p.lots).value;
     }
   }
 

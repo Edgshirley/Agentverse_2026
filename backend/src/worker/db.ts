@@ -1299,6 +1299,8 @@ export class EdgeStateStore {
 
   public getFullMarketBundle(marketId: string) {
     const market = this.engine.getMarket(marketId);
+    // Window bets: refresh live cash-out values (also prices bets from before live pricing)
+    if (market.archetype === 'spread') this.engine.spreadBook.markToMarket(market);
     const positions = this.engine.getMarketPositions(marketId);
     const orders = this.engine.getMarketOrders(marketId);
     const p2pBids = this.engine.getStandingP2PBids(marketId);

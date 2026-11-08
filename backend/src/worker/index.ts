@@ -9,6 +9,7 @@ import { createMiddleware } from 'hono/factory';
 import { Env, globalStore } from './db';
 import { AUCTION_QUIET_PERIOD_MS } from '../engine/auction';
 import { normalizeSpreadSide } from '../engine/state_machine';
+import { computeTakerWorstCasePerLot } from '../engine/payoffs';
 import { Market, OrderType, PositionSide, StrategyMandate } from '../shared/types';
 import {
   estimateAdvisoryFairValue,
@@ -28,6 +29,16 @@ export { globalStore, EdgeStateStore } from './db';
 export { config, PostgresConnectionSingleton, REDIS, MESSAGE_BUS };
 
 /** Betting closes at the market's close time; the result is entered after that. */
+/** Window bets: a stop must sit below the bet's value and a target above it (CHIP). */
+function assertWindowLevels(worth: number, takeProfit: number | null, stopLoss: number | null): void {
+  if (takeProfit != null && takeProfit <= worth) {
+    throw new Error(`Cash-out target must be above what the bet is worth now (${worth} CHIP).`);
+  }
+  if (stopLoss != null && stopLoss >= worth) {
+    throw new Error(`Stop must be below what the bet is worth now (${worth} CHIP).`);
+  }
+}
+
 function assertBettingOpen(market: Market, what = 'Betting'): void {
   if (market.state === 'settled' || market.state === 'void') {
     throw new Error('This bet is finished.');
@@ -507,6 +518,7 @@ app.post('/api/markets/:id/take', async (c) => {
     globalStore.clock.advance(250);
     const key = idempotencyKey || `take_${marketId}_${validPlayerId}_${globalStore.clock.now()}`;
     globalStore.engine.executeOneTapTake(marketId, validPlayerId, side, Number(amount), key);
+    globalStore.engine.runWindowStops(marketId, `${key}:stops`);
     globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
@@ -560,6 +572,7 @@ app.post('/api/markets/:id/withdraw', async (c) => {
         Number(fractionP),
         key
       );
+      globalStore.engine.runWindowStops(marketId, `${key}:stops`);
     } else {
       globalStore.engine.withdrawFromPool(marketId, playerId, side, Number(fractionP), key);
     }
@@ -588,6 +601,20 @@ app.post('/api/markets/:id/orders', async (c) => {
     const key = idempotencyKey || `ord_${marketId}_${validPlayerId}_${globalStore.clock.now()}`;
     const mkt = globalStore.engine.getMarket(marketId);
     assertBettingOpen(mkt);
+    if (mkt.archetype === 'spread' && type !== 'limit_buy') {
+      const s = normalizeSpreadSide(side);
+      const worth = globalStore.engine.spreadBook
+        .getPositions(marketId)
+        .filter((p) => p.player_id === validPlayerId && p.side === s && p.lots > 0)
+        .reduce((acc, p) => acc + p.live_equity_toks, 0);
+      if (worth > 0) {
+        assertWindowLevels(
+          worth,
+          type === 'stop_loss' ? null : Number(triggerLevel),
+          type === 'stop_loss' ? Number(triggerLevel) : null
+        );
+      }
+    }
     const res = globalStore.engine.poolBook.placeOrder(
       mkt,
       validPlayerId,
@@ -836,6 +863,13 @@ app.post('/api/markets/:id/strategy/activate', async (c) => {
       created_at: now,
     };
 
+    if (mkt.archetype === 'spread') {
+      // Window stops are in bet value: check them before the bet is placed
+      const lots = Math.max(1, Math.min(mkt.toggles.max_lots, Math.round(mandate.stake_toks / mkt.lot_stake_k)));
+      const worth = lots * computeTakerWorstCasePerLot(mkt, normalizeSpreadSide(mandate.side));
+      assertWindowLevels(worth, mandate.take_profit_level, mandate.min_balance_floor);
+    }
+
     globalStore.engine.activateConversationalStrategy(
       marketId,
       mandate,
@@ -869,6 +903,7 @@ app.post('/api/markets/:id/strategy/activate', async (c) => {
           mandate.id
         );
       }
+      globalStore.engine.runWindowStops(marketId, `strat_${marketId}_${now}:stops`);
     }
     globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);

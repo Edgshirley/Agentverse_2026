@@ -9,7 +9,7 @@ export const BotPromptBox: React.FC<{ bot: AskBot }> = ({ bot }) => {
   const placeholder = !activeMarket
     ? 'Describe your bet: "pit stops in the F1 race tomorrow"'
     : activeMarket.archetype === 'spread'
-      ? 'New bet, or a strategy: "bet 50 on above, sell at 6, stop at 2"'
+      ? 'New bet, or a strategy: "bet 25 on above, cash out at 40, stop at 15"'
       : 'New bet, or a strategy: "bet 50 on yes, sell at 70%, stop at 35%"';
 
   return (

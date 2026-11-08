@@ -166,6 +166,11 @@ export interface Order {
   visible_to_group: boolean; // Always true per SPEC §1.3 & §2.4.B.3
   mandate_id?: string | null;
   created_at: number;
+  /**
+   * 'bet_value': a window-bet stop/target. `trigger_level` is what the bet is worth
+   * in CHIP; when reached the bet is sold back to the market maker.
+   */
+  valuation?: 'bet_value';
 }
 
 export interface StrategyMandate {

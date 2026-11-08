@@ -65,8 +65,8 @@ describe('Stops and targets on window (spread) bets', () => {
       parsed_strategy_summary: 'Bet 50 CHIP on ABOVE, sell at 6, stop at 2',
       side: 'ABOVE',
       stake_toks: 50,
-      take_profit_level: 6,
-      min_balance_floor: 2,
+      take_profit_level: 400, // window levels are the bet's value in CHIP
+      min_balance_floor: 10,
       confirmed_at: Date.now(),
     });
 

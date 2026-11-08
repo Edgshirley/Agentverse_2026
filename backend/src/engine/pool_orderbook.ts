@@ -56,6 +56,12 @@ export class ContinuousPoolOrderBook {
     return (this.ordersByMarket.get(marketId) ?? []).map((o) => ({ ...o }));
   }
 
+  /** Mark a window-bet stop/target as filled or cancelled (no pool money involved). */
+  public setOrderStatus(marketId: string, orderId: string, status: 'filled' | 'cancelled'): void {
+    const o = (this.ordersByMarket.get(marketId) ?? []).find((x) => x.id === orderId);
+    if (o) o.status = status;
+  }
+
   public getAllOrders(): Order[] {
     const all: Order[] = [];
     for (const list of this.ordersByMarket.values()) {
@@ -319,6 +325,7 @@ export class ContinuousPoolOrderBook {
     }
 
     let escrowedToks = 0;
+    let externalBetValue = false;
     if (type === 'limit_buy') {
       // Balance-backed limit_buy locks sizeToks in escrow
       this.ledger.lockEscrow(
@@ -341,6 +348,7 @@ export class ContinuousPoolOrderBook {
           `Cannot place ${type} without an active position on ${side} with live_equity > 0`
         );
       }
+      if (!pos) externalBetValue = true;
     }
 
     const order: Order = {
@@ -356,11 +364,16 @@ export class ContinuousPoolOrderBook {
       visible_to_group: true, // Public Swing Map invariant
       mandate_id: mandateId ?? null,
       created_at: this.clock.now(),
+      ...(externalBetValue ? { valuation: 'bet_value' as const } : {}),
     };
 
     const list = this.ordersByMarket.get(market.id) ?? [];
     list.push(order);
     this.ordersByMarket.set(market.id, list);
+    // Window-bet stops are checked against the bet's value by the state machine, not here
+    if (externalBetValue) {
+      return { order: { ...order }, market: { ...market, version: market.version + 1 }, cascades: [] };
+    }
 
     // Check if order triggers immediately at current market odds
     let updatedMarket = { ...market, version: market.version + 1 };
@@ -695,7 +708,7 @@ export class ContinuousPoolOrderBook {
     while (iter < 25) {
       iter += 1;
       const openOrders = (this.ordersByMarket.get(market.id) ?? []).filter(
-        (o) => o.status === 'open'
+        (o) => o.status === 'open' && o.valuation !== 'bet_value'
       );
       if (openOrders.length === 0) break;
 

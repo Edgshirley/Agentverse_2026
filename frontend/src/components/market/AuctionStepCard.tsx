@@ -38,15 +38,14 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({ view, activePl
     await onDispatch(`/api/markets/${market.id}/auction/finalize`, {});
   };
 
-  // Step 2 Agent-Guided Handler: Locks window [L, H] and seeds initial friend book so graph is immediately alive
+  // Step 2 Agent-Guided Handler: Locks window [L, H], seeds one friend bet per side and goes live
   const handleStep2LockWindowAndGoLive = async () => {
     const lVal = Number(quoteLInput) || 3;
-    const wVal = market.active_width_w ?? 2;
     await onDispatch(`/api/markets/${market.id}/auction/quote`, {
       playerId: market.mm_player_id || activePlayer.id,
       L: lVal,
     });
-    // Agent automatically populates initial friend liquidity on both sides of the window so the Bid/Ask graph is live
+    // Seed a friend on each side, since a market with no takers voids when it locks
     await onDispatch(`/api/markets/${market.id}/take`, {
       playerId: 'alex',
       side: 'OVER',
@@ -57,20 +56,7 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({ view, activePl
       side: 'UNDER',
       amount: 1,
     });
-    await onDispatch(`/api/markets/${market.id}/orders`, {
-      playerId: 'alex',
-      side: 'OVER',
-      type: 'take_profit',
-      triggerLevel: lVal + wVal + 1,
-      sizeToks: market.lot_stake_k * 2,
-    });
-    await onDispatch(`/api/markets/${market.id}/orders`, {
-      playerId: 'sam',
-      side: 'UNDER',
-      type: 'stop_loss',
-      triggerLevel: Math.max(1, lVal - 1),
-      sizeToks: market.lot_stake_k,
-    });
+    await onDispatch(`/api/markets/${market.id}/lock-takes`, {});
   };
 
   if (isSpread && market.state === 'width_auction') {

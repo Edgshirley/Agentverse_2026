@@ -337,18 +337,15 @@ app.post('/api/markets/:id/auction/quote', async (c) => {
     const { playerId, L } = await c.req.json<{ playerId: string; L: number }>();
     const market = globalStore.engine.getMarket(marketId);
     const effectiveMm = market.mm_player_id || ensurePlayerRegistered(playerId);
+    // The market stays `open` for takes; /lock-takes moves it to `live` once someone has bet.
     const quoted = globalStore.engine.auction.submitQuote(market, effectiveMm, Number(L));
-    const liveMarket = globalStore.engine.spreadBook.lockTakesAndGoLive(
-      quoted,
-      `go_live_${marketId}_${globalStore.clock.now()}`
-    );
-    globalStore.engine.createMarket(liveMarket);
+    globalStore.engine.createMarket(quoted);
     globalStore.engine.emitWireTrace(
       marketId,
       'PLAYER',
       'MARKET_ENGINE',
       'MM_QUOTE_SUBMITTED',
-      `MM ${effectiveMm.toUpperCase()} quoted [${liveMarket.L}, ${liveMarket.H}]`
+      `MM ${effectiveMm.toUpperCase()} quoted [${quoted.L}, ${quoted.H}]`
     );
     globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);

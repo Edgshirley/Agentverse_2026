@@ -6,6 +6,7 @@ import {
 import { ActiveMarketBundle } from '../hooks/useMarketSync';
 import { PixelMascot } from '../components/PixelMascot';
 import { AppScreen } from '../App';
+import { sfx } from '../utils/soundEffects';
 
 export interface LocalChatMessage {
   id: string;
@@ -67,6 +68,7 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
     if (!trimmed) return;
 
     const nowStr = new Date().toTimeString().slice(0, 5);
+    sfx.playChatPop();
     setChatMessages((prev) => [
       ...prev,
       {
@@ -89,12 +91,14 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
           playerId: activePlayer.id,
         });
         const c = res.classification;
+        sfx.playCatAlert();
         setMascotAlert({
           question: trimmed.replace(/TOKS/gi, 'SPRD'),
           archetype: c.archetype === 'spread' ? 'LINEAR WINDOW' : c.archetype.toUpperCase(),
           route: c.route,
         });
       } catch {
+        sfx.playCatAlert();
         setMascotAlert({
           question: trimmed,
           archetype: 'BET',
@@ -106,6 +110,7 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
 
   const handleSimulateFriendReply = () => {
     const nowStr = new Date().toTimeString().slice(0, 5);
+    sfx.playChatPop();
     const friendSamples = [
       {
         sender: 'ALEX',
@@ -126,6 +131,7 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
       },
     ]);
     onForwardChatPromptToMainPage(pick.text);
+    setTimeout(() => sfx.playCatAlert(), 120);
     setMascotAlert({
       question: pick.text,
       archetype: pick.text.toLowerCase().includes('f1') ? 'LINEAR WINDOW' : 'SIMPLE',

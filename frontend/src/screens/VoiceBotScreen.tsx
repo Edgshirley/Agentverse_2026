@@ -10,6 +10,7 @@ import {
 import { usePushToTalk } from '../hooks/usePushToTalk';
 import { PixelMascot } from '../components/PixelMascot';
 import { AppScreen } from '../App';
+import { sfx } from '../utils/soundEffects';
 
 interface VoiceBotScreenProps {
   activeMarket: Market | null;
@@ -133,10 +134,11 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
           prompt: rawText,
           playerId: activePlayer.id,
         });
-        const d: DraftMarketProposal = res.draft;
+         const d: DraftMarketProposal = res.draft;
         const c: ClassifyMarketProposal = res.classification;
         setDraft(d);
         setClassification(c);
+        sfx.playCatAlert();
         setInHousePayoffMode(c.archetype === 'spread' ? 'linear' : d.payoff_mode || 'pot');
         setInHouseLotStake(String(d.lot_stake_k || 25));
         setInHouseUnit(
@@ -256,6 +258,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
       if (createdMarket?.id) {
         onSelectMarket(createdMarket.id);
       }
+      sfx.playBetConfirm();
       setDraft(null);
       setClassification(null);
       setChatHandoffBanner(null);
@@ -344,13 +347,13 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
 
   return (
     <div className="voice-home-layout">
-      {/* Center Pulsing Orb with 8-Bit Tuxedo Cat Mascot */}
+      {/* Center Pulsing Orb with 8-Bit Black & White Tuxedo Cat (Press once to start, press again to stop/send) */}
       <div
         className={orbClass}
-        onMouseDown={ptt.startRecording}
-        onMouseUp={() =>
-          ptt.stopRecording(intentMode === 'propose' ? proposeInput : strategyInput)
+        onClick={() =>
+          ptt.toggleRecording(intentMode === 'propose' ? proposeInput : strategyInput)
         }
+        title={ptt.isRecording ? 'Click again to finish & send' : 'Click once to start speaking'}
       >
         <div className="orb-ring orb-ring-1" />
         <div className="orb-ring orb-ring-2" />
@@ -362,7 +365,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
             isProcessing={isProcessing}
           />
           <span className="pixel-font" style={{ fontSize: 10 }}>
-            {ptt.isRecording ? 'LISTENING' : isProcessing ? '...' : 'SPEAK'}
+            {ptt.isRecording ? 'TAP TO SEND' : isProcessing ? '...' : 'SPEAK'}
           </span>
         </div>
       </div>

@@ -9,6 +9,7 @@ import {
 } from './screens/GroupChatScreen';
 import { MarketTableScreen } from './screens/MarketTableScreen';
 import { PixelJokerCard, PixelPokerChip } from './components/PixelMascot';
+import { sfx } from './utils/soundEffects';
 
 export type AppScreen = 'voice' | 'table' | 'chat';
 
@@ -73,8 +74,32 @@ export const App: React.FC = () => {
       escrow_balance_toks: 0,
     };
 
+  const handleDispatchWithSound = async (path: string, body?: Record<string, any>) => {
+    const res = await dispatchAction(path, body);
+    if (
+      path.includes('/take') ||
+      path.includes('/orders') ||
+      path.includes('/auction') ||
+      path.includes('/settle') ||
+      path.includes('/withdraw') ||
+      path.includes('/strategy/activate')
+    ) {
+      sfx.playBetConfirm();
+    }
+    return res;
+  };
+
   return (
-    <div className="citadel-shell" data-theme={theme}>
+    <div
+      className="citadel-shell"
+      data-theme={theme}
+      onClickCapture={(e) => {
+        const target = e.target as HTMLElement | null;
+        if (target && target.closest('button, .depth-center-pill')) {
+          sfx.playUiClick();
+        }
+      }}
+    >
       {/* Subtle Gently-Floating 8-Bit Playing Cards, Joker Card & Centered SPRD Poker Chips */}
       <div className="bg-betting-decor" aria-hidden="true">
         <div
@@ -179,7 +204,7 @@ export const App: React.FC = () => {
             showUnitLadder={showUnitLadder}
             onToggleUnitLadder={setShowUnitLadder}
             onSelectMarket={setSelectedMarketId}
-            onDispatch={dispatchAction}
+            onDispatch={handleDispatchWithSound}
             onNavigateScreen={setActiveScreen}
           />
         )}
@@ -194,7 +219,7 @@ export const App: React.FC = () => {
             showUnitLadder={showUnitLadder}
             onToggleUnitLadder={setShowUnitLadder}
             onSelectMarket={setSelectedMarketId}
-            onDispatch={dispatchAction}
+            onDispatch={handleDispatchWithSound}
             onNavigateScreen={setActiveScreen}
           />
         )}
@@ -210,7 +235,7 @@ export const App: React.FC = () => {
             setMascotAlert={setChatMascotAlert}
             onForwardChatPromptToMainPage={setForwardedChatPrompt}
             onSelectMarket={setSelectedMarketId}
-            onDispatch={dispatchAction}
+            onDispatch={handleDispatchWithSound}
             onNavigateScreen={setActiveScreen}
           />
         )}

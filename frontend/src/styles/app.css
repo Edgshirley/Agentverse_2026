@@ -1664,3 +1664,19 @@ button:disabled {
   min-width: 0;
   background-color: color-mix(in srgb, var(--bg-panel) 55%, transparent);
 }
+
+/* Header actions wrap onto a second line on narrow screens instead of running off-screen */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+/* Long unbroken words / links wrap inside chat bubbles */
+.chat-bubble {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}

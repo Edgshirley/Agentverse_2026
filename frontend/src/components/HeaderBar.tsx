@@ -40,7 +40,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       </div>
 
       {/* Your CHIP Balance, Theme & Cat Profile Button */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div className="header-actions">
         {playerSwitcher}
 
         <div className="chip-wallet-badge">

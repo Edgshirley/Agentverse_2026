@@ -1,5 +1,273 @@
 import React from 'react';
 
+export type CatAvatarId = 'no_hat' | 'tie' | 'bowtie' | 'tophat' | 'visor' | 'fedora';
+
+export interface CatAvatarOption {
+  id: CatAvatarId;
+  label: string;
+  subtitle: string;
+  badgeColor: string;
+}
+
+export const CAT_AVATAR_OPTIONS: CatAvatarOption[] = [
+  {
+    id: 'no_hat',
+    label: 'GINGER STRAY',
+    subtitle: 'No Hat · Pure Claws',
+    badgeColor: '#e59866',
+  },
+  {
+    id: 'tie',
+    label: 'QUANT TABBY',
+    subtitle: 'Wall St. Power Tie',
+    badgeColor: '#e57368',
+  },
+  {
+    id: 'bowtie',
+    label: 'TUXEDO DEALER',
+    subtitle: 'Black & White Bow Tie',
+    badgeColor: '#e58585',
+  },
+  {
+    id: 'tophat',
+    label: 'HIGH ROLLER',
+    subtitle: 'Obsidian Silk Top Hat',
+    badgeColor: '#dfc06c',
+  },
+  {
+    id: 'visor',
+    label: 'PIT BOSS',
+    subtitle: 'Emerald Dealer Visor',
+    badgeColor: '#6bc4a2',
+  },
+  {
+    id: 'fedora',
+    label: 'SKY DETECTIVE',
+    subtitle: 'Pastel Blue Fedora Hat',
+    badgeColor: '#78b7e6',
+  },
+];
+
+interface PixelCatAvatarProps {
+  variant: CatAvatarId;
+  size?: number;
+  showExclamation?: boolean;
+}
+
+/**
+ * 6 Collectible 8-Bit Cat Profile Avatars:
+ * 1. `no_hat`  — Ginger cat with no hat or neckwear
+ * 2. `tie`     — Slate tabby cat with a red/gold Wall St. necktie
+ * 3. `bowtie`  — Black & white Tuxedo cat with a monochrome bow tie (same look as the bot mascot)
+ * 4. `tophat`  — Charcoal high-roller cat with a black & gold silk top hat
+ * 5. `visor`   — Cream calico cat with a mint-green casino dealer visor hat
+ * 6. `fedora`  — Silver-blue cat with a sky-blue detective fedora hat
+ */
+export const PixelCatAvatar: React.FC<PixelCatAvatarProps> = ({
+  variant,
+  size = 40,
+  showExclamation = false,
+}) => {
+  // Per-variant fur, eye, and muzzle palette
+  const palettes: Record<
+    CatAvatarId,
+    {
+      furMain: string;
+      furDark: string;
+      muzzle: string;
+      earInner: string;
+      eyeIris: string;
+      nose: string;
+    }
+  > = {
+    no_hat: {
+      furMain: '#D9824B',
+      furDark: '#B86532',
+      muzzle: '#F7E7D4',
+      earInner: '#F4A6A6',
+      eyeIris: '#6BC4A2',
+      nose: '#E57368',
+    },
+    tie: {
+      furMain: '#5C667A',
+      furDark: '#444C5C',
+      muzzle: '#ECE9E2',
+      earInner: '#F4A6A6',
+      eyeIris: '#DFC06C',
+      nose: '#E58585',
+    },
+    bowtie: {
+      furMain: '#14161E',
+      furDark: '#0F1117',
+      muzzle: '#F8FAFC',
+      earInner: '#F8FAFC',
+      eyeIris: '#F8FAFC',
+      nose: '#0B0C10',
+    },
+    tophat: {
+      furMain: '#262433',
+      furDark: '#191822',
+      muzzle: '#F2EFE9',
+      earInner: '#E58585',
+      eyeIris: '#DFC06C',
+      nose: '#E58585',
+    },
+    visor: {
+      furMain: '#E6DEC8',
+      furDark: '#C9BFA6',
+      muzzle: '#FFFDF9',
+      earInner: '#F4A6A6',
+      eyeIris: '#78B7E6',
+      nose: '#E58585',
+    },
+    fedora: {
+      furMain: '#3B4D63',
+      furDark: '#2A384A',
+      muzzle: '#EBF2F7',
+      earInner: '#F4A6A6',
+      eyeIris: '#6BC4A2',
+      nose: '#E58585',
+    },
+  };
+
+  const p = palettes[variant] || palettes.bowtie;
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: size,
+        height: size,
+        flexShrink: 0,
+      }}
+    >
+      {showExclamation && (
+        <div className="pixel-exclamation-badge pixel-font" title="New notification!">
+          !
+        </div>
+      )}
+
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 16 16"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ imageRendering: 'pixelated', display: 'block' }}
+      >
+        {/* Pointy Cat Ears */}
+        <rect x="2" y="2" width="2" height="1" fill={p.furDark} />
+        <rect x="2" y="3" width="3" height="2" fill={p.furDark} />
+        <rect x="3" y="3" width="1" height="2" fill={p.earInner} />
+
+        <rect x="12" y="2" width="2" height="1" fill={p.furDark} />
+        <rect x="11" y="3" width="3" height="2" fill={p.furDark} />
+        <rect x="12" y="3" width="1" height="2" fill={p.earInner} />
+
+        {/* Hats (Rendered on Top of Head for Hat Variants) */}
+        {variant === 'tophat' && (
+          <>
+            {/* Tall Obsidian Silk Top Hat + Gold Band */}
+            <rect x="4" y="0" width="8" height="3" fill="#14151C" />
+            <rect x="4" y="2" width="8" height="1" fill="#DFC06C" />
+            <rect x="2" y="3" width="12" height="1" fill="#14151C" />
+          </>
+        )}
+
+        {variant === 'visor' && (
+          <>
+            {/* White Dealer Headband + Emerald Mint Translucent Visor Brim */}
+            <rect x="3" y="3" width="10" height="1" fill="#F5F2EB" />
+            <rect x="2" y="4" width="12" height="1" fill="#6BC4A2" />
+            <rect x="3" y="5" width="10" height="1" fill="#4D9E7E" />
+          </>
+        )}
+
+        {variant === 'fedora' && (
+          <>
+            {/* Sky-Blue Detective Fedora + Gold Feather Accent */}
+            <rect x="4" y="1" width="8" height="2" fill="#5CA0D3" />
+            <rect x="11" y="1" width="1" height="1" fill="#DFC06C" />
+            <rect x="4" y="2" width="8" height="1" fill="#2A4359" />
+            <rect x="2" y="3" width="12" height="1" fill="#78B7E6" />
+          </>
+        )}
+
+        {/* Cat Head */}
+        <rect x="2" y="4" width="12" height="6" fill={p.furMain} />
+        <rect x="1" y="6" width="1" height="3" fill={p.furMain} />
+        <rect x="14" y="6" width="1" height="3" fill={p.furMain} />
+
+        {/* Re-draw visor bill on forehead if visor */}
+        {variant === 'visor' && (
+          <rect x="2" y="4" width="12" height="1" fill="#6BC4A2" />
+        )}
+
+        {/* Forehead Blaze & Muzzle */}
+        <rect x="7" y="5" width="2" height="2" fill={p.muzzle} />
+        <rect x="5" y="7" width="6" height="3" fill={p.muzzle} />
+
+        {/* Cat Eyes + Pupils */}
+        <rect x="3" y="6" width="2" height="2" fill={p.eyeIris} />
+        <rect x="4" y="6" width="1" height="2" fill="#14161D" />
+
+        <rect x="11" y="6" width="2" height="2" fill={p.eyeIris} />
+        <rect x="11" y="6" width="1" height="2" fill="#14161D" />
+
+        {/* Cute Cat Nose */}
+        <rect x="7" y="8" width="2" height="1" fill={p.nose} />
+
+        {/* Cat Whiskers */}
+        <rect x="0" y="7" width="2" height="1" fill={p.muzzle} />
+        <rect x="0" y="9" width="2" height="1" fill="#C9C3B5" />
+        <rect x="14" y="7" width="2" height="1" fill={p.muzzle} />
+        <rect x="14" y="9" width="2" height="1" fill="#C9C3B5" />
+
+        {/* Shoulders & Chest Bib */}
+        <rect x="3" y="10" width="10" height="5" fill={p.furDark} />
+        <rect x="5" y="10" width="6" height="4" fill={p.muzzle} />
+
+        {/* Neckwear Variants */}
+        {variant === 'bowtie' && (
+          <>
+            {/* Monochrome Black-and-Silver Tuxedo Bowtie (matches the bot mascot) */}
+            <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+            <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+            <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          </>
+        )}
+
+        {variant === 'tie' && (
+          <>
+            {/* Wall Street Power Necktie + Gold Tie Clip */}
+            <rect x="7" y="10" width="2" height="1" fill="#B84A42" />
+            <rect x="7" y="11" width="2" height="3" fill="#E57368" />
+            <rect x="7" y="12" width="2" height="1" fill="#DFC06C" />
+          </>
+        )}
+
+        {variant === 'tophat' && (
+          <>
+            {/* Gold Monocle Chain / Lapel Pin */}
+            <rect x="7" y="10" width="2" height="1" fill="#DFC06C" />
+          </>
+        )}
+
+        {/* Paws */}
+        <rect x="3" y="14" width="2" height="1" fill={p.muzzle} />
+        <rect x="11" y="14" width="2" height="1" fill={p.muzzle} />
+
+        {/* Curled Tail with Tip */}
+        <rect x="13" y="11" width="2" height="3" fill={p.furMain} />
+        <rect x="14" y="10" width="1" height="1" fill={p.muzzle} />
+      </svg>
+    </div>
+  );
+};
+
 interface PixelMascotProps {
   size?: number;
   isListening?: boolean;

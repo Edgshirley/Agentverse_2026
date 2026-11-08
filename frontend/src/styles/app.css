@@ -243,7 +243,7 @@ button:disabled {
  * App Shell & Subtle Background Playing Cards / Joker / CHIP Chips Motif
  * ============================================================================ */
 
-.citadel-shell {
+.app-root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -524,7 +524,7 @@ button:disabled {
  * Single-Page Layout: Chat + Right Rail + Bet Drawer
  * ============================================================================ */
 
-.citadel-shell.app-shell {
+.app-root.app-shell {
   height: 100vh;
   height: 100dvh;
   min-height: 0;

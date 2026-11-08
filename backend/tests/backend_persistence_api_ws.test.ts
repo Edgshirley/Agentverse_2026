@@ -56,7 +56,7 @@ describe('SQLite / D1 Relational Persistence, Full API Routes & Real-Time Pub/Su
     // Mutate store2 before hydration to prove hydration overwrites with DB state
     store2.engine.ledger.registerPlayer({
       id: 'temp_user',
-      group_id: 'grp_citadel',
+      group_id: 'grp_main',
       nickname: 'TEMP',
       is_admin: false,
       wallet_balance_toks: 999,

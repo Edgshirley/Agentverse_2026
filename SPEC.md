@@ -2,7 +2,7 @@
 
 **Date:** November 7, 2026  
 **Currency:** Stokens (`CHIP` — play-money "Spread Tokens" only; integer balances, zero monetary value)  
-** Aesthetic:** Full Dual-Theme Citadel Poker Terminal (`#000000` Live Terminal + `#FAFAFA` Strategy & Allocation Sheet)
+** Aesthetic:** Full Dual-Theme MarketMate (`#000000` Live Terminal + `#FAFAFA` Strategy & Allocation Sheet)
 
 ---
 
@@ -16,7 +16,7 @@
 4. **Hybrid Entry: 1-Tap Manual Takes + AI Strategy Risk Gate** — Manual Over/Under buttons execute in **1 tap** for speed (< 30s from prompt to auction). When entering via **conversational voice or text strategy**, the bot enforces a **Hard Risk Gate**, requiring explicit confirmation of: (1) Strategy Summary, (2) Take-Profit target, and (3) Drawdown Floor (`min_balance_floor`) before activation.
 5. **Voice-First & Text Modality** — Push-to-talk speech-to-intent lets players propose markets, dictate multi-leg strategies, or adjust stops by voice alongside standard text and 1-tap controls.
 6. **Two-Stage AI Classification & 3rd-Party Oracle Resolution** — **Agent 1 (Intake)** structures raw prompts; **Agent 2 (Classifier)** assigns market archetype and resolution route (`Auto`, `Arbiter`, `Group`). Unverifiable private bets lock on a mandatory countdown and require a designated non-trading **3rd-Party Arbiter** to enter the official outcome.
-7. **Full Dual-Theme Citadel Poker Terminal UI** — High-contrast monospaced interface combining a `#000000` Dark Live Terminal and a `#FAFAFA` Light Strategy & Allocation Sheet across five core exhibits: **Player Ring**, **Action Swimlanes**, **Branching Swing Tree**, **Heads-Up Telemetry Card**, and **Live Wire Trace**.
+7. **Full Dual-Theme MarketMate UI** — High-contrast monospaced interface combining a `#000000` Dark Live Terminal and a `#FAFAFA` Light Strategy & Allocation Sheet across five core exhibits: **Player Ring**, **Action Swimlanes**, **Branching Swing Tree**, **Heads-Up Telemetry Card**, and **Live Wire Trace**.
 8. **Deterministic Zero-Sum Engine** — AI agents only invoke tools to return structured proposals. Only the deterministic market engine mutates state or balances, and every balance-affecting action requires explicit player confirmation.
 
 ---
@@ -156,7 +156,7 @@ The AI never mutates database state or balances directly; every tool returns a s
 
 ---
 
-## 4. UI & Visual Design: Citadel Poker Terminal
+## 4. UI & Visual Design: MarketMate
 
 ### 4.1 Visual Language & Dual High-Contrast Themes
 
@@ -234,7 +234,7 @@ The AI never mutates database state or balances directly; every tool returns a s
 | **FR-07** | Public Swing Map | Participants can place balance-backed limit and stop orders; all open orders are visible to the group on the Swing Map and branching Swing Tree. | MUST |
 | **FR-08** | Custom Arbiter & Lock | `custom_unverifiable` markets require a countdown timer and a designated non-trading 3rd-party arbiter; countdown expiry locks all trading/withdrawals until the arbiter submits $X$. | MUST |
 | **FR-09** | Replay Mode | The live feed worker supports deterministic Replay Mode to stream recorded matches at configurable speeds for demos and automated tests. | MUST |
-| **FR-10** | Dual-Theme Terminal UI | The app implements both the `#000000` Dark Live Terminal and `#FAFAFA` Light Strategy Sheet across all 5 Citadel Poker exhibits. | MUST |
+| **FR-10** | Dual-Theme Terminal UI | The app implements both the `#000000` Dark Live Terminal and `#FAFAFA` Light Strategy Sheet across all 5 exhibits. | MUST |
 
 ### 6.2 Edge Cases & Deterministic Resolution
 
@@ -267,7 +267,7 @@ The AI never mutates database state or balances directly; every tool returns a s
 ### 7.2 Phased Delivery Milestones
 
 - [x] **M0 — Deterministic Rules Engine:** Pure TypeScript engine covering width auction, `[L, H]` quotes, `Pot`/`Binary`/`Linear`/`Log` payoffs, escrow, P2P position transfers, continuous mark-to-market pool math, limit/stop cascade matching, and Golden + `fast-check` property test suites.
-- [x] **M1 — Citadel Poker Terminal Web App & Cloudflare D1 Backend:** Single Cloudflare Worker + D1 persistence, invite-link groups, real-time state sync, Dual-Theme UI (`#000000` Live Terminal + `#FAFAFA` Strategy Sheet), Player Ring, Action Swimlanes, 1-tap takes, and manual resolution.
+- [x] **M1 — MarketMate Web App & Cloudflare D1 Backend:** Single Cloudflare Worker + D1 persistence, invite-link groups, real-time state sync, Dual-Theme UI (`#000000` Live Terminal + `#FAFAFA` Strategy Sheet), Player Ring, Action Swimlanes, 1-tap takes, and manual resolution.
 - [x] **M2 — Multi-Agent AI & Voice Layer:** Cloudflare Workers AI (`env.AI`) pipeline for Agent 1 (`draft_market`, `lint_criteria`), Agent 2 (`classify_market`), push-to-talk voice input, `parse_rule` with the mandatory 3-part Risk Gate, `commentate`, and `write_recap`.
 - [x] **M3 — Live Feeds, Order Book & Demo Readiness:** Sports feed tick controller with Replay Mode, Poisson fair-value model, P2P standing bids, public Limit/Stop Swing Map, Branching Swing Tree, Telemetry Card, and Wire Trace.
 - [x] **M4 — Stacked Markets, Arbiter Route & Edge Deployment:** Stacked derivative markets (`parent_market_id`), countdown-locked 3rd-party Arbiter workflow, ranking markets, and zero-cost Cloudflare Worker + D1 deployment.

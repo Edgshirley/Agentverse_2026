@@ -71,7 +71,7 @@ export const App: React.FC = () => {
 
   if (loading || !data) {
     return (
-      <div className="citadel-shell" data-theme={theme} style={{ padding: 40, textAlign: 'center' }}>
+      <div className="app-root" data-theme={theme} style={{ padding: 40, textAlign: 'center' }}>
         <span className="pixel-font">LOADING MARKETMATE...</span>
       </div>
     );
@@ -90,7 +90,7 @@ export const App: React.FC = () => {
     };
 
   return (
-    <div className="citadel-shell app-shell" data-theme={theme}>
+    <div className="app-root app-shell" data-theme={theme}>
       {/* Subtle Gently-Floating 8-Bit Playing Cards, Joker Card & Centered CHIP Poker Chips */}
       <div className="bg-betting-decor" aria-hidden="true">
         <div
@@ -143,7 +143,6 @@ export const App: React.FC = () => {
       </div>
 
       <HeaderBar
-        group={group}
         activePlayer={activePlayer}
         theme={theme}
         onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}

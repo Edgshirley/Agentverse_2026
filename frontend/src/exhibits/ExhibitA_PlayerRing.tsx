@@ -116,7 +116,7 @@ export const ExhibitA_PlayerRing: React.FC<ExhibitAProps> = ({
           {topSeats.map((p, idx) => renderSeat(p, idx))}
         </div>
 
-        {/* Center Citadel Poker Board */}
+        {/* Center Poker Board */}
         <div className="center-poker-board">
           <div
             style={{

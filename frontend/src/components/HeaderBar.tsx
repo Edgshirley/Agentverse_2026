@@ -1,10 +1,9 @@
 import React from 'react';
 import { Icon } from './Icon';
-import { Group, Player } from '../shared/types';
+import { Player } from '../shared/types';
 import { PixelMascot } from './PixelMascot';
 
 interface HeaderBarProps {
-  group: Group;
   activePlayer: Player;
   theme: 'dark' | 'light';
     onToggleTheme: () => void;
@@ -14,7 +13,6 @@ interface HeaderBarProps {
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
-  group,
   activePlayer,
   theme,
     onToggleTheme,
@@ -24,13 +22,12 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 }) => {
   return (
     <header className="terminal-header">
-      {/* Brand + Group Name */}
+      {/* Brand */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <span className="brand-lockup">
           <PixelMascot size={32} />
           <span className="pixel-font brand-wordmark">MarketMate</span>
         </span>
-        <span style={{ fontWeight: 700, fontSize: 13 }}>{group.name}</span>
       </div>
 
       {/* Your CHIP Balance & Theme */}

@@ -26,7 +26,7 @@ def api_request(method: str, path: str, payload: dict | None = None) -> dict:
 
 
 def wait_for_app() -> None:
-    print(f"[SEED] Waiting for Citadel Terminal API at {API_BASE_URL}/api/state ...")
+    print(f"[SEED] Waiting for MarketMate API at {API_BASE_URL}/api/state ...")
     deadline = time.time() + MAX_WAIT_SECONDS
     while time.time() < deadline:
         try:

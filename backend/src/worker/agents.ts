@@ -654,7 +654,7 @@ export async function generateMarketRecapAsync(
   const deterministic = generateMarketRecap(market, netPnlByPlayer);
   const aiRecap = await callLlmJson<RecapProposal>(
     env,
-    `You are the Citadel Poker Terminal Post-Settlement Analyst (write_recap).
+    `You are the MarketMate Post-Settlement Analyst (write_recap).
 Return JSON with:
 - headline: string (must include "X = ${market.outcome_x}")
 - winner_summary: string

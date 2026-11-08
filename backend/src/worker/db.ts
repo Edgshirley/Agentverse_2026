@@ -214,8 +214,8 @@ export class EdgeStateStore {
     this.clock = new DeterministicClock(1762542000000);
     this.engine = new SpreadEngine(this.clock);
     this.group = {
-      id: 'grp_citadel',
-      name: seedDemoFixtures ? 'CITADEL // NORTH LONDON SYNDICATE' : 'FRIENDS BETTING CLUB',
+      id: 'grp_main',
+      name: seedDemoFixtures ? 'NORTH LONDON SYNDICATE' : 'FRIENDS BETTING CLUB',
       invite_code: 'MARKETMATE-2026',
       created_at: this.clock.now(),
     };
@@ -274,7 +274,7 @@ export class EdgeStateStore {
     this.stateVersion += 1;
     this.group = {
       ...this.group,
-      name: this.seedDemoFixtures ? 'CITADEL // NORTH LONDON SYNDICATE' : 'FRIENDS BETTING CLUB',
+      name: this.seedDemoFixtures ? 'NORTH LONDON SYNDICATE' : 'FRIENDS BETTING CLUB',
     };
     if (this.seedDemoFixtures) {
       this.seedInitialState();

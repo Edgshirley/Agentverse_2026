@@ -7,6 +7,7 @@ import { cors } from 'hono/cors';
 import { streamSSE } from 'hono/streaming';
 import { createMiddleware } from 'hono/factory';
 import { Env, globalStore } from './db';
+import { AUCTION_QUIET_PERIOD_MS } from '../engine/auction';
 import { Market, OrderType, PositionSide, StrategyMandate } from '../shared/types';
 import {
   estimateAdvisoryFairValue,
@@ -183,6 +184,7 @@ app.get('/api/events', handleSseStream);
 
 // 1. Get complete group & active market terminal state
 app.get('/api/state', async (c) => {
+  await closeExpiredAuctions(c.env);
   const requestedMarketId = c.req.query('marketId');
   return c.json(globalStore.getTerminalStatePayload(requestedMarketId));
 });
@@ -348,6 +350,35 @@ app.post('/api/markets/:id/toggles', async (c) => {
 });
 
 // 4. Width Auction: Place width bid, finalize auction, submit [L, H] quote, or trigger timeout
+function closeAuction(marketId: string): void {
+  const market = globalStore.engine.getMarket(marketId);
+  const updated = globalStore.engine.auction.finalizeAuction(market);
+  globalStore.engine.createMarket(updated);
+  globalStore.engine.emitWireTrace(
+    marketId,
+    'MARKET_ENGINE',
+    'BROADCAST',
+    'AUCTION_WON',
+    `Width auction closed -> ${updated.mm_player_id?.toUpperCase()} wins MM at w=${updated.active_width_w}`
+  );
+  globalStore.bumpVersion(marketId);
+}
+
+/** Closes every auction whose timer has run out. Safe to call repeatedly. */
+export async function closeExpiredAuctions(env?: Env): Promise<void> {
+  const now = Date.now();
+  const expired = globalStore.engine
+    .getAllMarkets()
+    .filter(
+      (m) =>
+        m.state === 'width_auction' &&
+        m.auction_closes_at_wall_ms != null &&
+        now >= m.auction_closes_at_wall_ms
+    );
+  for (const market of expired) closeAuction(market.id);
+  if (expired.length > 0) await globalStore.persistToD1(env);
+}
+
 app.post('/api/markets/:id/auction/bid', async (c) => {
   try {
     const marketId = c.req.param('id');
@@ -355,7 +386,10 @@ app.post('/api/markets/:id/auction/bid', async (c) => {
     const validPlayerId = ensurePlayerRegistered(playerId);
     const market = globalStore.engine.getMarket(marketId);
     const res = globalStore.engine.auction.placeWidthBid(market, validPlayerId, Number(width));
-    globalStore.engine.createMarket(res.market);
+    globalStore.engine.createMarket({
+      ...res.market,
+      auction_closes_at_wall_ms: Date.now() + AUCTION_QUIET_PERIOD_MS,
+    });
     globalStore.engine.emitWireTrace(
       marketId,
       'PLAYER',
@@ -373,18 +407,12 @@ app.post('/api/markets/:id/auction/bid', async (c) => {
 
 app.post('/api/markets/:id/auction/finalize', async (c) => {
   try {
+    // Auctions close themselves at the deadline; only the dev simulator may skip the wait.
+    if (!devToolsEnabled(c.env)) {
+      return c.json({ error: 'The auction closes when the timer runs out' }, 409);
+    }
     const marketId = c.req.param('id');
-    const market = globalStore.engine.getMarket(marketId);
-    const updated = globalStore.engine.auction.finalizeAuction(market);
-    globalStore.engine.createMarket(updated);
-    globalStore.engine.emitWireTrace(
-      marketId,
-      'MARKET_ENGINE',
-      'BROADCAST',
-      'AUCTION_WON',
-      `Width auction closed -> ${updated.mm_player_id?.toUpperCase()} wins MM at w=${updated.active_width_w}`
-    );
-    globalStore.bumpVersion(marketId);
+    closeAuction(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
@@ -397,7 +425,7 @@ app.post('/api/markets/:id/auction/quote', async (c) => {
     const marketId = c.req.param('id');
     const { playerId, L } = await c.req.json<{ playerId: string; L: number }>();
     const market = globalStore.engine.getMarket(marketId);
-    const effectiveMm = market.mm_player_id || ensurePlayerRegistered(playerId);
+    const effectiveMm = ensurePlayerRegistered(playerId);
     // The market stays `open` for takes; /lock-takes moves it to `live` once someone has bet.
     const quoted = globalStore.engine.auction.submitQuote(market, effectiveMm, Number(L));
     globalStore.engine.createMarket(quoted);
@@ -474,7 +502,11 @@ app.post('/api/markets/:id/take', async (c) => {
 app.post('/api/markets/:id/lock-takes', async (c) => {
   try {
     const marketId = c.req.param('id');
+    const { playerId } = await c.req.json<{ playerId?: string }>().catch(() => ({ playerId: undefined }));
     const market = globalStore.engine.getMarket(marketId);
+    if (!playerId || ensurePlayerRegistered(playerId) !== market.mm_player_id) {
+      return c.json({ error: 'Only the market maker can open the book' }, 403);
+    }
     const updated = globalStore.engine.spreadBook.lockTakesAndGoLive(
       market,
       `lock_${marketId}_${globalStore.clock.now()}`

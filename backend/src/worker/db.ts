@@ -1285,6 +1285,7 @@ export class EdgeStateStore {
     return {
       stateVersion: this.stateVersion,
       serverClockMs: this.clock.now(),
+      wallClockMs: Date.now(),
       group: this.group,
       players: this.engine.ledger.getAllPlayers(),
       markets,

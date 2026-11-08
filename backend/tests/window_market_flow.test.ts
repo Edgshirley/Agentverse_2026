@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { app } from '../src/worker/index';
 
 async function post(path: string, body: Record<string, unknown> = {}) {
@@ -13,6 +13,8 @@ async function post(path: string, body: Record<string, unknown> = {}) {
 }
 
 describe('Window market lifecycle through the API', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
   it('stays open after the quote so friends can take, then goes live on lock', async () => {
     const { market } = await post('/api/markets', {
       proposer_id: 'you',
@@ -45,6 +47,7 @@ describe('Window market lifecycle through the API', () => {
     });
 
     const id = market.id;
+    vi.stubEnv('DEV_TOOLS', '1'); // skip the auction timer
     await post(`/api/markets/${id}/auction/bid`, { playerId: 'you', width: 2 });
     await post(`/api/markets/${id}/auction/finalize`);
 
@@ -59,7 +62,7 @@ describe('Window market lifecycle through the API', () => {
     });
     expect(taken.positions.some((p: any) => p.player_id === 'friend_a' && p.lots > 0)).toBe(true);
 
-    const live = await post(`/api/markets/${id}/lock-takes`);
+    const live = await post(`/api/markets/${id}/lock-takes`, { playerId: 'you' });
     expect(live.market.state).toBe('live');
   });
 });

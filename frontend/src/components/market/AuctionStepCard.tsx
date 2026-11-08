@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Icon } from '../Icon';
 import { Player } from '../../shared/types';
 import { PixelMascot } from '../PixelMascot';
@@ -8,55 +8,92 @@ import { pickFriends } from '../../shared/friends';
 interface AuctionStepCardProps {
   view: MarketView;
   activePlayer: Player;
+  players: Player[];
+  wallClockMs: number;
   onDispatch: (path: string, body?: Record<string, any>) => Promise<any>;
   /** False behind the gateway: real friends bet, and the market stays open for them. */
   standInFriends: boolean;
 }
 
-/** The two agent-guided steps a window market goes through before it is live. */
+function defaultWidth(unit: string): number {
+  if (unit === 'pit stops' || unit === 'laps') return 2;
+  return unit === 'min' ? 8 : 4;
+}
+
+function defaultStart(unit: string): number {
+  if (unit === 'pit stops' || unit === 'laps') return 3;
+  return unit === 'min' ? 35 : 22;
+}
+
+/** The two steps a window market goes through before friends can bet. */
 export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({
   view,
   activePlayer,
+  players,
+  wallClockMs,
   onDispatch,
   standInFriends,
 }) => {
-  const { market, isSpread, unitLabel } = view;
-  const [widthBidInput, setWidthBidInput] = useState<string>('2');
-  const [quoteLInput, setQuoteLInput] = useState<string>('3');
+  const { market, unitLabel, widthBids } = view;
+
+  const bids = [...widthBids].sort(
+    (a, b) => a.width - b.width || a.created_at - b.created_at
+  );
+  const best = bids[0] ?? null;
+  const isMarketMaker = market.mm_player_id === activePlayer.id;
+  const nameOf = (id: string | null | undefined) =>
+    players.find((p) => p.id === id)?.nickname ?? (id ?? '').toUpperCase();
+
+  const [widthInput, setWidthInput] = useState<string>(String(defaultWidth(market.unit)));
+  const [startInput, setStartInput] = useState<string>(String(defaultStart(market.unit)));
+
+  // Offer the next undercut as soon as someone narrows the window
+  useEffect(() => {
+    if (best) setWidthInput(String(Math.max(1, best.width - 1)));
+    else setWidthInput(String(defaultWidth(market.unit)));
+  }, [best?.width, market.id, market.unit]);
 
   useEffect(() => {
-    if (market.unit === 'pit stops' || market.unit === 'laps') {
-      setWidthBidInput('2');
-      setQuoteLInput('3');
-    } else if (market.unit === 'min') {
-      setWidthBidInput('8');
-      setQuoteLInput('35');
-    } else {
-      setWidthBidInput('4');
-      setQuoteLInput('22');
-    }
+    setStartInput(String(defaultStart(market.unit)));
   }, [market.id, market.unit]);
 
-  // Step 1 Agent-Guided Handler: Bids your width, simulates friend counter-bid if needed, and advances to Step 2
-  const handleStep1BidAndAdvance = async () => {
-    const w = Math.max(1, Number(widthBidInput) || 2);
-    await onDispatch(`/api/markets/${market.id}/auction/bid`, {
-      playerId: activePlayer.id,
-      width: w,
-    });
-    await onDispatch(`/api/markets/${market.id}/auction/finalize`, {});
-  };
+  // The deadline is server time, so everyone at the table sees the same countdown
+  const clockOffsetRef = useRef(0);
+  useEffect(() => {
+    clockOffsetRef.current = wallClockMs - Date.now();
+  }, [wallClockMs]);
 
-  // Step 2 Agent-Guided Handler: Locks window [L, H], seeds one friend bet per side and goes live
-  const handleStep2LockWindowAndGoLive = async () => {
-    const lVal = Number(quoteLInput) || 3;
-    const [friendAbove, friendBelow] = pickFriends(2, [activePlayer.id, market.mm_player_id]);
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 250);
+    return () => clearInterval(timer);
+  }, []);
+
+  const deadline = market.auction_closes_at_wall_ms ?? null;
+  const secondsLeft =
+    deadline == null
+      ? null
+      : Math.max(0, Math.ceil((deadline - (Date.now() + clockOffsetRef.current)) / 1000));
+
+  const parsedWidth = Math.floor(Number(widthInput));
+  const canBid =
+    parsedWidth >= 1 && Number.isFinite(parsedWidth) && (!best || parsedWidth < best.width);
+
+  const placeBid = () =>
+    onDispatch(`/api/markets/${market.id}/auction/bid`, {
+      playerId: activePlayer.id,
+      width: parsedWidth,
+    });
+
+  const setWindow = async () => {
+    const lower = Number(startInput) || 0;
     await onDispatch(`/api/markets/${market.id}/auction/quote`, {
-      playerId: market.mm_player_id || activePlayer.id,
-      L: lVal,
+      playerId: activePlayer.id,
+      L: lower,
     });
     if (!standInFriends) return;
-    // Seed a friend on each side, since a market with no takers voids when it locks
+    // Without the gateway there is nobody else here, so seed one bet per side and go live
+    const [friendAbove, friendBelow] = pickFriends(2, [activePlayer.id, market.mm_player_id]);
     await onDispatch(`/api/markets/${market.id}/take`, {
       playerId: friendAbove,
       side: 'OVER',
@@ -67,114 +104,122 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({
       side: 'UNDER',
       amount: 1,
     });
-    await onDispatch(`/api/markets/${market.id}/lock-takes`, {});
+    await onDispatch(`/api/markets/${market.id}/lock-takes`, { playerId: activePlayer.id });
   };
 
-  if (isSpread && market.state === 'width_auction') {
+  if (market.state === 'width_auction') {
     return (
-      <div className="poker-felt-arena" style={{ maxWidth: 640, margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className="poker-felt-arena auction-card">
+        <div className="auction-card-head">
           <PixelMascot size={42} showExclamation={true} />
           <div>
-            <div className="pixel-font" style={{ fontSize: 11, color: 'var(--pastel-gold-text)' }}>
-              STEP 1/2 · WIDTH
-            </div>
-            <div style={{ fontSize: 16, fontWeight: 700 }}>
-              {market.question.replace(/TOKS/gi, 'CHIP')}
-            </div>
+            <div className="pixel-font auction-step-label">STEP 1/2 · BID THE WINDOW DOWN</div>
+            <div className="auction-question">{market.question.replace(/TOKS/gi, 'CHIP')}</div>
           </div>
+          {secondsLeft != null && (
+            <div
+              className={`pixel-font auction-countdown ${secondsLeft <= 10 ? 'urgent' : ''}`}
+              aria-live="off"
+              title="Closes when nobody undercuts in time. Every bid resets it."
+            >
+              0:{String(secondsLeft).padStart(2, '0')}
+            </div>
+          )}
         </div>
 
-        <p style={{ fontSize: 12.5, color: 'var(--fg-muted)' }}>
-          Tightest window wins the market maker seat.
+        <p className="auction-hint">
+          {best
+            ? 'Tightest window becomes market maker. Each bid restarts the clock.'
+            : 'Tightest window becomes market maker. The clock starts with the first bid.'}
         </p>
 
-        <div
-          style={{
-            display: 'flex',
-            gap: 10,
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            padding: '14px 16px',
-            borderRadius: 10,
-            backgroundColor: 'var(--bg-canvas)',
-            border: '1.5px solid var(--border-color)',
-          }}
-        >
-          <span className="pixel-font">W</span>
+        {bids.length > 0 && (
+          <ol className="auction-bids" aria-label="Bids so far">
+            {bids.slice(0, 4).map((bid, index) => (
+              <li key={bid.id} className={index === 0 ? 'best' : ''}>
+                <span className="pixel-font">{nameOf(bid.player_id)}</span>
+                <span>
+                  {bid.width} {unitLabel}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+
+        <div className="auction-form">
+          <label className="pixel-font" htmlFor="auction-width">
+            W
+          </label>
           <input
+            id="auction-width"
             type="number"
             min={1}
-            value={widthBidInput}
-            onChange={(e) => setWidthBidInput(e.target.value)}
-            style={{ width: 72, padding: '6px 10px', fontWeight: 700 }}
+            max={best ? best.width - 1 : undefined}
+            value={widthInput}
+            onChange={(e) => setWidthInput(e.target.value)}
           />
-          <span className="pixel-font" style={{ fontSize: 11 }}>
-            {unitLabel}
-          </span>
-          <button
-            className="btn-mint pixel-font"
-            style={{ marginLeft: 'auto' }}
-            onClick={handleStep1BidAndAdvance}
-          >
-            <Icon name="check" size={14} /> {widthBidInput} {unitLabel.toUpperCase()}
+          <span className="pixel-font auction-unit">{unitLabel}</span>
+          <button className="btn-mint pixel-font" disabled={!canBid} onClick={placeBid}>
+            <Icon name="arrow-down" size={14} /> {best ? 'UNDERCUT' : 'BID'}
           </button>
         </div>
       </div>
     );
   }
 
-  if (isSpread && market.state === 'quoting') {
-    const w = market.active_width_w ?? (Number(widthBidInput) || 2);
-    const lVal = Number(quoteLInput) || 0;
-    const hVal = lVal + w;
+  if (market.state === 'quoting') {
+    const width = market.active_width_w ?? 0;
+    const lower = Number(startInput) || 0;
+    const upper = lower + width;
+
+    if (!isMarketMaker) {
+      return (
+        <div className="poker-felt-arena auction-card">
+          <div className="auction-card-head">
+            <PixelMascot size={42} />
+            <div>
+              <div className="pixel-font auction-step-label">STEP 2/2 · WINDOW</div>
+              <div className="auction-question">
+                {nameOf(market.mm_player_id)} won at {width} {unitLabel} and is choosing the window
+              </div>
+            </div>
+          </div>
+          <p className="auction-hint">You can bet above or below as soon as it&apos;s set.</p>
+        </div>
+      );
+    }
 
     return (
-      <div className="poker-felt-arena" style={{ maxWidth: 640, margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className="poker-felt-arena auction-card">
+        <div className="auction-card-head">
           <PixelMascot size={42} showExclamation={true} />
           <div>
-            <div className="pixel-font" style={{ fontSize: 11, color: 'var(--pastel-mint-text)' }}>
-              STEP 2/2 · [L, H]
-            </div>
-            <div style={{ fontSize: 16, fontWeight: 700 }}>
-              Width {w} {unitLabel}: pick the start
+            <div className="pixel-font auction-step-label">STEP 2/2 · YOU WON, SET THE WINDOW</div>
+            <div className="auction-question">
+              Width {width} {unitLabel}: pick the start
             </div>
           </div>
         </div>
 
-        <p style={{ fontSize: 12.5, color: 'var(--fg-muted)' }}>
-          Friends bet above {hVal} or below {lVal}.
+        <p className="auction-hint">
+          Friends bet above {upper} or below {lower}. Anything inside pays you.
         </p>
 
-        <div
-          style={{
-            display: 'flex',
-            gap: 12,
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            padding: '14px 16px',
-            borderRadius: 10,
-            backgroundColor: 'var(--bg-canvas)',
-            border: '1.5px solid var(--border-color)',
-          }}
-        >
-          <span>Start (L):</span>
+        <div className="auction-form">
+          <label className="pixel-font" htmlFor="auction-start">
+            L
+          </label>
           <input
+            id="auction-start"
             type="number"
-            value={quoteLInput}
-            onChange={(e) => setQuoteLInput(e.target.value)}
-            style={{ width: 72, padding: '6px 10px', fontWeight: 700 }}
+            value={startInput}
+            onChange={(e) => setStartInput(e.target.value)}
           />
           <span className="badge-outline pixel-font">
-            WINDOW: [{lVal} .. {hVal}] {unitLabel}
+            [{lower} .. {upper}] {unitLabel}
           </span>
-          <button
-            className="btn-mint pixel-font"
-            style={{ marginLeft: 'auto' }}
-            onClick={handleStep2LockWindowAndGoLive}
-          >
-            <Icon name="play" size={14} /> [{lVal}..{hVal}]
+          <button className="btn-mint pixel-font" onClick={setWindow}>
+            <Icon name="play" size={14} /> OPEN BETS
           </button>
         </div>
       </div>

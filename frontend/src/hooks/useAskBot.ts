@@ -307,22 +307,13 @@ export function useAskBot({
       return;
     }
 
+    if (activeMarket.state === 'width_auction' || activeMarket.state === 'quoting') {
+      setGateError('Bets open once the market maker sets the window.');
+      return;
+    }
+
     setIsProcessing(true);
     try {
-      if (activeMarket.archetype === 'spread' && activeMarket.state === 'width_auction') {
-        const defaultW = activeMarket.unit === 'pit stops' ? 2 : 8;
-        const defaultL = activeMarket.unit === 'pit stops' ? 3 : 35;
-        await onDispatch(`/api/markets/${activeMarket.id}/auction/bid`, {
-          playerId: 'house_mm',
-          width: defaultW,
-        });
-        await onDispatch(`/api/markets/${activeMarket.id}/auction/finalize`, {});
-        await onDispatch(`/api/markets/${activeMarket.id}/auction/quote`, {
-          playerId: 'house_mm',
-          L: defaultL,
-        });
-      }
-
       await onDispatch(`/api/markets/${activeMarket.id}/strategy/activate`, {
         player_id: activePlayer.id,
         input_modality: 'voice',

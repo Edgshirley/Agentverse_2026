@@ -1,7 +1,7 @@
 import React from 'react';
 import { Icon } from '../Icon';
 import { AskBot } from '../../hooks/useAskBot';
-import { PayoffMode } from '../../shared/types';
+import { PAYOUT_MODES } from '../market/payouts';
 import { PixelMascot } from '../PixelMascot';
 
 /** Agent 1 + Agent 2 result, ready for the creator to confirm. */
@@ -72,6 +72,28 @@ export const DraftCard: React.FC<{ bot: AskBot }> = ({ bot }) => {
         &ldquo;{draft.question.replace(/TOKS/gi, 'CHIP')}&rdquo;
       </div>
 
+      {classification.archetype === 'spread' && (
+        <div className="payout-picker">
+          <div className="payout-modes" role="radiogroup" aria-label="Payout mode">
+            {PAYOUT_MODES.map((option) => (
+              <button
+                key={option.mode}
+                type="button"
+                role="radio"
+                aria-checked={inHousePayoffMode === option.mode}
+                className={inHousePayoffMode === option.mode ? 'btn-brand' : ''}
+                onClick={() => setInHousePayoffMode(option.mode)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <p className="auction-hint">
+            {PAYOUT_MODES.find((option) => option.mode === inHousePayoffMode)?.blurb}
+          </p>
+        </div>
+      )}
+
       {/* Compact Agent Summary Pill Row */}
       <div
         style={{
@@ -120,20 +142,6 @@ export const DraftCard: React.FC<{ bot: AskBot }> = ({ bot }) => {
                 gap: 10,
               }}
             >
-              <div>
-                <label style={{ fontSize: 11, color: 'var(--fg-muted)', display: 'block', marginBottom: 4 }}>
-                  When Market Maker wins inside [L, H]:
-                </label>
-                <select
-                  value={inHousePayoffMode}
-                  onChange={(e) => setInHousePayoffMode(e.target.value as PayoffMode)}
-                  style={{ width: '100%', padding: '6px 8px' }}
-                >
-                  <option value="linear">Linear per {inHouseUnit}</option>
-                  <option value="pot">Pot Sweep</option>
-                  <option value="binary">Fixed 1:1</option>
-                </select>
-              </div>
               <div>
                 <label style={{ fontSize: 11, color: 'var(--fg-muted)', display: 'block', marginBottom: 4 }}>
                   Max Payout Cap:

@@ -15,6 +15,7 @@ interface MarketDetailProps {
   players: Player[];
   activePlayer: Player;
   serverClockMs: number;
+  wallClockMs: number;
   showUnitLadder: boolean;
   onToggleUnitLadder: (show: boolean) => void;
   onSelectMarket: (marketId: string) => void;
@@ -28,6 +29,7 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
   players,
   activePlayer,
   serverClockMs,
+  wallClockMs,
   showUnitLadder,
   onToggleUnitLadder,
   onSelectMarket,
@@ -102,6 +104,8 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
       <AuctionStepCard
         view={view}
         activePlayer={activePlayer}
+        players={players}
+        wallClockMs={wallClockMs}
         onDispatch={onDispatch}
         standInFriends={standInFriends}
       />
@@ -240,7 +244,12 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
         )}
 
         {(market.state === 'live' || market.state === 'open') && (
-          <MarketActions view={view} activePlayer={activePlayer} onDispatch={onDispatch} />
+          <MarketActions
+            view={view}
+            activePlayer={activePlayer}
+            players={players}
+            onDispatch={onDispatch}
+          />
         )}
       </div>
     </div>

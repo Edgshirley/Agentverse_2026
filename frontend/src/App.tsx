@@ -181,7 +181,7 @@ export const App: React.FC = () => {
 
   const effectiveDisplayName = customName.trim() || defaultGeneratedName;
 
-  const { group, players, markets, activeBundle, chatMessages, serverClockMs } = data;
+  const { group, players, markets, activeBundle, chatMessages, serverClockMs, wallClockMs } = data;
   const rawActivePlayer =
     players.find((p) => p.id === activePlayerId) ??
     players[0] ?? {
@@ -440,6 +440,7 @@ export const App: React.FC = () => {
             players={playersWithProfileName}
             activePlayer={activePlayer}
             serverClockMs={serverClockMs}
+            wallClockMs={wallClockMs}
             showUnitLadder={showUnitLadder}
             onToggleUnitLadder={setShowUnitLadder}
             onSelectMarket={setSelectedMarketId}

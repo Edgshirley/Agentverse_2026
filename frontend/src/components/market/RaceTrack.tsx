@@ -30,7 +30,9 @@ export const RaceTrack: React.FC<RaceTrackProps> = ({ view, players, activePlaye
       name: activePlayer.nickname,
       subtitle: myActivePos
         ? `${myActivePos.side === 'OVER' ? 'ABOVE' : myActivePos.side === 'UNDER' ? 'BELOW' : myActivePos.side} · ${myLiveBalance} CHIP`
-        : 'READY TO BET',
+        : market.mm_player_id === activePlayer.id
+          ? 'MARKET MAKER'
+          : 'READY TO BET',
       pct: Math.min(95, Math.max(18, myLiveBalance > 0 ? Math.round((myLiveBalance / Math.max(100, totalPotChip)) * 100) : 32)),
       colorClass: 'filled-mint' as const,
       accent: 'var(--pastel-mint-border)',

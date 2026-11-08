@@ -88,6 +88,8 @@ export interface Market {
   outcome_x?: number | null;
   toggles: MarketToggles;
   auction_quiet_Ends_at?: number | null;
+  /** Real time the auction closes; resets on every bid. */
+  auction_closes_at_wall_ms?: number | null;
   quote_deadline_at?: number | null;
   version: number; // Optimistic concurrency version
   created_at: number;

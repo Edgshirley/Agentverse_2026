@@ -123,7 +123,7 @@ export const SIM_STEPS: SimStep[] = [
   take(SIDES, ARSENAL, 'michel', 'UNDER', 2),
   take(SIDES, ARSENAL, 'jules', 'UNDER', 1),
   take(SIDES, ARSENAL, 'andre', 'OVER', 1),
-  act(SIDES, 'Takes lock: the market is live', market(ARSENAL, 'lock-takes'), {}, ARSENAL, true),
+  act(SIDES, 'Takes lock: the market is live', market(ARSENAL, 'lock-takes'), { playerId: 'edouard' }, ARSENAL, true),
 
   tick(MATCH, ARSENAL, "1': kickoff", true),
   tick(MATCH, ARSENAL, "18': Saka hits the bar"),

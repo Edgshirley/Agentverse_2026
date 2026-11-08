@@ -3,7 +3,7 @@ import { Player } from '../../shared/types';
 
 /** Values derived from the active bundle that every market panel needs. */
 export function deriveMarketView(bundle: ActiveMarketBundle, activePlayer: Player) {
-  const { market, positions, orders, mmEscrowToks } = bundle;
+  const { market, positions, orders, mmEscrowToks, widthBids } = bundle;
   const isSpread = market.archetype === 'spread';
   const openOrders = orders.filter((o) => o.status === 'open');
   const unitLabel =
@@ -24,6 +24,7 @@ export function deriveMarketView(bundle: ActiveMarketBundle, activePlayer: Playe
   return {
     market,
     positions,
+    widthBids,
     isSpread,
     openOrders,
     unitLabel,

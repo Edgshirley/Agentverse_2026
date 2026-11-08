@@ -1116,6 +1116,111 @@ button:disabled {
   color: var(--pastel-gold-text);
 }
 
+.auction-card {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.auction-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auction-card-head > div:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
+.auction-step-label {
+  font-size: 11px;
+  color: var(--pastel-gold-text);
+}
+
+.auction-question {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.auction-countdown {
+  font-size: 22px;
+  color: var(--pastel-gold-border);
+}
+
+.auction-countdown.urgent {
+  color: var(--brand-ink);
+}
+
+.auction-hint {
+  font-size: 12.5px;
+  color: var(--fg-muted);
+}
+
+.auction-bids {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.auction-bids li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--bg-canvas);
+}
+
+.auction-bids li.best {
+  border-color: var(--pastel-mint-border);
+  background-color: var(--pastel-mint-bg);
+  color: var(--pastel-mint-text);
+}
+
+.auction-form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
+  background-color: var(--bg-canvas);
+}
+
+.auction-form input {
+  width: 72px;
+  padding: 6px 10px;
+  font-weight: 700;
+}
+
+.auction-form button {
+  margin-left: auto;
+}
+
+.auction-unit {
+  font-size: 11px;
+}
+
+.payout-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.payout-modes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.payout-modes button {
+  padding: 5px 4px;
+  font-size: 11.5px;
+}
+
 /* ============================================================================
  * Chat Screen & Bottom-Right 8-Bit Mascot Pop-Up Widget
  * ============================================================================ */

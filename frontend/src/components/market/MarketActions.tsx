@@ -2,15 +2,26 @@ import React, { useEffect, useState } from 'react';
 import { Icon } from '../Icon';
 import { Player } from '../../shared/types';
 import { MarketView } from './marketView';
+import { describePayout } from './payouts';
 
 interface MarketActionsProps {
   view: MarketView;
   activePlayer: Player;
+  players: Player[];
   onDispatch: (path: string, body?: Record<string, any>) => Promise<any>;
 }
 
-export const MarketActions: React.FC<MarketActionsProps> = ({ view, activePlayer, onDispatch }) => {
-  const { market, isSpread, unitLabel, myActivePos, myLiveBalance } = view;
+export const MarketActions: React.FC<MarketActionsProps> = ({
+  view,
+  activePlayer,
+  players,
+  onDispatch,
+}) => {
+  const { market, positions, isSpread, unitLabel, myActivePos, myLiveBalance } = view;
+  const isMarketMaker = isSpread && market.mm_player_id === activePlayer.id;
+  const hasBets = positions.some((p) => p.lots > 0);
+  const marketMakerName =
+    players.find((p) => p.id === market.mm_player_id)?.nickname ?? 'The market maker';
 
   const [showCustomWithdraw, setShowCustomWithdraw] = useState<boolean>(false);
   const [withdrawValue, setWithdrawValue] = useState<string>('25');
@@ -39,8 +50,28 @@ export const MarketActions: React.FC<MarketActionsProps> = ({ view, activePlayer
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {isSpread && (
+        <p className="auction-hint">
+          {describePayout(market, unitLabel)} Inside the window, the market maker wins.
+          {market.state === 'open' && !isMarketMaker && ` ${marketMakerName} goes live when ready.`}
+        </p>
+      )}
+
+      {isMarketMaker && market.state === 'open' && (
+        <button
+          className="btn-brand pixel-font"
+          disabled={!hasBets}
+          title={hasBets ? 'Close the opening round and go live' : 'Waiting for the first bet'}
+          onClick={() =>
+            onDispatch(`/api/markets/${market.id}/lock-takes`, { playerId: activePlayer.id })
+          }
+        >
+          <Icon name="play" size={15} /> {hasBets ? 'GO LIVE' : 'WAITING FOR BETS'}
+        </button>
+      )}
+
       <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-        {isSpread ? (
+        {isMarketMaker ? null : isSpread ? (
           <>
             <button
               className="btn-mint pixel-font"

@@ -40,6 +40,7 @@ export interface ActiveMarketBundle {
 export interface TerminalStatePayload {
   stateVersion: number;
   serverClockMs: number;
+  wallClockMs: number;
   group: Group;
   players: Player[];
   markets: Market[];

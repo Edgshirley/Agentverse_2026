@@ -144,6 +144,50 @@ describe('Live bet proposal', () => {
   });
 });
 
+describe('Gemini failures say what went wrong', () => {
+  beforeEach(() => vi.stubEnv('GEMINI_API_KEY', 'test-key'));
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  const failWith = (status: number, reason?: string) =>
+    vi.fn().mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ error: { details: reason ? [{ reason }] : [] } }), { status })
+    );
+  const errorFor = async () =>
+    ((await (await send('/api/agents/intake', { prompt: 'a bet' })).json()) as any).error as string;
+
+  it('names a missing key', async () => {
+    vi.stubEnv('GEMINI_API_KEY', '');
+    expect(await errorFor()).toMatch(/GEMINI_API_KEY isn't set/);
+  });
+
+  it.each([
+    [400, 'API_KEY_INVALID', /rejected the Gemini API key/],
+    [403, 'PERMISSION_DENIED', /rejected the Gemini API key/],
+    [404, undefined, /isn't available for this API key/],
+    [429, 'RESOURCE_EXHAUSTED', /quota or rate limit/],
+    [503, undefined, /having problems/],
+  ])('explains HTTP %s', async (status, reason, expected) => {
+    vi.stubGlobal('fetch', failWith(status, reason));
+    expect(await errorFor()).toMatch(expected);
+  });
+
+  it('explains a connection failure', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed')));
+    expect(await errorFor()).toMatch(/couldn't connect/);
+  });
+
+  it('never exposes the key in the status report', async () => {
+    const res = await app.request('/api/system/status');
+    const text = await res.text();
+    expect(JSON.parse(text).gemini.configured).toBe(true);
+    expect(text).not.toContain('test-key');
+  });
+});
+
 describe('Bot resolution', () => {
   beforeEach(() => vi.stubEnv('GEMINI_API_KEY', 'test-key'));
   afterEach(() => {

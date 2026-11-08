@@ -19,6 +19,7 @@ import {
   BotVerdict,
   draftBetFromText,
   findMarketResult,
+  geminiStatus,
   getOutsideOdds,
   isLiveAiConfigured,
 } from './agents';
@@ -116,6 +117,7 @@ app.get('/api/system/status', async (c) => {
     postgres: { connected: pgConnected, host: config.POSTGRES_HOST, database: config.POSTGRES_DB },
     redis: { connected: redisConnected, host: config.REDIS_HOST, db: 2 },
     messageBus: { driver: config.MESSAGE_BUS, channel: config.BUS_CHANNEL },
+    gemini: geminiStatus(c.env),
   });
 });
 
@@ -1371,6 +1373,8 @@ app.post('/api/demo/reset', async (c) => {
   await globalStore.resetAndPersist(c.env);
   return c.json({ ok: true, stateVersion: globalStore.stateVersion });
 });
+
+export { geminiStatus };
 
 // Default export for Cloudflare Workers runtime (serves API, WebSocket Upgrade, & Static Assets)
 export default {

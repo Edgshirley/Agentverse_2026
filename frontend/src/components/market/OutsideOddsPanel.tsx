@@ -4,7 +4,7 @@ import { Market, OutsideOdds } from '../../shared/types';
 
 const MESSAGES: Record<Exclude<OutsideOdds['status'], 'ok'>, string> = {
   no_data: 'Nothing useful found on the web for this one.',
-  unconfigured: 'The bot needs a Gemini key on the server to search the web.',
+  unconfigured: "The bot isn't connected to Gemini on the game server.",
   error: "Couldn't search the web. Try again in a minute.",
 };
 
@@ -72,7 +72,7 @@ export const OutsideOddsPanel: React.FC<{ market: Market }> = ({ market }) => {
 
       {loading && !odds && <p className="auction-hint">Searching the web...</p>}
 
-      {odds && odds.status !== 'ok' && <p className="auction-hint">{MESSAGES[odds.status]}</p>}
+      {odds && odds.status !== 'ok' && <p className="auction-hint">{odds.message ?? MESSAGES[odds.status]}</p>}
 
       {odds?.status === 'ok' && (
         <>

@@ -11,7 +11,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
-import { app, globalStore, runMarketTimers } from '../dist/worker.mjs';
+import { app, geminiStatus, globalStore, runMarketTimers } from '../dist/worker.mjs';
 import { createSqliteD1Database } from '../dist/sqlite_d1.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -44,6 +44,14 @@ globalStore.attachDatabase(sqliteDb);
 const hydrated =
   (await globalStore.hydrateFromPostgresOrRedis()) ||
   (await globalStore.hydrateFromD1({ ...process.env, DB: sqliteDb }));
+
+// Says whether the AI is connected, without ever printing the key
+const gemini = geminiStatus(process.env);
+console.log(
+  gemini.configured
+    ? `Gemini: key found, using model ${gemini.model}`
+    : 'Gemini: GEMINI_API_KEY is NOT set. Put it in prod.env or secrets.env, then recreate the engine.'
+);
 
 // Auctions, challenge windows and bot checks run on real time, even when nobody is polling
 globalStore.enableWallClock();

@@ -117,6 +117,7 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - MESSAGE_BUS=redis
       - BUS_CHANNEL=${BUS_CHANNEL:-spread-messages}
+      # `make prod` reads these from prod.env and, if present, secrets.env.
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash}
     volumes:

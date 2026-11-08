@@ -195,6 +195,8 @@ export interface OutcomeProposal {
 
 export interface OutsideOdds {
   status: 'ok' | 'no_data' | 'unconfigured' | 'error';
+  /** What went wrong, safe to show to players. */
+  message?: string;
   summary?: string;
   facts?: string[];
   quotes: { source: string; value: string; detail?: string }[];

@@ -579,8 +579,8 @@ export function clearOutsideOddsCache(): void {
   outsideOddsInFlight.clear();
 }
 
-function oddsResult(status: OutsideOdds['status']): OutsideOdds {
-  return { status, quotes: [], sources: [], fetched_at: Date.now() };
+function oddsResult(status: OutsideOdds['status'], message?: string): OutsideOdds {
+  return { status, message, quotes: [], sources: [], fetched_at: Date.now() };
 }
 
 function geminiConfig(env?: Env): { apiKey: string; model: string } | null {
@@ -594,26 +594,64 @@ export function isLiveAiConfigured(env?: Env): boolean {
   return geminiConfig(env) !== null;
 }
 
+/** Safe to expose: says whether a key exists and which model is used, never the key. */
+export function geminiStatus(env?: Env): { configured: boolean; model: string } {
+  return {
+    configured: isLiveAiConfigured(env),
+    model: getEnvVar(env, 'GEMINI_MODEL') || DEFAULT_GEMINI_MODEL,
+  };
+}
+
+const NO_KEY_MESSAGE = "The bot isn't connected: GEMINI_API_KEY isn't set on the game server.";
+
+/** Thrown with a message that names the real cause and is safe to show to players. */
+class GeminiRequestError extends Error {}
+
+function describeGeminiFailure(httpStatus: number, reason: string, model: string): string {
+  if (reason === 'API_KEY_INVALID' || httpStatus === 401 || httpStatus === 403) {
+    return 'Google rejected the Gemini API key on the game server.';
+  }
+  if (httpStatus === 404) return `Gemini model "${model}" isn't available for this API key.`;
+  if (httpStatus === 429) return 'The Gemini quota or rate limit has been reached. Try again later.';
+  if (httpStatus >= 500) return 'Gemini is having problems right now. Try again in a minute.';
+  return `Gemini rejected the request (HTTP ${httpStatus}).`;
+}
+
 async function geminiGenerate(
   config: { apiKey: string; model: string },
   body: Record<string, unknown>
 ): Promise<any> {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(config.model)}:generateContent`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': config.apiKey },
-      signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
-      body: JSON.stringify(body),
-    }
-  );
+  let res: Response;
+  try {
+    res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(config.model)}:generateContent`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': config.apiKey },
+        signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
+        body: JSON.stringify(body),
+      }
+    );
+  } catch (err) {
+    const timedOut = err instanceof Error && err.name === 'TimeoutError';
+    console.warn(`Gemini request failed: ${err instanceof Error ? err.name : 'unknown'}`);
+    throw new GeminiRequestError(
+      timedOut ? 'Gemini took too long to answer. Try again.' : "The game server couldn't connect to Gemini."
+    );
+  }
+
   if (!res.ok) {
-    console.warn(`Gemini returned HTTP ${res.status} for model ${config.model}`);
-    throw new Error(`Gemini returned HTTP ${res.status}`);
+    const error: any = await res.json().catch(() => null);
+    const reason = String(error?.error?.details?.[0]?.reason ?? error?.error?.status ?? '');
+    console.warn(`Gemini returned HTTP ${res.status} for model ${config.model} (${reason || 'no reason given'})`);
+    throw new GeminiRequestError(describeGeminiFailure(res.status, reason, config.model));
   }
   const data: any = await res.json();
   return data?.candidates?.[0];
 }
+
+const geminiFailureMessage = (err: unknown): string =>
+  err instanceof GeminiRequestError ? err.message : 'The bot hit an unexpected problem talking to Gemini.';
 
 const candidateText = (candidate: any): string =>
   candidate?.content?.parts?.map((p: any) => p.text || '').join('') || '';
@@ -727,7 +765,7 @@ export async function getOutsideOdds(
   refresh: boolean = false
 ): Promise<OutsideOdds> {
   const config = geminiConfig(env);
-  if (!config) return oddsResult('unconfigured');
+  if (!config) return oddsResult('unconfigured', NO_KEY_MESSAGE);
 
   const cacheKey = `${market.id}:${market.question}`;
   const cached = outsideOddsCache.get(cacheKey);
@@ -741,10 +779,7 @@ export async function getOutsideOdds(
   if (running) return running;
 
   const request = requestOutsideOdds(market, config)
-    .catch((err: unknown) => {
-      console.warn(`Outside odds: request failed (${err instanceof Error ? err.name : 'unknown'})`);
-      return oddsResult('error');
-    })
+    .catch((err: unknown) => oddsResult('error', geminiFailureMessage(err)))
     .then((result) => {
       outsideOddsCache.set(cacheKey, result);
       outsideOddsInFlight.delete(cacheKey);
@@ -796,7 +831,7 @@ export async function draftBetFromText(
   now: number = Date.now()
 ): Promise<LiveProposalResult> {
   const config = geminiConfig(env);
-  if (!config) throw new BotUnavailableError('The bot needs a Gemini API key on the server');
+  if (!config) throw new BotUnavailableError(NO_KEY_MESSAGE);
 
   const systemPrompt = `You turn a friend's message into a bet for a group betting game.
 The current time is ${new Date(now).toISOString()}.
@@ -822,8 +857,8 @@ Say whether a public source could settle it, or whether it is a private matter. 
       },
       text
     );
-  } catch {
-    throw new BotUnavailableError('The bot could not reach Gemini. Try again in a minute.');
+  } catch (err) {
+    throw new BotUnavailableError(geminiFailureMessage(err));
   }
 
   const raw = reply.parsed;
@@ -917,7 +952,7 @@ export async function findMarketResult(
   now: number = Date.now()
 ): Promise<BotVerdict> {
   const config = geminiConfig(env);
-  if (!config) throw new BotUnavailableError('The bot needs a Gemini API key on the server');
+  if (!config) throw new BotUnavailableError(NO_KEY_MESSAGE);
 
   const systemPrompt = `You settle a bet between friends using real, published results.
 The current time is ${new Date(now).toISOString()}.
@@ -943,8 +978,8 @@ Preferred source: ${market.resolution_source}`;
       },
       userPrompt
     );
-  } catch {
-    throw new BotUnavailableError('The bot could not reach Gemini. Try again in a minute.');
+  } catch (err) {
+    throw new BotUnavailableError(geminiFailureMessage(err));
   }
 
   const explanation = nonEmpty(reply.parsed?.explanation).slice(0, 400);

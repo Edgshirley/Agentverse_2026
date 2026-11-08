@@ -46,10 +46,12 @@ api-test:
 
 # Production env file (copy prod.env.example); override with `make prod PROD_ENV=/path/prod.env`
 PROD_ENV ?= prod.env
+# LLM keys may also live in git-ignored secrets.env; when present it is read last.
+PROD_ENV_FLAGS = --env-file $(PROD_ENV) $(if $(wildcard secrets.env),--env-file secrets.env)
 
 prod:
 	@if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then \
-		docker compose --env-file $(PROD_ENV) -f docker-compose.prod.yml up --build -d; \
+		docker compose $(PROD_ENV_FLAGS) -f docker-compose.prod.yml up --build -d; \
 	else \
 		echo "[make prod] Docker daemon not detected — starting local prod stack (:4000 + :3000)..."; \
 		$(MAKE) prod-down >/dev/null 2>&1 || true; \
@@ -65,7 +67,7 @@ prod:
 
 prod-down:
 	@if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then \
-		docker compose --env-file $(PROD_ENV) -f docker-compose.prod.yml down; \
+		docker compose $(PROD_ENV_FLAGS) -f docker-compose.prod.yml down; \
 	fi
 	@if [ -f /tmp/spread-frontend-prod.pid ]; then kill $$(cat /tmp/spread-frontend-prod.pid) 2>/dev/null || true; rm -f /tmp/spread-frontend-prod.pid; fi
 	@if [ -f /tmp/spread-backend-prod.pid ]; then kill $$(cat /tmp/spread-backend-prod.pid) 2>/dev/null || true; rm -f /tmp/spread-backend-prod.pid; fi

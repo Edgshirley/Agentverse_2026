@@ -1,6 +1,14 @@
-import React from 'react';
+import React, { createContext, useContext } from 'react';
 
 export type CatAvatarId = 'no_hat' | 'tie' | 'bowtie' | 'tophat' | 'visor' | 'fedora';
+
+/**
+ * The player's selected profile cat. Every <PixelMascot /> in the app reads this,
+ * so picking a cat in the Profile modal swaps the bot cat everywhere.
+ * 'bowtie' keeps the original high-contrast Tuxedo Cat Dealer sprite.
+ */
+export const SelectedCatContext = createContext<CatAvatarId>('bowtie');
+export const useSelectedCat = () => useContext(SelectedCatContext);
 
 export interface CatAvatarOption {
   id: CatAvatarId;
@@ -286,20 +294,30 @@ export const PixelMascot: React.FC<PixelMascotProps> = ({
   isProcessing = false,
   showExclamation = false,
 }) => {
+  const selectedCat = useSelectedCat();
+  const wrapClass = `pixel-mascot-wrap ${isListening ? 'mascot-listening' : ''} ${
+    isProcessing ? 'mascot-thinking' : ''
+  }`;
+  const wrapStyle: React.CSSProperties = {
+    position: 'relative',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: size,
+    height: size,
+  };
+
+  // Any non-default profile cat replaces the bot mascot (same animations & badge)
+  if (selectedCat !== 'bowtie') {
+    return (
+      <div className={wrapClass} style={wrapStyle}>
+        <PixelCatAvatar variant={selectedCat} size={size} showExclamation={showExclamation} />
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={`pixel-mascot-wrap ${isListening ? 'mascot-listening' : ''} ${
-        isProcessing ? 'mascot-thinking' : ''
-      }`}
-      style={{
-        position: 'relative',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: size,
-        height: size,
-      }}
-    >
+    <div className={wrapClass} style={wrapStyle}>
       {showExclamation && (
         <div className="pixel-exclamation-badge pixel-font" title="Tuxedo Cat Bot Alert!">
           !

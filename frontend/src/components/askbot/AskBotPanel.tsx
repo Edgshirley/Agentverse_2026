@@ -5,8 +5,19 @@ import { AskBotOrb } from './AskBotOrb';
 import { BotPromptBox } from './BotPromptBox';
 import { DraftCard } from './DraftCard';
 import { RiskGateCard } from './RiskGateCard';
+import { HintBubble } from '../HintBubble';
 
-export const AskBotPanel: React.FC<AskBotOptions> = (props) => {
+interface AskBotPanelProps extends AskBotOptions {
+  /** First-run "CLICK TO TALK" bubble (shown after profile setup). */
+  showTalkHint?: boolean;
+  onTalkHintSeen?: () => void;
+}
+
+export const AskBotPanel: React.FC<AskBotPanelProps> = ({
+  showTalkHint = false,
+  onTalkHintSeen,
+  ...props
+}) => {
   const bot = useAskBot(props);
   const {
     activeMarket,
@@ -22,7 +33,10 @@ export const AskBotPanel: React.FC<AskBotOptions> = (props) => {
 
   return (
     <div className="ask-bot-panel">
-      <AskBotOrb bot={bot} />
+      {showTalkHint && !bot.ptt.isRecording && (
+        <HintBubble text="CLICK TO TALK" placement="stacked" onClick={onTalkHintSeen} />
+      )}
+      <AskBotOrb bot={bot} needsFirstTap={showTalkHint} onFirstTap={onTalkHintSeen} />
 
       {/* Mode Switcher Pills */}
       {allMarkets.length > 0 && (

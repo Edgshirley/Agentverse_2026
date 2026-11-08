@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Icon } from '../Icon';
 
 interface BetDrawerProps {
   onClose: () => void;
@@ -24,8 +25,8 @@ export const BetDrawer: React.FC<BetDrawerProps> = ({ onClose, children }) => {
         aria-label="Bet details"
         onClick={(e) => e.stopPropagation()}
       >
-        <button className="bet-drawer-close" onClick={onClose} aria-label="Close bet">
-          ×
+        <button className="bet-drawer-close" onClick={onClose} aria-label="Close bet" title="Close">
+          <Icon name="close" />
         </button>
         {children}
       </aside>

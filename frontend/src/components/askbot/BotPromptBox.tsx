@@ -1,4 +1,5 @@
 import React from 'react';
+import { Icon } from '../Icon';
 import { AskBot } from '../../hooks/useAskBot';
 
 export const BotPromptBox: React.FC<{ bot: AskBot }> = ({ bot }) => {
@@ -27,7 +28,7 @@ export const BotPromptBox: React.FC<{ bot: AskBot }> = ({ bot }) => {
         }}
       >
         <span className="preset-label-badge">
-          {intentMode === 'propose' ? '★ QUICK BET PRESETS:' : '★ STRATEGY PRESETS:'}
+          <Icon name="star" size={12} />
         </span>
         {intentMode === 'propose' ? (
           <>
@@ -39,13 +40,13 @@ export const BotPromptBox: React.FC<{ bot: AskBot }> = ({ bot }) => {
                 )
               }
             >
-              🏎️ F1 Pit Stops Window Market
+              <Icon name="car" size={13} /> F1 pit stops
             </button>
             <button
               className="preset-pill-btn"
               onClick={() => setProposeInput('I bet it will be 24°C tomorrow, 50 CHIP')}
             >
-              🌡️ 24°C Tomorrow
+              <Icon name="thermometer" size={13} /> 24°C
             </button>
             <button
               className="preset-pill-btn"
@@ -55,7 +56,7 @@ export const BotPromptBox: React.FC<{ bot: AskBot }> = ({ bot }) => {
                 )
               }
             >
-              🏢 Custom Company Bet (Boss Arbiter)
+              <Icon name="building" size={13} /> Company
             </button>
             {allMarkets.length > 0 && (
               <button
@@ -66,7 +67,7 @@ export const BotPromptBox: React.FC<{ bot: AskBot }> = ({ bot }) => {
                   )
                 }
               >
-                🔗 Stack on Current Bet
+                <Icon name="link" size={13} /> Stack
               </button>
             )}
           </>
@@ -86,13 +87,13 @@ export const BotPromptBox: React.FC<{ bot: AskBot }> = ({ bot }) => {
                 )
               }
             >
-              ⚡ Full Strategy + Sell &amp; Stop ({betUnitLabel})
+              <Icon name="zap" size={13} /> Full plan
             </button>
             <button
               className="preset-pill-btn"
               onClick={() => setStrategyInput('Put 100 CHIP in right now with no stops')}
             >
-              🛡️ Test Missing Risk Tolerance Gate
+              <Icon name="shield" size={13} /> No stops
             </button>
           </>
         )}
@@ -110,18 +111,20 @@ export const BotPromptBox: React.FC<{ bot: AskBot }> = ({ bot }) => {
           }
           placeholder={
             intentMode === 'propose'
-              ? 'Tell the Tuxedo Cat Bot your bet (e.g. "I want to make a market for pit stops in the f1 race tomorrow")...'
-              : 'Tell the bot your strategy, when to sell, and your stop level in bet units...'
+              ? 'Describe your bet...'
+              : 'Strategy, sell level, stop level...'
           }
           style={{ flex: 1, padding: '10px 12px', fontSize: 13.5 }}
         />
         <button
           className={intentMode === 'propose' ? 'btn-brand pixel-font' : 'btn-mint pixel-font'}
           onClick={() => handleSendToBot()}
+          title="Ask the bot"
+          aria-label="Ask the bot"
           disabled={isProcessing}
-          style={{ padding: '0 22px', fontSize: 12 }}
+          style={{ padding: '0 14px', fontSize: 12 }}
         >
-          {isProcessing ? '...' : 'GO ->'}
+          {isProcessing ? '...' : <Icon name="arrow-right" size={18} />}
         </button>
       </div>
     </div>

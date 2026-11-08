@@ -1,4 +1,5 @@
 import React from 'react';
+import { Icon } from '../Icon';
 import { AskBot } from '../../hooks/useAskBot';
 import { PayoffMode } from '../../shared/types';
 import { PixelMascot } from '../PixelMascot';
@@ -51,16 +52,19 @@ export const DraftCard: React.FC<{ bot: AskBot }> = ({ bot }) => {
           <PixelMascot size={32} />
           <span className="pixel-font" style={{ fontSize: 11, color: 'var(--pastel-mint-text)' }}>
             {classification.archetype === 'spread'
-              ? 'AGENT READY · LINEAR WINDOW [L, H]'
-              : 'AGENT READY · BET CLASSIFIED'}
+              ? 'WINDOW [L, H]' : classification.archetype.toUpperCase()}
           </span>
         </div>
         <button
           type="button"
           onClick={() => setShowCustomizeRules((v) => !v)}
-          style={{ padding: '4px 10px', fontSize: 11 }}
+          style={{ padding: '4px 8px' }}
+          title="Rules"
+          aria-label="Customize rules"
+          aria-expanded={showCustomizeRules}
         >
-          {showCustomizeRules ? 'HIDE RULES ▲' : 'CUSTOMIZE RULES ▾'}
+          <Icon name="sliders" size={14} />
+          <Icon name={showCustomizeRules ? 'chevron-up' : 'chevron-down'} size={14} />
         </button>
       </div>
 
@@ -242,13 +246,14 @@ export const DraftCard: React.FC<{ bot: AskBot }> = ({ bot }) => {
             setDraft(null);
             setClassification(null);
           }}
+          title="Cancel"
+          aria-label="Cancel"
         >
-          CANCEL
+          <Icon name="close" size={14} />
         </button>
         <button className="btn-mint pixel-font" onClick={handleConfirmLaunchMarket}>
-          {classification.archetype === 'spread'
-            ? 'START WINDOW BIDDING ->'
-            : 'CREATE BET ->'}
+          START
+          <Icon name="arrow-right" size={14} />
         </button>
       </div>
     </div>

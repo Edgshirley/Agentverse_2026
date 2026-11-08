@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Icon } from '../Icon';
 import { Player } from '../../shared/types';
 import { MarketView } from './marketView';
 
@@ -52,7 +53,7 @@ export const MarketActions: React.FC<MarketActionsProps> = ({ view, activePlayer
                 })
               }
             >
-              ▲ BET ABOVE (&gt; {market.H ?? 5} {unitLabel}) · +{market.lot_stake_k} CHIP
+              <Icon name="arrow-up" size={15} /> &gt; {market.H ?? 5} {unitLabel} · {market.lot_stake_k} CHIP
             </button>
             <button
               className="btn-coral pixel-font"
@@ -65,7 +66,7 @@ export const MarketActions: React.FC<MarketActionsProps> = ({ view, activePlayer
                 })
               }
             >
-              ▼ BET BELOW (&lt; {market.L ?? 3} {unitLabel}) · +{market.lot_stake_k} CHIP
+              <Icon name="arrow-down" size={15} /> &lt; {market.L ?? 3} {unitLabel} · {market.lot_stake_k} CHIP
             </button>
           </>
         ) : (
@@ -81,7 +82,7 @@ export const MarketActions: React.FC<MarketActionsProps> = ({ view, activePlayer
                 })
               }
             >
-              ✓ BET YES (+{market.lot_stake_k} CHIP)
+              <Icon name="check" size={15} /> YES · {market.lot_stake_k} CHIP
             </button>
             <button
               className="btn-coral pixel-font"
@@ -94,7 +95,7 @@ export const MarketActions: React.FC<MarketActionsProps> = ({ view, activePlayer
                 })
               }
             >
-              ✗ BET NO (+{market.lot_stake_k} CHIP)
+              <Icon name="close" size={15} /> NO · {market.lot_stake_k} CHIP
             </button>
           </>
         )}
@@ -102,8 +103,13 @@ export const MarketActions: React.FC<MarketActionsProps> = ({ view, activePlayer
         {/* Withdraw buttons only appear once you have an active balance in the bet */}
         {myLiveBalance > 0 && (
           <>
-            <button onClick={() => setShowCustomWithdraw((v) => !v)}>
-              WITHDRAW X% / CHIP
+            <button
+              onClick={() => setShowCustomWithdraw((v) => !v)}
+              title="Withdraw part"
+              aria-label="Withdraw part"
+            >
+              <Icon name="minus" size={14} />
+              <Icon name="wallet" size={14} />
             </button>
             <button
               onClick={() =>
@@ -114,7 +120,7 @@ export const MarketActions: React.FC<MarketActionsProps> = ({ view, activePlayer
                 })
               }
             >
-              WITHDRAW ALL ({myLiveBalance} CHIP)
+              <Icon name="wallet" size={14} /> {myLiveBalance} CHIP
             </button>
           </>
         )}
@@ -133,7 +139,7 @@ export const MarketActions: React.FC<MarketActionsProps> = ({ view, activePlayer
             border: '1.5px solid var(--border-color)',
           }}
         >
-          <span style={{ fontSize: 12 }}>WITHDRAW:</span>
+          <Icon name="wallet" size={14} />
           <input
             type="number"
             value={withdrawValue}
@@ -148,8 +154,8 @@ export const MarketActions: React.FC<MarketActionsProps> = ({ view, activePlayer
             <option value="CHIP">CHIP</option>
             <option value="%">%</option>
           </select>
-          <button className="btn-mint pixel-font" onClick={handleCustomWithdraw}>
-            CONFIRM
+          <button className="btn-mint" onClick={handleCustomWithdraw} title="Confirm" aria-label="Confirm">
+            <Icon name="check" size={14} />
           </button>
         </div>
       )}

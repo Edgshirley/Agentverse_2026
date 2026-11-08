@@ -1,4 +1,5 @@
 import React from 'react';
+import { Icon } from '../Icon';
 import { Market } from '../../shared/types';
 import { ActiveMarketBundle } from '../../hooks/useMarketSync';
 import { PixelMascot } from '../PixelMascot';
@@ -28,11 +29,13 @@ export const LiveBetsList: React.FC<LiveBetsListProps> = ({
           alignItems: 'center',
         }}
       >
-        <span className="pixel-font" style={{ fontSize: 12 }}>
-          YOUR GROUP&apos;S BETS ({allMarkets.length})
+        <span className="pixel-font icon-label" style={{ fontSize: 12 }} title="Live bets">
+          <Icon name="chart" />
+          {allMarkets.length}
         </span>
         <button className="btn-mint pixel-font" onClick={onNewBet}>
-          + NEW BET
+          <Icon name="plus" size={14} />
+          BET
         </button>
       </div>
 
@@ -60,15 +63,15 @@ export const LiveBetsList: React.FC<LiveBetsListProps> = ({
           >
             <div>
               <div className="pixel-font" style={{ fontSize: 10, opacity: 0.75 }}>
-                BET #{idx + 1} · {m.archetype === 'spread' ? 'LINEAR WINDOW' : m.archetype.toUpperCase()} ·{' '}
+                {m.archetype === 'spread' ? 'WINDOW' : m.archetype.toUpperCase()} ·{' '}
                 {m.state.toUpperCase()}
               </div>
               <div style={{ fontWeight: 700, fontSize: 14, marginTop: 2 }}>
                 {m.question.replace(/TOKS/gi, 'CHIP')}
               </div>
             </div>
-            <button className="btn-inverted pixel-font" style={{ fontSize: 10 }}>
-              OPEN BET -&gt;
+            <button className="btn-inverted" title="Open bet" aria-label="Open bet">
+              <Icon name="arrow-right" size={14} />
             </button>
           </div>
         ))

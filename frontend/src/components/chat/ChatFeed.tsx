@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Icon } from '../Icon';
 import { ChatMessage, Player } from '../../shared/types';
 import { PixelMascot } from '../PixelMascot';
 import { AppPanel } from '../../App';
@@ -88,26 +89,31 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
           alignItems: 'center',
         }}
       >
-        <span className="pixel-font" style={{ fontSize: 12 }}>
-          CHAT ({chatMessages.length})
+        <span className="pixel-font icon-label" style={{ fontSize: 12 }} title="Messages">
+          <Icon name="message" />
+          {chatMessages.length}
         </span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button
             className="btn-sky"
-            style={{ fontSize: 10.5, padding: '3px 8px' }}
+            style={{ padding: '3px 8px' }}
             onClick={handleSimulateFriendReply}
+            title="Simulate a friend's message"
+            aria-label="Simulate a friend's message"
           >
-            + SIMULATE FRIEND MESSAGE
+            <Icon name="user-plus" size={14} />
           </button>
-          <span className="badge-outline">INVITE: MARKETMATE-2026</span>
+          <span className="badge-outline" title="Invite code">
+            <Icon name="link" size={12} />
+            MARKETMATE-2026
+          </span>
         </div>
       </div>
 
       <div className="chat-messages-scroll" ref={scrollRef}>
         {chatMessages.length === 0 && (
           <div style={{ color: 'var(--fg-muted)', textAlign: 'center', margin: 'auto 0' }}>
-            No messages yet — say hi to your group or type a bet idea (e.g. &ldquo;lets make a bet
-            on f1&rdquo;)!
+            No messages yet
           </div>
         )}
 
@@ -154,10 +160,11 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
               </span>
               <button
                 onClick={() => setMascotAlert(null)}
-                style={{ padding: '0px 5px', fontSize: 10 }}
+                style={{ padding: '2px 4px' }}
                 aria-label="Dismiss"
+                title="Dismiss"
               >
-                ×
+                <Icon name="close" size={12} />
               </button>
             </div>
             <div style={{ fontSize: 11.5, marginBottom: 8 }}>
@@ -172,7 +179,8 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
                 onOpenPanel('askbot');
               }}
             >
-              MAKE THIS A BET -&gt;
+              BET
+              <Icon name="arrow-right" size={14} />
             </button>
           </div>
         </div>
@@ -191,11 +199,11 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
           type="text"
           value={chatInput}
           onChange={(e) => setChatInput(e.target.value)}
-          placeholder="Message friends (e.g. 'lets make a bet on f1')..."
+          placeholder="Message the group..."
           style={{ flex: 1, padding: '8px 12px' }}
         />
-        <button type="submit" className="btn-brand pixel-font">
-          SEND
+        <button type="submit" className="btn-brand" title="Send" aria-label="Send">
+          <Icon name="send" size={18} />
         </button>
       </form>
     </div>

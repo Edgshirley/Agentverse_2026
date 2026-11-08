@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Icon } from '../Icon';
 import { Market, Player } from '../../shared/types';
 import { ActiveMarketBundle } from '../../hooks/useMarketSync';
 import { AuctionStepCard } from './AuctionStepCard';
@@ -150,10 +151,14 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
               </select>
             )}
             <button
-              style={{ fontSize: 11, padding: '5px 10px' }}
+              style={{ padding: '5px 8px' }}
               onClick={() => setShowAdminDrawer((v) => !v)}
+              title="Options"
+              aria-label="Options"
+              aria-expanded={showAdminDrawer}
             >
-              {showAdminDrawer ? 'CLOSE OPTIONS ▲' : 'OPTIONS ▾'}
+              <Icon name="sliders" size={14} />
+              <Icon name={showAdminDrawer ? 'chevron-up' : 'chevron-down'} size={14} />
             </button>
           </div>
         </div>
@@ -175,7 +180,7 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
           >
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button style={{ fontSize: 11 }} onClick={handleSimulateFriendActivity}>
-                + SIMULATE FRIEND BET
+                <Icon name="user-plus" size={13} /> FRIEND BET
               </button>
               {isMarketCreator && (
                 <button style={{ fontSize: 11 }} onClick={handleCreatorToggleVisibility}>
@@ -205,7 +210,7 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
                   })
                 }
               >
-                SETTLE ({outcomeInput} {unitLabel})
+                <Icon name="flag" size={12} /> {outcomeInput} {unitLabel}
               </button>
             </div>
           </div>

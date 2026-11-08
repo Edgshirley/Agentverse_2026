@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Icon } from '../Icon';
 import { OrderType, Player } from '../../shared/types';
 import { MarketView } from './marketView';
 
@@ -121,19 +122,21 @@ export const DepthGraph: React.FC<DepthGraphProps> = ({ view, players, activePla
       <div className="depth-graph-wrap">
         <div className="depth-header-grid">
           <div style={{ display: 'flex', justifyContent: 'space-between', paddingRight: 8 }}>
-            <span style={{ color: 'var(--fg-muted)', fontSize: 10 }}>VOLUME (CHIP)</span>
-            <span style={{ color: 'var(--accent-pos)' }}>
-              {isSpread ? '▲ ABOVE / BID' : '✓ YES / BID'}
-            </span>
+            <span style={{ color: 'var(--fg-muted)', fontSize: 10 }}>CHIP</span>
+            <span className="icon-label" style={{ color: 'var(--accent-pos)' }}>
+            <Icon name={isSpread ? 'arrow-up' : 'check'} size={13} />
+            {isSpread ? 'ABOVE' : 'YES'}
+          </span>
           </div>
           <div style={{ textAlign: 'center', color: 'var(--fg-muted)', fontSize: 10 }}>
-            LEVEL ({unitLabel.toUpperCase()})
+            {unitLabel.toUpperCase()}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 8 }}>
-            <span style={{ color: 'var(--accent-neg)' }}>
-              {isSpread ? '▼ BELOW / STOPS' : '✗ NO / STOPS'}
-            </span>
-            <span style={{ color: 'var(--fg-muted)', fontSize: 10 }}>VOLUME (CHIP)</span>
+            <span className="icon-label" style={{ color: 'var(--accent-neg)' }}>
+            <Icon name={isSpread ? 'arrow-down' : 'close'} size={13} />
+            {isSpread ? 'BELOW' : 'NO'}
+          </span>
+            <span style={{ color: 'var(--fg-muted)', fontSize: 10 }}>CHIP</span>
           </div>
         </div>
 
@@ -154,7 +157,7 @@ export const DepthGraph: React.FC<DepthGraphProps> = ({ view, players, activePla
               <div className="depth-side-bid">
                 <div className="depth-bar-bid" style={{ width: `${bidWidthPct}%` }}>
                   <span>{row.totalBidVol} CHIP</span>
-                  <span style={{ opacity: 0.75, fontSize: 9.5 }}>●</span>
+                  
                 </div>
               </div>
 
@@ -173,7 +176,7 @@ export const DepthGraph: React.FC<DepthGraphProps> = ({ view, players, activePla
               <div className="depth-side-ask">
                 <div className="depth-bar-ask" style={{ width: `${askWidthPct}%` }}>
                   <span style={{ opacity: 0.85, fontSize: 9.5 }}>
-                    {row.stopLabels.length > 0 ? row.stopLabels[0] : '●'}
+                    {row.stopLabels[0] ?? ''}
                   </span>
                   <span>{row.totalAskVol} CHIP</span>
                 </div>
@@ -219,8 +222,10 @@ export const DepthGraph: React.FC<DepthGraphProps> = ({ view, players, activePla
             <span style={{ fontSize: 11.5 }}>CHIP</span>
             <button
               className="btn-inverted pixel-font"
-              style={{ fontSize: 10, padding: '5px 10px' }}
-              onClick={async () => {
+              style={{ padding: '5px 8px' }}
+            title="Place order"
+            aria-label="Place order"
+            onClick={async () => {
                 await onDispatch(`/api/markets/${market.id}/orders`, {
                   playerId: activePlayer.id,
                   side: myActivePos?.side || (isSpread ? 'OVER' : 'YES'),
@@ -231,14 +236,16 @@ export const DepthGraph: React.FC<DepthGraphProps> = ({ view, players, activePla
                 setSelectedGraphLevel(null);
               }}
             >
-              CONFIRM ORDER
-            </button>
+            <Icon name="check" size={14} />
+          </button>
             <button
-              style={{ fontSize: 10, padding: '4px 8px' }}
-              onClick={() => setSelectedGraphLevel(null)}
-            >
-              ×
-            </button>
+              style={{ padding: '4px 6px' }}
+            onClick={() => setSelectedGraphLevel(null)}
+            title="Cancel"
+            aria-label="Cancel"
+          >
+            <Icon name="close" size={14} />
+          </button>
           </div>
         )}
       </div>

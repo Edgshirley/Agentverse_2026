@@ -7,14 +7,15 @@ import { LiveBetsList } from './components/chat/LiveBetsList';
 import { BetDrawer } from './components/market/BetDrawer';
 import { MarketDetail } from './components/market/MarketDetail';
 import { PixelJokerCard, PixelPokerChip } from './components/PixelMascot';
+import { Icon, IconName } from './components/Icon';
 
 export type AppPanel = 'askbot' | 'bet' | 'chat';
 type MobilePane = 'chat' | 'bets' | 'bot';
 
-const MOBILE_TABS: { pane: MobilePane; label: string }[] = [
-  { pane: 'chat', label: 'CHAT' },
-  { pane: 'bets', label: 'BETS' },
-  { pane: 'bot', label: 'BOT' },
+const MOBILE_TABS: { pane: MobilePane; label: string; icon: IconName }[] = [
+  { pane: 'chat', label: 'Chat', icon: 'message' },
+  { pane: 'bets', label: 'Live bets', icon: 'chart' },
+  { pane: 'bot', label: 'Ask bot', icon: 'mic' },
 ];
 
 export const App: React.FC = () => {
@@ -157,7 +158,9 @@ export const App: React.FC = () => {
           <span>
             <strong>HOLD ON:</strong> {errorBanner.replace(/TOKS/g, 'CHIP')}
           </span>
-          <button onClick={() => setErrorBanner(null)}>OK</button>
+          <button onClick={() => setErrorBanner(null)} title="Dismiss" aria-label="Dismiss">
+            <Icon name="close" size={14} />
+          </button>
         </div>
       )}
 
@@ -209,8 +212,10 @@ export const App: React.FC = () => {
             key={t.pane}
             className={`nav-pill-btn ${mobilePane === t.pane ? 'active' : ''}`}
             onClick={() => setMobilePane(t.pane)}
+            title={t.label}
+            aria-label={t.label}
           >
-            {t.label}
+            <Icon name={t.icon} size={20} />
           </button>
         ))}
       </nav>

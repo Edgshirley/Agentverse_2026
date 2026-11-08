@@ -1,4 +1,5 @@
 import React from 'react';
+import { Icon } from '../Icon';
 import { AskBot } from '../../hooks/useAskBot';
 import { PixelMascot } from '../PixelMascot';
 
@@ -23,7 +24,7 @@ export const AskBotOrb: React.FC<{ bot: AskBot }> = ({ bot }) => {
           isProcessing={isProcessing}
         />
         <span className="pixel-font" style={{ fontSize: 10 }}>
-          {ptt.isRecording ? 'LISTENING' : isProcessing ? '...' : 'SPEAK'}
+          {isProcessing && !ptt.isRecording ? '...' : <Icon name="mic" size={16} />}
         </span>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Icon } from '../Icon';
 import { AskBotOptions, useAskBot } from '../../hooks/useAskBot';
 import { AskBotOrb } from './AskBotOrb';
 import { BotPromptBox } from './BotPromptBox';
@@ -33,7 +34,8 @@ export const AskBotPanel: React.FC<AskBotOptions> = (props) => {
               setGateError(null);
             }}
           >
-            + CREATE NEW BET
+            <Icon name="plus" size={14} />
+            NEW
           </button>
           <button
             className={intentMode === 'strategy' ? 'btn-mint' : ''}
@@ -42,7 +44,8 @@ export const AskBotPanel: React.FC<AskBotOptions> = (props) => {
               setGateError(null);
             }}
           >
-            ENTER BET &amp; SET STRATEGY ({activeMarket?.question.slice(0, 28)}...)
+            <Icon name="target" size={14} />
+            STRATEGY
           </button>
         </div>
       )}

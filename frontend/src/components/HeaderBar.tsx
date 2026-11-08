@@ -1,4 +1,5 @@
 import React from 'react';
+import { Icon } from './Icon';
 import { Group, Player } from '../shared/types';
 import { PixelMascot } from './PixelMascot';
 
@@ -31,26 +32,34 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       {/* Your CHIP Balance & Theme */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div className="chip-wallet-badge">
+          <Icon name="coins" size={15} />
           <span className="pixel-font">{activePlayer.wallet_balance_toks.toLocaleString()}</span>
           <span className="pixel-font" style={{ fontSize: 11, opacity: 0.9 }}>
             CHIP
           </span>
           {activePlayer.escrow_balance_toks > 0 && (
-            <span style={{ fontSize: 11, opacity: 0.75 }}>
-              ({activePlayer.escrow_balance_toks} IN PLAY)
+            <span className="icon-label" style={{ fontSize: 11, opacity: 0.75 }} title="Chips in play">
+              <Icon name="lock" size={12} />
+              {activePlayer.escrow_balance_toks}
             </span>
           )}
         </div>
 
-        <button onClick={onToggleTheme} style={{ padding: '5px 10px', fontSize: 11 }}>
-          {theme === 'dark' ? '☀ LIGHT' : '☾ DARK'}
+        <button
+          onClick={onToggleTheme}
+          style={{ padding: '6px 8px' }}
+          title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
+          aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+        >
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
         </button>
         <button
           onClick={onResetDemo}
-          style={{ padding: '5px 10px', fontSize: 11, color: 'var(--fg-muted)' }}
-          title="Clear all markets and start fresh as the first person in your group"
+          style={{ padding: '6px 8px', color: 'var(--fg-muted)' }}
+          title="Start fresh: clears all bets and chat"
+          aria-label="Start fresh"
         >
-          START FRESH
+          <Icon name="reload" />
         </button>
       </div>
     </header>

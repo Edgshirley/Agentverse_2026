@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Icon } from '../Icon';
 import { Player } from '../../shared/types';
 import { PixelMascot } from '../PixelMascot';
 import { MarketView } from './marketView';
@@ -66,7 +67,7 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({ view, activePl
           <PixelMascot size={42} showExclamation={true} />
           <div>
             <div className="pixel-font" style={{ fontSize: 11, color: 'var(--pastel-gold-text)' }}>
-              AGENT STEP 1 OF 2 · WINDOW WIDTH BIDDING
+              STEP 1/2 · WIDTH
             </div>
             <div style={{ fontSize: 16, fontWeight: 700 }}>
               {market.question.replace(/TOKS/gi, 'CHIP')}
@@ -75,9 +76,7 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({ view, activePl
         </div>
 
         <p style={{ fontSize: 12.5, color: 'var(--fg-muted)' }}>
-          How narrow of a window width (<strong>W in {unitLabel}</strong>) are you willing to make?
-          The tightest window wins the Market Maker seat and sets the exact <strong>[L, H]</strong>{' '}
-          range.
+          Tightest window wins the market maker seat.
         </p>
 
         <div
@@ -92,7 +91,7 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({ view, activePl
             border: '1.5px solid var(--border-color)',
           }}
         >
-          <span style={{ fontSize: 12.5 }}>Window Width (W):</span>
+          <span className="pixel-font">W</span>
           <input
             type="number"
             min={1}
@@ -108,7 +107,7 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({ view, activePl
             style={{ marginLeft: 'auto' }}
             onClick={handleStep1BidAndAdvance}
           >
-            CONFIRM WIDTH ({widthBidInput} {unitLabel.toUpperCase()}) -&gt;
+            <Icon name="check" size={14} /> {widthBidInput} {unitLabel.toUpperCase()}
           </button>
         </div>
       </div>
@@ -126,17 +125,16 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({ view, activePl
           <PixelMascot size={42} showExclamation={true} />
           <div>
             <div className="pixel-font" style={{ fontSize: 11, color: 'var(--pastel-mint-text)' }}>
-              AGENT STEP 2 OF 2 · SELECT THE WINDOW [L, H]
+              STEP 2/2 · [L, H]
             </div>
             <div style={{ fontSize: 16, fontWeight: 700 }}>
-              Window Width Locked at {w} {unitLabel} — Choose Start Level (L)
+              Width {w} {unitLabel}: pick the start
             </div>
           </div>
         </div>
 
         <p style={{ fontSize: 12.5, color: 'var(--fg-muted)' }}>
-          Set where the window begins so friends can bet <strong>ABOVE (&gt; {hVal})</strong> and{' '}
-          <strong>BELOW (&lt; {lVal})</strong> the window.
+          Friends bet above {hVal} or below {lVal}.
         </p>
 
         <div
@@ -166,7 +164,7 @@ export const AuctionStepCard: React.FC<AuctionStepCardProps> = ({ view, activePl
             style={{ marginLeft: 'auto' }}
             onClick={handleStep2LockWindowAndGoLive}
           >
-            OPEN LIVE MARKET [{lVal}..{hVal}] -&gt;
+            <Icon name="play" size={14} /> [{lVal}..{hVal}]
           </button>
         </div>
       </div>

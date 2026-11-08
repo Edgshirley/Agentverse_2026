@@ -1,4 +1,5 @@
 import React from 'react';
+import { Icon } from '../Icon';
 import { Player } from '../../shared/types';
 import { PixelRacerAvatar } from '../PixelMascot';
 import { MarketView } from './marketView';
@@ -69,11 +70,13 @@ export const RaceTrack: React.FC<RaceTrackProps> = ({ view, players, activePlaye
           color: 'var(--fg-muted)',
         }}
       >
-        <span className="pixel-font">LIVE RACE STANDINGS &amp; TARGET LINE</span>
+        <span className="pixel-font icon-label" title="Live standings">
+          <Icon name="trophy" size={13} />
+        </span>
         <span className="pixel-font">
           {isSpread
-            ? `TARGET WINDOW: [${market.L ?? 3}..${market.H ?? 5}] ${unitLabel.toUpperCase()}`
-            : `CURRENT LINE: ${currentUnitCenter} ${unitLabel.toUpperCase()}`}
+            ? `[${market.L ?? 3}..${market.H ?? 5}] ${unitLabel.toUpperCase()}`
+            : `${currentUnitCenter} ${unitLabel.toUpperCase()}`}
         </span>
       </div>
 
@@ -95,7 +98,7 @@ export const RaceTrack: React.FC<RaceTrackProps> = ({ view, players, activePlaye
               <div className="race-target-line" style={{ left: '75%' }}>
                 {idx === 0 && (
                   <span className="race-target-flag">
-                    ⚑ {isSpread ? `[${market.L}..${market.H}]` : `${currentUnitCenter}${unitLabel}`}
+                    <Icon name="flag" size={10} /> {isSpread ? `[${market.L}..${market.H}]` : `${currentUnitCenter}${unitLabel}`}
                   </span>
                 )}
               </div>

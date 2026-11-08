@@ -153,6 +153,24 @@ button:active:not(:disabled) {
   box-shadow: 1px 1px 0px var(--border-strong);
 }
 
+button:has(> .px-icon) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.px-icon {
+  flex: none;
+  vertical-align: -0.15em;
+}
+
+.icon-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 button:disabled {
   opacity: 0.42;
   cursor: not-allowed;

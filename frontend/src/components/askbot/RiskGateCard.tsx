@@ -1,4 +1,5 @@
 import React from 'react';
+import { Icon } from '../Icon';
 import { AskBot } from '../../hooks/useAskBot';
 
 /** Mandatory strategy, exit and stop confirmation before a bet goes live. */
@@ -33,7 +34,7 @@ export const RiskGateCard: React.FC<{ bot: AskBot }> = ({ bot }) => {
         }}
       >
         <span className="pixel-font" style={{ fontSize: 11, color: 'var(--pastel-mint-text)' }}>
-          AGENT RISK GATE · CONFIRM EXIT &amp; STOP LEVELS ({betUnitLabel.toUpperCase()})
+          <Icon name="shield" size={13} /> RISK GATE · {betUnitLabel.toUpperCase()}
         </span>
       </div>
 
@@ -104,9 +105,12 @@ export const RiskGateCard: React.FC<{ bot: AskBot }> = ({ bot }) => {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-        <button onClick={() => setShowRiskGateCard(false)}>CANCEL</button>
+        <button onClick={() => setShowRiskGateCard(false)} title="Cancel" aria-label="Cancel">
+          <Icon name="close" size={14} />
+        </button>
         <button className="btn-mint pixel-font" onClick={handleConfirmStrategyAndRisk}>
-          ✓ CONFIRM &amp; OPEN LIVE BET -&gt;
+          <Icon name="check" size={14} />
+          CONFIRM
         </button>
       </div>
     </div>

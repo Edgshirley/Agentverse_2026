@@ -31,6 +31,13 @@ import {
   WireTraceEntry,
 } from '../shared/types';
 
+
+/** Spread/window bets are OVER or UNDER; the bot and UI sometimes say ABOVE/BELOW/YES/NO. */
+export function normalizeSpreadSide(side: string): 'OVER' | 'UNDER' {
+  const s = String(side).toUpperCase();
+  return s === 'UNDER' || s === 'BELOW' || s === 'NO' ? 'UNDER' : 'OVER';
+}
+
 export class RiskGateError extends Error {
   constructor(
     message: string,
@@ -68,6 +75,16 @@ export class SpreadEngine {
     this.spreadBook = new SpreadMarketBook(this.clock, this.ledger);
     this.p2p = new P2PTransferEngine(this.clock, this.ledger, this.spreadBook);
     this.poolBook = new ContinuousPoolOrderBook(this.clock, this.ledger);
+    // Window/spread bets live in the spread book: count them when placing stops & targets
+    this.poolBook.hasExternalLivePosition = (marketId, playerId, side) =>
+      this.spreadBook
+        .getPositions(marketId)
+        .some(
+          (p) =>
+            p.player_id === playerId &&
+            p.side === normalizeSpreadSide(side) &&
+            (p.lots > 0 || p.staked_toks > 0)
+        );
     this.resolution = new ResolutionEngine(this.clock);
   }
 
@@ -295,7 +312,7 @@ export class SpreadEngine {
     let position: Position | undefined;
 
     if (m.archetype === 'spread') {
-      const side = mandate.side === 'UNDER' ? 'UNDER' : 'OVER';
+      const side = normalizeSpreadSide(mandate.side);
       const lots = Math.max(1, Math.min(m.toggles.max_lots, Math.round(mandate.stake_toks / m.lot_stake_k)));
       const res = this.spreadBook.takeSpreadPosition(
         updatedMarket,

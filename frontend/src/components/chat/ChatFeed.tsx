@@ -4,6 +4,7 @@ import { ChatMessage, Player } from '../../shared/types';
 import { PixelMascot } from '../PixelMascot';
 import { AppPanel } from '../../App';
 import { sfx } from '../../utils/soundEffects';
+import { looksLikeBetProposal } from '../../utils/betDetection';
 
 export interface MascotWidgetAlert {
   question: string;
@@ -41,16 +42,23 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
     if (el) el.scrollTop = el.scrollHeight;
   }, [chatMessages.length]);
 
-  // Heuristic check so casual greetings like "hi!" do not trigger the bet widget,
-  // while any bet/market/F1/sport/temperature message triggers the Tuxedo Cat handoff!
-  const looksLikeBetProposal = (text: string): boolean => {
-    const t = text.trim().toLowerCase();
-    if (t.length < 5) return false;
-    if (/^(hi|hey|hello|yo|sup|ok|okay|thanks|lol|haha)[!?.]*$/i.test(t)) return false;
-    return /\b(bet|make a|market|f1|race|pit|stop|odds|will|score|temp|°c|chips?|rank|win|over|under|window|linear|who|when|how many)\b/i.test(
-      t
-    );
-  };
+  // Rule-based bet detection (utils/betDetection.ts) on every NEW message, from you or
+  // a friend: the tuxedo cat chimes and offers to turn it into a bet. Messages already
+  // in the history when the page loads never trigger it.
+  const seenMessageIds = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (seenMessageIds.current === null) {
+      seenMessageIds.current = new Set(chatMessages.map((m) => m.id));
+      return;
+    }
+    const fresh = chatMessages.filter((m) => !seenMessageIds.current!.has(m.id));
+    fresh.forEach((m) => seenMessageIds.current!.add(m.id));
+    const betIdea = [...fresh].reverse().find((m) => looksLikeBetProposal(m.text));
+    if (betIdea) {
+      sfx.playCatAlert();
+      setMascotAlert({ question: betIdea.text });
+    }
+  }, [chatMessages, setMascotAlert]);
 
   const handleSendChat = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,12 +71,6 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
       await onDispatch('/api/chat', { playerId: activePlayer.id, text: trimmed });
     } catch {
       setChatInput(trimmed); // keep the draft so a failed send can be retried
-      return;
-    }
-
-    if (looksLikeBetProposal(trimmed)) {
-      sfx.playCatAlert();
-      setMascotAlert({ question: trimmed });
     }
   };
 
@@ -80,9 +82,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
     ];
     const pick = friendSamples[chatMessages.length % friendSamples.length];
     sfx.playChatPop();
-    await onDispatch('/api/chat', pick);
-    setTimeout(() => sfx.playCatAlert(), 120);
-    setMascotAlert({ question: pick.text });
+    await onDispatch('/api/chat', pick); // the new-message effect above raises the cat
   };
 
   return (

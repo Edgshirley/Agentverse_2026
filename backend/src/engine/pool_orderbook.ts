@@ -30,6 +30,14 @@ export class ContinuousPoolOrderBook {
   private ordersByMarket: Map<string, Order[]> = new Map();
   private seq: number = 0;
 
+  /**
+   * Positions held outside this pool (spread/window markets keep their bets in the
+   * SpreadMarketBook). Lets players attach stop-loss / take-profit orders to those bets.
+   * Wired up by the state machine.
+   */
+  public hasExternalLivePosition: (marketId: string, playerId: string, side: PositionSide) => boolean =
+    () => false;
+
   constructor(
     private readonly clock: Clock,
     private readonly ledger: ToksLedger
@@ -328,7 +336,7 @@ export class ContinuousPoolOrderBook {
       const pos = positions.find(
         (p) => p.player_id === playerId && p.side === side && p.live_equity_toks > 0
       );
-      if (!pos) {
+      if (!pos && !this.hasExternalLivePosition(market.id, playerId, side)) {
         throw new PoolOrderBookError(
           `Cannot place ${type} without an active position on ${side} with live_equity > 0`
         );

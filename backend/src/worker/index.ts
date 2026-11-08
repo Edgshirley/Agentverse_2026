@@ -8,6 +8,7 @@ import { streamSSE } from 'hono/streaming';
 import { createMiddleware } from 'hono/factory';
 import { Env, globalStore } from './db';
 import { AUCTION_QUIET_PERIOD_MS } from '../engine/auction';
+import { normalizeSpreadSide } from '../engine/state_machine';
 import { Market, OrderType, PositionSide, StrategyMandate } from '../shared/types';
 import {
   estimateAdvisoryFairValue,
@@ -595,7 +596,7 @@ app.post('/api/markets/:id/orders', async (c) => {
     const res = globalStore.engine.poolBook.placeOrder(
       mkt,
       validPlayerId,
-      side,
+      mkt.archetype === 'spread' ? normalizeSpreadSide(side) : side,
       type,
       Number(triggerLevel),
       Number(sizeToks),
@@ -847,11 +848,12 @@ app.post('/api/markets/:id/strategy/activate', async (c) => {
     // If spread market, also place the TP and SL on poolBook so they show on the vertical unit ladder graph
     const updatedMkt = globalStore.engine.getMarket(marketId);
     if (updatedMkt.archetype === 'spread') {
+      const spreadSide = normalizeSpreadSide(mandate.side);
       if (mandate.take_profit_level != null) {
         globalStore.engine.poolBook.placeOrder(
           updatedMkt,
           validPlayerId,
-          mandate.side,
+          spreadSide,
           'take_profit',
           mandate.take_profit_level,
           mandate.stake_toks,
@@ -863,7 +865,7 @@ app.post('/api/markets/:id/strategy/activate', async (c) => {
         globalStore.engine.poolBook.placeOrder(
           updatedMkt,
           validPlayerId,
-          mandate.side,
+          spreadSide,
           'stop_loss',
           mandate.min_balance_floor,
           mandate.stake_toks,

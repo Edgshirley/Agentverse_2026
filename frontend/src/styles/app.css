@@ -375,7 +375,7 @@ button:disabled {
 
 .terminal-header {
   position: relative;
-  z-index: 2;
+  z-index: 5;
   border-bottom: 2px solid var(--border-color);
   padding: 12px 24px;
   display: flex;
@@ -1456,4 +1456,141 @@ button:disabled {
   font-weight: 700;
   box-shadow: 2px 2px 0px var(--pixel-shadow);
   animation: exclaimJump 0.75s steps(2, end) infinite;
+}
+
+/* ============================================================================
+ * First-Run Onboarding Hint Bubbles ("SET UP PROFILE" -> "CLICK TO TALK")
+ * ============================================================================ */
+
+.hint-bubble {
+  position: absolute;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px 7px 8px;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  border: 2px solid var(--pastel-gold-border);
+  background-color: var(--pastel-gold-bg);
+  color: var(--pastel-gold-text);
+  box-shadow: 3px 3px 0px var(--pixel-shadow);
+  cursor: pointer;
+  animation: hintBob 1.6s steps(4, end) infinite;
+}
+
+/* Pixel tail: two stacked squares (border colour + fill colour) */
+.hint-bubble::before,
+.hint-bubble::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+}
+
+.hint-bubble__bang {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  font-size: 13px;
+  background-color: var(--pastel-coral-bg);
+  color: var(--pastel-coral-text);
+  border: 2px solid var(--pastel-coral-border);
+  animation: exclaimJump 0.75s steps(2, end) infinite;
+}
+
+/* Under the header profile button, tail pointing up */
+.hint-bubble--below-right {
+  top: calc(100% + 12px);
+  right: 0;
+}
+.hint-bubble--below-right::before {
+  top: -7px;
+  right: 22px;
+  background-color: var(--pastel-gold-border);
+}
+.hint-bubble--below-right::after {
+  top: -4px;
+  right: 22px;
+  background-color: var(--pastel-gold-bg);
+}
+
+/* Above the voice orb, tail pointing down */
+.hint-bubble--above {
+  bottom: calc(100% - 6px);
+  left: 50%;
+  margin-left: -72px; /* keeps transform free for the bob animation */
+  min-width: 144px;
+  justify-content: center;
+}
+.hint-bubble--above::before {
+  bottom: -7px;
+  left: calc(50% - 5px);
+  background-color: var(--pastel-gold-border);
+}
+.hint-bubble--above::after {
+  bottom: -4px;
+  left: calc(50% - 5px);
+  background-color: var(--pastel-gold-bg);
+}
+
+/* Header button glows while it's the next onboarding step */
+.profile-header-btn.needs-setup {
+  border-color: var(--pastel-gold-border);
+  animation: setupGlow 1.6s ease-in-out infinite;
+}
+
+/* Orb core picks up the gold accent while waiting for the first tap */
+.orb-stage.needs-first-tap .orb-core {
+  border-color: var(--pastel-gold-border);
+}
+
+@keyframes hintBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes setupGlow {
+  0%, 100% { box-shadow: 2px 2px 0px var(--pixel-shadow), 0 0 0 0 var(--pastel-gold-border); }
+  50% { box-shadow: 2px 2px 0px var(--pixel-shadow), 0 0 0 4px var(--pastel-gold-bg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hint-bubble,
+  .hint-bubble__bang,
+  .profile-header-btn.needs-setup {
+    animation: none;
+  }
+}
+
+/* 1px pixel outline so dark profile cats (top hat, tuxedo) stay readable on dark panels
+   and light cats (visor) on light panels. --border-strong flips with the theme. */
+.pixel-mascot-wrap svg {
+  filter: drop-shadow(1px 0 0 var(--border-strong)) drop-shadow(-1px 0 0 var(--border-strong))
+    drop-shadow(0 1px 0 var(--border-strong)) drop-shadow(0 -1px 0 var(--border-strong));
+}
+
+/* Giulio layout: bubble sits in normal flow above the scaled-down rail orb
+   (the rail scrolls, so an absolutely positioned bubble would be clipped) */
+.hint-bubble--stacked {
+  position: relative;
+  align-self: center;
+  margin-bottom: -6px;
+  z-index: 3;
+}
+.hint-bubble--stacked::before {
+  bottom: -7px;
+  left: calc(50% - 5px);
+  background-color: var(--pastel-gold-border);
+}
+.hint-bubble--stacked::after {
+  bottom: -4px;
+  left: calc(50% - 5px);
+  background-color: var(--pastel-gold-bg);
 }

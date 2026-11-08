@@ -82,6 +82,15 @@ docker compose -f docker-compose.prod.yml up --build -d
 
 ---
 
+## Dev Tools
+
+`npm run dev` sets `DEV_TOOLS=1` on the backend. That enables `/api/dev/*` and `/api/demo/*`, which return 404 in production.
+
+- **Personas:** Édouard, Jules, André, Michel and Nathalie, selectable from the "playing as" control in the header. The choice is per browser tab.
+- **Simulator:** open `http://localhost:5173/sim` to step or skip through a scripted betting session. Opening it resets local data.
+
+---
+
 ## Running Tests & Local Dev Without Docker
 
 ```bash

@@ -390,6 +390,91 @@ button:disabled {
   font-weight: 700;
 }
 
+.dev-sim-link {
+  display: inline-flex;
+  padding: 6px 8px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--pastel-sky-text);
+  background-color: var(--pastel-sky-bg);
+}
+
+.sim-console {
+  position: fixed;
+  right: max(20px, calc((100vw - 1400px) / 2 + 20px));
+  bottom: 20px;
+  z-index: 30;
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-color: var(--brand-border);
+}
+
+.app-shell:has(.sim-console) .bet-drawer {
+  padding-bottom: 210px;
+}
+
+.sim-console-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sim-progress {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.sim-buttons {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.sim-buttons button {
+  padding: 5px 8px;
+}
+
+.sim-progress-bar {
+  height: 6px;
+  border-radius: 2px;
+  overflow: hidden;
+  background-color: var(--bg-canvas);
+}
+
+.sim-progress-bar > div {
+  height: 100%;
+  background-color: var(--brand-border);
+  transition: width 0.15s ease;
+}
+
+.sim-label {
+  font-size: 12px;
+  min-height: 1.55em;
+}
+
+.sim-chapters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sim-chapters button {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  .sim-console {
+    left: 12px;
+    right: 12px;
+    bottom: 72px;
+    width: auto;
+  }
+}
+
 .brand-lockup {
   display: inline-flex;
   align-items: center;

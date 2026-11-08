@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useState } from 'react';
 import { useMarketSync } from './hooks/useMarketSync';
 import { useActivePlayerId } from './hooks/useActivePlayerId';
 import { PlayerSwitcher } from './dev/PlayerSwitcher';
@@ -10,6 +10,10 @@ import { BetDrawer } from './components/market/BetDrawer';
 import { MarketDetail } from './components/market/MarketDetail';
 import { PixelJokerCard, PixelPokerChip } from './components/PixelMascot';
 import { Icon, IconName } from './components/Icon';
+
+// The dev-only simulator; Vite strips this import from production builds.
+const SimConsole = import.meta.env.DEV ? React.lazy(() => import('./dev/SimConsole')) : null;
+const isSimRoute = import.meta.env.DEV && window.location.pathname === '/sim';
 
 export type AppPanel = 'askbot' | 'bet' | 'chat';
 type MobilePane = 'chat' | 'bets' | 'bot';
@@ -26,7 +30,8 @@ export const App: React.FC = () => {
     loading,
     errorBanner,
     setErrorBanner,
-        setSelectedMarketId,
+            setSelectedMarketId,
+    refresh,
     dispatchAction,
   } = useMarketSync();
   const [activePlayerId, setActivePlayerId] = useActivePlayerId();
@@ -47,7 +52,8 @@ export const App: React.FC = () => {
     if (personasMissing) void dispatchAction('/api/dev/personas', {});
   }, [personasMissing, dispatchAction]);
 
-  const closeBetDrawer = useCallback(() => setBetDrawerOpen(false), []);
+    const closeBetDrawer = useCallback(() => setBetDrawerOpen(false), []);
+  const openBetDrawer = useCallback(() => setBetDrawerOpen(true), []);
 
   const openPanel = useCallback((panel: AppPanel) => {
     if (panel === 'bet') {
@@ -143,11 +149,21 @@ export const App: React.FC = () => {
         onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
         playerSwitcher={
           import.meta.env.DEV ? (
-            <PlayerSwitcher
-              players={players}
-              activePlayerId={activePlayer.id}
-              onChange={setActivePlayerId}
-            />
+            <>
+              <a
+                className="dev-sim-link"
+                href={isSimRoute ? '/' : '/sim'}
+                title={isSimRoute ? 'Leave simulator' : 'Open simulator (dev only)'}
+                aria-label={isSimRoute ? 'Leave simulator' : 'Open simulator'}
+              >
+                <Icon name={isSimRoute ? 'close' : 'play'} />
+              </a>
+              <PlayerSwitcher
+                players={players}
+                activePlayerId={activePlayer.id}
+                onChange={setActivePlayerId}
+              />
+            </>
           ) : null
         }
         onResetDemo={!import.meta.env.DEV ? undefined : async () => {
@@ -237,6 +253,18 @@ export const App: React.FC = () => {
           </button>
         ))}
       </nav>
+
+            {isSimRoute && SimConsole && (
+        <Suspense fallback={null}>
+          <SimConsole
+            refresh={refresh}
+            onSelectMarket={setSelectedMarketId}
+            onOpenBet={openBetDrawer}
+            onCloseBet={closeBetDrawer}
+            onChoosePlayer={setActivePlayerId}
+          />
+        </Suspense>
+      )}
 
       {betDrawerOpen && activeBundle && (
         <BetDrawer onClose={closeBetDrawer}>

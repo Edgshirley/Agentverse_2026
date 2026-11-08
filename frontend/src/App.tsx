@@ -15,6 +15,7 @@ import {
   CatAvatarId,
   PixelJokerCard,
   PixelMascot,
+  SelectedCatContext,
   PixelPokerChip,
 } from './components/PixelMascot';
 import { Icon, IconName } from './components/Icon';
@@ -38,6 +39,7 @@ interface StoredProfile {
   customName: string;
   defaultName: string;
   onboarded: boolean;
+  talkHintSeen: boolean;
 }
 
 const PROFILE_STORAGE_KEY = 'spread.profile.v1';
@@ -48,6 +50,7 @@ function loadStoredProfile(): StoredProfile {
     customName: '',
     defaultName: generateThemedGamerName(),
     onboarded: false,
+    talkHintSeen: false,
   };
   try {
     const raw = window.localStorage.getItem(PROFILE_STORAGE_KEY);
@@ -60,6 +63,7 @@ function loadStoredProfile(): StoredProfile {
       customName: typeof parsed.customName === 'string' ? parsed.customName : '',
       defaultName: parsed.defaultName || fallback.defaultName,
       onboarded: parsed.onboarded === true,
+      talkHintSeen: parsed.talkHintSeen === true,
     };
   } catch {
     return fallback;
@@ -113,14 +117,18 @@ export const App: React.FC = () => {
     !savedProfile.onboarded
   );
 
+  // Second onboarding step: "CLICK TO TALK" on the orb, shown once the profile is set up
+  const [talkHintSeen, setTalkHintSeen] = useState<boolean>(savedProfile.talkHintSeen);
+
   useEffect(() => {
     saveStoredProfile({
       avatar: selectedAvatar,
       customName,
       defaultName: defaultGeneratedName,
       onboarded: !showProfileOnboardingBadge,
+      talkHintSeen,
     });
-  }, [selectedAvatar, customName, defaultGeneratedName, showProfileOnboardingBadge]);
+  }, [selectedAvatar, customName, defaultGeneratedName, showProfileOnboardingBadge, talkHintSeen]);
 
   const [chatMascotAlert, setChatMascotAlert] = useState<MascotWidgetAlert | null>(null);
   const [forwardedChatPrompt, setForwardedChatPrompt] = useState<string | null>(null);
@@ -226,6 +234,7 @@ export const App: React.FC = () => {
   };
 
   return (
+    <SelectedCatContext.Provider value={selectedAvatar}>
     <div
       className="app-root app-shell"
       data-theme={theme}
@@ -405,6 +414,8 @@ export const App: React.FC = () => {
               onDispatch={handleDispatchWithSound}
               onOpenPanel={openPanel}
               newBetRequest={newBetRequest}
+              showTalkHint={!showProfileOnboardingBadge && !talkHintSeen}
+              onTalkHintSeen={() => setTalkHintSeen(true)}
             />
           </section>
         </aside>
@@ -454,5 +465,6 @@ export const App: React.FC = () => {
         </BetDrawer>
       )}
     </div>
+    </SelectedCatContext.Provider>
   );
 };

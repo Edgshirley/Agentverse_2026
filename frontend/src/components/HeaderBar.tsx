@@ -2,6 +2,7 @@ import React from 'react';
 import { Icon } from './Icon';
 import { Player } from '../shared/types';
 import { CatAvatarId, PixelCatAvatar, PixelMascot } from './PixelMascot';
+import { HintBubble } from './HintBubble';
 
 interface HeaderBarProps {
   activePlayer: Player;
@@ -69,18 +70,11 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         <button
           type="button"
           onClick={onOpenProfile}
-          className="profile-header-btn"
+          className={`profile-header-btn ${showProfileExclamation ? 'needs-setup' : ''}`}
           title="Profile and how the game works"
           aria-label="Profile and how the game works"
         >
-          {showProfileExclamation && (
-            <span
-              className="pixel-exclamation-badge pixel-font"
-              title="Set up your profile & check how the game works!"
-            >
-              !
-            </span>
-          )}
+          {showProfileExclamation && <HintBubble text="SET UP PROFILE" placement="below-right" />}
           <PixelCatAvatar variant={selectedAvatar} size={22} />
           <span
             className="pixel-font"

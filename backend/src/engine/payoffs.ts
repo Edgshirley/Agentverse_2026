@@ -186,6 +186,41 @@ export class SpreadMarketBook {
     return this.mmEscrowByMarket.get(marketId) ?? 0;
   }
 
+  public exportState() {
+    const positionsByMarket: Record<string, Position[]> = {};
+    for (const [k, v] of this.positionsByMarket.entries()) {
+      positionsByMarket[k] = v.map((p) => ({ ...p }));
+    }
+    const mmEscrowByMarket: Record<string, number> = {};
+    for (const [k, v] of this.mmEscrowByMarket.entries()) {
+      mmEscrowByMarket[k] = v;
+    }
+    return {
+      positionsByMarket,
+      mmEscrowByMarket,
+      posSeq: this.posSeq,
+    };
+  }
+
+  public importState(data: {
+    positionsByMarket?: Record<string, Position[]>;
+    mmEscrowByMarket?: Record<string, number>;
+    posSeq?: number;
+  }): void {
+    this.positionsByMarket.clear();
+    this.mmEscrowByMarket.clear();
+    this.posSeq = data.posSeq ?? 0;
+    for (const [k, list] of Object.entries(data.positionsByMarket ?? {})) {
+      this.positionsByMarket.set(
+        k,
+        list.map((p) => ({ ...p }))
+      );
+    }
+    for (const [k, v] of Object.entries(data.mmEscrowByMarket ?? {})) {
+      this.mmEscrowByMarket.set(k, v);
+    }
+  }
+
   /**
    * 1-Tap Manual Take (Over or Under) for 1..max_lots lots (SPEC §2.2 & §6.2).
    * Validates taker wallet balance AND MM remaining escrow cover.

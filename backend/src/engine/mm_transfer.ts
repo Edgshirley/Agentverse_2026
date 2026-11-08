@@ -33,6 +33,69 @@ export class P2PTransferEngine {
     return (this.bidsByMarket.get(marketId) ?? []).map((b) => ({ ...b }));
   }
 
+  public getAllStandingOrders(): PositionBid[] {
+    const all: PositionBid[] = [];
+    for (const list of this.bidsByMarket.values()) {
+      for (const b of list) all.push({ ...b });
+    }
+    return all;
+  }
+
+  public cancelStandingOrder(
+    market: Market,
+    orderId: string,
+    actorId: string,
+    idempotencyKey: string
+  ): PositionBid {
+    const list = this.bidsByMarket.get(market.id) ?? [];
+    const item = list.find((b) => b.id === orderId);
+    if (!item || item.status !== 'open') {
+      throw new P2PTransferError(`Standing P2P order ${orderId} is not open`);
+    }
+    const ownerId = item.kind === 'BID' ? item.buyer_id : item.seller_id;
+    if (ownerId !== actorId) {
+      throw new P2PTransferError(`Only the order creator (${ownerId}) can cancel ${orderId}`);
+    }
+    if (item.escrowed_toks > 0) {
+      this.ledger.releaseEscrow(
+        item.buyer_id,
+        market.id,
+        item.escrowed_toks,
+        'ESCROW_RELEASE',
+        `${idempotencyKey}:cancel_p2p`,
+        `Cancelled standing P2P bid ${item.id}`
+      );
+      item.escrowed_toks = 0;
+    }
+    item.status = 'cancelled';
+    return { ...item };
+  }
+
+  public exportState() {
+    const bidsByMarket: Record<string, PositionBid[]> = {};
+    for (const [k, v] of this.bidsByMarket.entries()) {
+      bidsByMarket[k] = v.map((b) => ({ ...b }));
+    }
+    return {
+      bidsByMarket,
+      bidSeq: this.bidSeq,
+    };
+  }
+
+  public importState(data: {
+    bidsByMarket?: Record<string, PositionBid[]>;
+    bidSeq?: number;
+  }): void {
+    this.bidsByMarket.clear();
+    this.bidSeq = data.bidSeq ?? 0;
+    for (const [k, list] of Object.entries(data.bidsByMarket ?? {})) {
+      this.bidsByMarket.set(
+        k,
+        list.map((b) => ({ ...b }))
+      );
+    }
+  }
+
   private assertMarketTradable(market: Market, actorId: string): void {
     if (market.state !== 'live' && market.state !== 'open') {
       throw new P2PTransferError(

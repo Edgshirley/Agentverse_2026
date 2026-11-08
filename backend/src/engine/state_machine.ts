@@ -13,6 +13,7 @@ import { ResolutionEngine } from './resolution';
 import { evaluateStackedMarket } from './stacked';
 import { computeSwingTree, formatSwingRiskTelemetry } from './swing_tree';
 import {
+  AgentClassificationLog,
   LifecyclePhase,
   LiveEvent,
   Market,
@@ -55,6 +56,7 @@ export class SpreadEngine {
   private swimlanesByMarket: Map<string, SwimlaneEvent[]> = new Map();
   private wireTracesByMarket: Map<string, WireTraceEntry[]> = new Map();
   private liveEventsByMarket: Map<string, LiveEvent[]> = new Map();
+  private classificationLogs: AgentClassificationLog[] = [];
   private historyByMarket: Map<string, Array<{ step: string; implied_value: number; minute?: number }>> =
     new Map();
   private lastSettlementNetPnlByMarket: Map<string, Record<string, number>> = new Map();
@@ -129,17 +131,45 @@ export class SpreadEngine {
     if (market.route === 'arbiter' && (!market.arbiter_id || !market.countdown_ends_at)) {
       throw new Error('Arbiter route requires both arbiter_id and countdown_ends_at (SPEC §3.4 & FR-08)');
     }
+    const isNew = !this.markets.has(market.id);
     const copy: Market = { ...market };
     this.markets.set(copy.id, copy);
-    this.recordMainLinePoint(copy.id, 'OPEN', copy.live_implied_value, 0);
-    this.emitWireTrace(
-      copy.id,
-      'PLAYER',
-      'MARKET_ENGINE',
-      'CREATE_MARKET',
-      `[${copy.archetype.toUpperCase()} / ${copy.route.toUpperCase()}] "${copy.question}" (k=${copy.lot_stake_k} TOKS)`
-    );
+    if (isNew) {
+      this.recordMainLinePoint(copy.id, 'OPEN', copy.live_implied_value, 0);
+      this.emitWireTrace(
+        copy.id,
+        'PLAYER',
+        'MARKET_ENGINE',
+        'CREATE_MARKET',
+        `[${copy.archetype.toUpperCase()} / ${copy.route.toUpperCase()}] "${copy.question}" (k=${copy.lot_stake_k} TOKS)`
+      );
+    }
     return { ...copy };
+  }
+
+  public recordLiveEvent(marketId: string, event: LiveEvent): LiveEvent {
+    const list = this.liveEventsByMarket.get(marketId) ?? [];
+    list.push({ ...event });
+    this.liveEventsByMarket.set(marketId, list);
+    if (event.implied_value_after != null) {
+      this.recordMainLinePoint(
+        marketId,
+        `${event.event_type.toUpperCase()}_${event.minute}M`,
+        event.implied_value_after,
+        event.minute
+      );
+    }
+    return { ...event };
+  }
+
+  public recordClassificationLog(log: AgentClassificationLog): AgentClassificationLog {
+    this.classificationLogs.push({ ...log });
+    return { ...log };
+  }
+
+  public getClassificationLogs(marketId?: string): AgentClassificationLog[] {
+    if (!marketId) return [...this.classificationLogs];
+    return this.classificationLogs.filter((l) => l.market_id === marketId);
   }
 
   public getMarket(marketId: string): Market {
@@ -641,5 +671,66 @@ export class SpreadEngine {
       );
       this.recordMainLinePoint(marketId, `CASCADE_${c.type.toUpperCase()}`, c.impliedValueAfter);
     }
+  }
+
+  public exportSnapshot() {
+    const mapToObj = <T>(m: Map<string, T>): Record<string, T> => {
+      const out: Record<string, T> = {};
+      for (const [k, v] of m.entries()) {
+        out[k] = v;
+      }
+      return out;
+    };
+
+    return {
+      clockNow: this.clock.now(),
+      wireSeq: this.wireSeq,
+      markets: Array.from(this.markets.values()).map((m) => ({ ...m, toggles: { ...m.toggles } })),
+      ledger: this.ledger.exportState(),
+      auction: this.auction.exportState(),
+      spreadBook: this.spreadBook.exportState(),
+      p2p: this.p2p.exportState(),
+      poolBook: this.poolBook.exportState(),
+      resolution: this.resolution.exportState(),
+      mandatesByMarket: mapToObj(this.mandatesByMarket),
+      swimlanesByMarket: mapToObj(this.swimlanesByMarket),
+      wireTracesByMarket: mapToObj(this.wireTracesByMarket),
+      liveEventsByMarket: mapToObj(this.liveEventsByMarket),
+      historyByMarket: mapToObj(this.historyByMarket),
+      lastSettlementNetPnlByMarket: mapToObj(this.lastSettlementNetPnlByMarket),
+      classificationLogs: [...this.classificationLogs],
+    };
+  }
+
+  public importSnapshot(snapshot: any): void {
+    if (!snapshot) return;
+    this.wireSeq = snapshot.wireSeq ?? 0;
+    this.markets.clear();
+    for (const m of snapshot.markets ?? []) {
+      this.markets.set(m.id, { ...m, toggles: { ...m.toggles } });
+    }
+    if (snapshot.ledger) this.ledger.importState(snapshot.ledger);
+    if (snapshot.auction) this.auction.importState(snapshot.auction);
+    if (snapshot.spreadBook) this.spreadBook.importState(snapshot.spreadBook);
+    if (snapshot.p2p) this.p2p.importState(snapshot.p2p);
+    if (snapshot.poolBook) this.poolBook.importState(snapshot.poolBook);
+    if (snapshot.resolution) this.resolution.importState(snapshot.resolution);
+
+    const loadMap = <T>(target: Map<string, T>, obj?: Record<string, T>) => {
+      target.clear();
+      for (const [k, v] of Object.entries(obj ?? {})) {
+        target.set(k, v);
+      }
+    };
+
+    loadMap(this.mandatesByMarket, snapshot.mandatesByMarket);
+    loadMap(this.swimlanesByMarket, snapshot.swimlanesByMarket);
+    loadMap(this.wireTracesByMarket, snapshot.wireTracesByMarket);
+    loadMap(this.liveEventsByMarket, snapshot.liveEventsByMarket);
+    loadMap(this.historyByMarket, snapshot.historyByMarket);
+    loadMap(this.lastSettlementNetPnlByMarket, snapshot.lastSettlementNetPnlByMarket);
+    this.classificationLogs = Array.isArray(snapshot.classificationLogs)
+      ? [...snapshot.classificationLogs]
+      : [];
   }
 }

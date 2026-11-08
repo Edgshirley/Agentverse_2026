@@ -35,6 +35,49 @@ export class WidthAuctionEngine {
     return [...(this.bidsByMarket.get(marketId) ?? [])];
   }
 
+  public getAllBids(): WidthBid[] {
+    const all: WidthBid[] = [];
+    for (const list of this.bidsByMarket.values()) {
+      for (const b of list) all.push({ ...b });
+    }
+    return all;
+  }
+
+  public exportState() {
+    const bidsByMarket: Record<string, WidthBid[]> = {};
+    for (const [k, v] of this.bidsByMarket.entries()) {
+      bidsByMarket[k] = v.map((b) => ({ ...b }));
+    }
+    const forfeitedByMarket: Record<string, string[]> = {};
+    for (const [k, v] of this.forfeitedBiddersByMarket.entries()) {
+      forfeitedByMarket[k] = Array.from(v);
+    }
+    return {
+      bidsByMarket,
+      forfeitedByMarket,
+      bidSeq: this.bidSeq,
+    };
+  }
+
+  public importState(data: {
+    bidsByMarket?: Record<string, WidthBid[]>;
+    forfeitedByMarket?: Record<string, string[]>;
+    bidSeq?: number;
+  }): void {
+    this.bidsByMarket.clear();
+    this.forfeitedBiddersByMarket.clear();
+    this.bidSeq = data.bidSeq ?? 0;
+    for (const [k, list] of Object.entries(data.bidsByMarket ?? {})) {
+      this.bidsByMarket.set(
+        k,
+        list.map((b) => ({ ...b }))
+      );
+    }
+    for (const [k, arr] of Object.entries(data.forfeitedByMarket ?? {})) {
+      this.forfeitedBiddersByMarket.set(k, new Set(arr));
+    }
+  }
+
   public getStandingBestBid(marketId: string): WidthBid | null {
     const forfeited = this.forfeitedBiddersByMarket.get(marketId) ?? new Set<string>();
     const bids = (this.bidsByMarket.get(marketId) ?? []).filter(

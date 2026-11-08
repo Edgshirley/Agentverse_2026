@@ -31,6 +31,35 @@ export class ResolutionEngine {
     return p ? { ...p, votes: { ...p.votes } } : null;
   }
 
+  public getAllProposals(): OutcomeProposal[] {
+    return Array.from(this.proposalsByMarket.values()).map((p) => ({
+      ...p,
+      votes: { ...p.votes },
+    }));
+  }
+
+  public exportState() {
+    const proposalsByMarket: Record<string, OutcomeProposal> = {};
+    for (const [k, v] of this.proposalsByMarket.entries()) {
+      proposalsByMarket[k] = { ...v, votes: { ...v.votes } };
+    }
+    return {
+      proposalsByMarket,
+      seq: this.seq,
+    };
+  }
+
+  public importState(data: {
+    proposalsByMarket?: Record<string, OutcomeProposal>;
+    seq?: number;
+  }): void {
+    this.proposalsByMarket.clear();
+    this.seq = data.seq ?? 0;
+    for (const [k, p] of Object.entries(data.proposalsByMarket ?? {})) {
+      this.proposalsByMarket.set(k, { ...p, votes: { ...p.votes } });
+    }
+  }
+
   /**
    * Checks and enforces the mandatory countdown lock (`00:00:00`) for `arbiter` route markets (SPEC §3.1 & FR-08).
    */

@@ -1,23 +1,43 @@
 // ============================================================================
-// Cloudflare Worker Entrypoint & Hono REST / Sync Hub (SPEC §5.1)
+// Cloudflare Worker Entrypoint & Hono REST / WebSocket / SSE Sync Hub (SPEC §5.1)
 // ============================================================================
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { streamSSE } from 'hono/streaming';
 import { Env, globalStore } from './db';
 import { Market, OrderType, PositionSide, StrategyMandate } from '../shared/types';
 import {
   estimateAdvisoryFairValue,
-  generateMarketRecap,
+  generateMarketRecapAsync,
   parseStrategyRuleWithRiskGate,
   runAgent1Intake,
   runAgent2Classifier,
 } from './agents';
 import { stepDeterministicReplay, toggleFeedDelayedStatus } from './replay';
 
+export { globalStore, EdgeStateStore } from './db';
+
 export const app = new Hono<{ Bindings: Env }>();
 
 app.use('/api/*', cors());
+
+// Root status endpoint when visiting http://localhost:4000/ directly in a browser
+app.get('/', async (c) => {
+  return c.json({
+    service: 'Friend Spreader (Spread) — Citadel Poker Terminal Backend API',
+    status: 'ONLINE',
+    stateVersion: globalStore.stateVersion,
+    frontendUrl: 'http://localhost:5173',
+    endpoints: {
+      state: 'http://localhost:4000/api/state',
+      health: 'http://localhost:4000/api/health',
+      dbInspect: 'http://localhost:4000/api/db/inspect',
+      sseStream: 'http://localhost:4000/api/stream',
+      webSocket: 'ws://localhost:4000/ws',
+    },
+  });
+});
 
 function ensurePlayerRegistered(rawIdOrNick: string): string {
   const cleanId = (rawIdOrNick || 'you').trim().toLowerCase().replace(/[^a-z0-9]/g, '_') || 'you';
@@ -35,30 +55,95 @@ function ensurePlayerRegistered(rawIdOrNick: string): string {
   return cleanId;
 }
 
+// 0. Healthcheck & SQLite / D1 Database Inspector
+app.get('/api/health', async (c) => {
+  const db = globalStore.getDatabase(c.env);
+  return c.json({
+    ok: true,
+    service: 'friend-spreader-backend',
+    stateVersion: globalStore.stateVersion,
+    serverClockMs: globalStore.clock.now(),
+    databaseConnected: Boolean(db),
+  });
+});
+
+app.get('/api/db/inspect', async (c) => {
+  try {
+    await globalStore.persistToD1(c.env);
+    const report = await globalStore.inspectDatabase(c.env);
+    return c.json(report);
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// 0b. Real-Time Server-Sent Events (SSE) Stream (/api/stream & /api/events)
+const handleSseStream = (c: any) => {
+  const requestedMarketId = c.req.query('marketId');
+  return streamSSE(c, async (stream) => {
+    let closed = false;
+    stream.onAbort(() => {
+      closed = true;
+    });
+
+    // Send initial snapshot immediately upon connection
+    await stream.writeSSE({
+      event: 'INITIAL_STATE',
+      data: JSON.stringify(globalStore.getTerminalStatePayload(requestedMarketId)),
+    });
+
+    let pendingResolve: (() => void) | null = null;
+    const queue: Array<{ type: string; marketId?: string }> = [];
+
+    const unsubscribe = globalStore.subscribe((evt) => {
+      queue.push({ type: evt.type, marketId: evt.marketId });
+      if (pendingResolve) {
+        const r = pendingResolve;
+        pendingResolve = null;
+        r();
+      }
+    });
+
+    try {
+      while (!closed) {
+        if (queue.length === 0) {
+          await new Promise<void>((resolve) => {
+            pendingResolve = resolve;
+            setTimeout(resolve, 15000);
+          });
+        }
+        if (closed) break;
+        if (queue.length > 0) {
+          const latest = queue.pop()!;
+          queue.length = 0;
+          const targetId = requestedMarketId || latest.marketId;
+          await stream.writeSSE({
+            event: latest.type,
+            data: JSON.stringify(globalStore.getTerminalStatePayload(targetId)),
+          });
+        } else {
+          await stream.writeSSE({
+            event: 'HEARTBEAT',
+            data: JSON.stringify({
+              stateVersion: globalStore.stateVersion,
+              serverClockMs: globalStore.clock.now(),
+            }),
+          });
+        }
+      }
+    } finally {
+      unsubscribe();
+    }
+  });
+};
+
+app.get('/api/stream', handleSseStream);
+app.get('/api/events', handleSseStream);
+
 // 1. Get complete group & active market terminal state
 app.get('/api/state', async (c) => {
   const requestedMarketId = c.req.query('marketId');
-  const markets = globalStore.engine.getAllMarkets();
-  const activeMarketId =
-    requestedMarketId && markets.some((m) => m.id === requestedMarketId)
-      ? requestedMarketId
-      : markets[0]?.id;
-
-  const activeBundle = activeMarketId
-    ? globalStore.getFullMarketBundle(activeMarketId)
-    : null;
-
-  return c.json({
-    stateVersion: globalStore.stateVersion,
-    serverClockMs: globalStore.clock.now(),
-    group: globalStore.group,
-    players: globalStore.engine.ledger.getAllPlayers(),
-    markets,
-    activeBundle,
-    ledgerEntries: activeMarketId
-      ? globalStore.engine.ledger.getEntries(activeMarketId)
-      : [],
-  });
+  return c.json(globalStore.getTerminalStatePayload(requestedMarketId));
 });
 
 // 2. Onboarding: Join group by invite code + nickname
@@ -155,7 +240,7 @@ app.post('/api/markets', async (c) => {
     }
 
     const created = globalStore.engine.createMarket(market);
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(created.id);
     await globalStore.persistToD1(c.env);
 
     return c.json({
@@ -183,7 +268,7 @@ app.post('/api/markets/:id/auction/bid', async (c) => {
       'WIDTH_BID',
       `${playerId.toUpperCase()} bid spread width w=${width} (quiet timer reset to 30s)`
     );
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
@@ -204,7 +289,7 @@ app.post('/api/markets/:id/auction/finalize', async (c) => {
       'AUCTION_WON',
       `Width auction closed -> ${updated.mm_player_id?.toUpperCase()} wins MM at w=${updated.active_width_w}`
     );
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
@@ -226,7 +311,7 @@ app.post('/api/markets/:id/auction/quote', async (c) => {
       'MM_QUOTE_SUBMITTED',
       `MM ${playerId.toUpperCase()} quoted [${updated.L}, ${updated.H}]`
     );
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
@@ -248,7 +333,7 @@ app.post('/api/markets/:id/auction/timeout', async (c) => {
       'MM_QUOTE_TIMEOUT_FORFEIT',
       `MM missed 3m deadline -> forfeited ${market.lot_stake_k} TOKS ante to ${updated.mm_player_id ?? 'VOID'}`
     );
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
@@ -270,7 +355,7 @@ app.post('/api/markets/:id/take', async (c) => {
     globalStore.clock.advance(250);
     const key = idempotencyKey || `take_${marketId}_${validPlayerId}_${globalStore.clock.now()}`;
     globalStore.engine.executeOneTapTake(marketId, validPlayerId, side, Number(amount), key);
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
@@ -288,7 +373,7 @@ app.post('/api/markets/:id/lock-takes', async (c) => {
       `lock_${marketId}_${globalStore.clock.now()}`
     );
     globalStore.engine.createMarket(updated);
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
@@ -309,7 +394,7 @@ app.post('/api/markets/:id/withdraw', async (c) => {
     globalStore.clock.advance(250);
     const key = idempotencyKey || `withdraw_${marketId}_${playerId}_${globalStore.clock.now()}`;
     globalStore.engine.withdrawFromPool(marketId, playerId, side, Number(fractionP), key);
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
@@ -317,7 +402,7 @@ app.post('/api/markets/:id/withdraw', async (c) => {
   }
 });
 
-// 8. Public Limit & Stop Order Book ("Swing Map")
+// 8. Public Limit & Stop Order Book ("Swing Map") + Order Cancellation
 app.post('/api/markets/:id/orders', async (c) => {
   try {
     const marketId = c.req.param('id');
@@ -358,7 +443,7 @@ app.post('/api/markets/:id/orders', async (c) => {
       `${playerId.toUpperCase()} placed public ${type.toUpperCase()} on ${side} @ ${triggerLevel}% for ${sizeToks} TOKS`
     );
     globalStore.engine.logCascadesToWireAndSwimlanes(marketId, res.cascades);
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
@@ -366,7 +451,35 @@ app.post('/api/markets/:id/orders', async (c) => {
   }
 });
 
-// 9. P2P Position Transfer (Standing Bids, Asks, Auto-Sell, & 1-Tap Cash-Out)
+app.post('/api/markets/:id/orders/:orderId/cancel', async (c) => {
+  try {
+    const marketId = c.req.param('id');
+    const orderId = c.req.param('orderId');
+    const { playerId } = await c.req.json<{ playerId: string }>();
+    globalStore.clock.advance(250);
+    const mkt = globalStore.engine.getMarket(marketId);
+    const cancelled = globalStore.engine.poolBook.cancelOrder(
+      mkt,
+      orderId,
+      playerId,
+      `cancel_ord_${orderId}_${globalStore.clock.now()}`
+    );
+    globalStore.engine.emitWireTrace(
+      marketId,
+      'PLAYER',
+      'MARKET_ENGINE',
+      'CANCEL_ORDER',
+      `${playerId.toUpperCase()} cancelled order ${cancelled.id} (${cancelled.type.toUpperCase()})`
+    );
+    globalStore.bumpVersion(marketId);
+    await globalStore.persistToD1(c.env);
+    return c.json(globalStore.getFullMarketBundle(marketId));
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+// 9. P2P Position Transfer (Standing Bids, Asks, Auto-Sell, 1-Tap Cash-Out & Cancel)
 app.post('/api/markets/:id/p2p/bid', async (c) => {
   try {
     const marketId = c.req.param('id');
@@ -405,7 +518,53 @@ app.post('/api/markets/:id/p2p/bid', async (c) => {
         res.autoMatchedSale.priceToks
       );
     }
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
+    await globalStore.persistToD1(c.env);
+    return c.json(globalStore.getFullMarketBundle(marketId));
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+app.post('/api/markets/:id/p2p/ask', async (c) => {
+  try {
+    const marketId = c.req.param('id');
+    const { sellerId, side, minPriceToks, kind } = await c.req.json<{
+      sellerId: string;
+      side: 'OVER' | 'UNDER';
+      minPriceToks: number;
+      kind?: 'ASK' | 'AUTO_SELL';
+    }>();
+    globalStore.clock.advance(250);
+    const mkt = globalStore.engine.getMarket(marketId);
+    const orderKind = kind === 'AUTO_SELL' ? 'AUTO_SELL' : 'ASK';
+    const key = `p2p_ask_${marketId}_${sellerId}_${globalStore.clock.now()}`;
+    const res = globalStore.engine.p2p.postAskOrAutoSell(
+      mkt,
+      sellerId,
+      side,
+      Number(minPriceToks),
+      orderKind,
+      key
+    );
+    globalStore.engine.recordSwimlane(
+      marketId,
+      sellerId,
+      'LIVE',
+      res.autoMatchedSale ? 'W' : 'L',
+      res.autoMatchedSale
+        ? `Matched ${orderKind} 1x ${side} @ ${res.autoMatchedSale.priceToks} TOKS`
+        : `${orderKind} 1x ${side} @ ${minPriceToks} TOKS`,
+      res.autoMatchedSale ? res.autoMatchedSale.priceToks : undefined
+    );
+    globalStore.engine.emitWireTrace(
+      marketId,
+      'PLAYER',
+      'MARKET_ENGINE',
+      `P2P_${orderKind}`,
+      `${sellerId.toUpperCase()} posted ${orderKind} for 1x ${side} @ ${minPriceToks} TOKS`
+    );
+    globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
@@ -441,7 +600,28 @@ app.post('/api/markets/:id/p2p/cashout', async (c) => {
       `${sellerId.toUpperCase()} cashed out 1x ${side} lot to ${res.matchedBid.buyer_id.toUpperCase()} @ ${res.matchedBid.price_toks} TOKS`,
       res.matchedBid.price_toks
     );
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
+    await globalStore.persistToD1(c.env);
+    return c.json(globalStore.getFullMarketBundle(marketId));
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+app.post('/api/markets/:id/p2p/:orderId/cancel', async (c) => {
+  try {
+    const marketId = c.req.param('id');
+    const orderId = c.req.param('orderId');
+    const { playerId } = await c.req.json<{ playerId: string }>();
+    globalStore.clock.advance(250);
+    const mkt = globalStore.engine.getMarket(marketId);
+    globalStore.engine.p2p.cancelStandingOrder(
+      mkt,
+      orderId,
+      playerId,
+      `cancel_p2p_${orderId}_${globalStore.clock.now()}`
+    );
+    globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
@@ -481,7 +661,7 @@ app.post('/api/markets/:id/strategy/activate', async (c) => {
       mandate,
       `strat_${marketId}_${now}`
     );
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
@@ -492,7 +672,7 @@ app.post('/api/markets/:id/strategy/activate', async (c) => {
   }
 });
 
-// 11. Resolution & Arbiter Controls (Countdown Lock, Outcome Proposal, Settle)
+// 11. Resolution & Arbiter Controls (Countdown Lock, Outcome Proposal, Challenge/Vote, Finalize, Reassign, Settle, Void)
 app.post('/api/markets/:id/resolve/lock-countdown', async (c) => {
   try {
     const marketId = c.req.param('id');
@@ -501,7 +681,7 @@ app.post('/api/markets/:id/resolve/lock-countdown', async (c) => {
       globalStore.clock.set(Math.max(globalStore.clock.now(), mkt.countdown_ends_at + 1000));
     }
     globalStore.engine.getMarket(marketId); // triggers countdown_locked check
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
@@ -543,7 +723,82 @@ app.post('/api/markets/:id/resolve/propose', async (c) => {
       );
     }
 
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
+    await globalStore.persistToD1(c.env);
+    return c.json(globalStore.getFullMarketBundle(marketId));
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+app.post('/api/markets/:id/resolve/challenge', async (c) => {
+  try {
+    const marketId = c.req.param('id');
+    const { playerId, votedX } = await c.req.json<{ playerId: string; votedX: number }>();
+    globalStore.clock.advance(250);
+    const mkt = globalStore.engine.getMarket(marketId);
+    globalStore.engine.resolution.challengeAndVote(mkt, playerId, Number(votedX));
+    globalStore.engine.emitWireTrace(
+      marketId,
+      'PLAYER',
+      'MARKET_ENGINE',
+      'OUTCOME_CHALLENGED_VOTE',
+      `${playerId.toUpperCase()} challenged outcome proposal and voted X=${votedX}`
+    );
+    globalStore.bumpVersion(marketId);
+    await globalStore.persistToD1(c.env);
+    return c.json(globalStore.getFullMarketBundle(marketId));
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+app.post('/api/markets/:id/resolve/finalize', async (c) => {
+  try {
+    const marketId = c.req.param('id');
+    globalStore.clock.advance(250);
+    const mkt = globalStore.engine.getMarket(marketId);
+    const res = globalStore.engine.resolution.finalizeProposal(mkt);
+    if (res.status === 'settle' && res.outcomeX != null) {
+      globalStore.engine.settleMarket(
+        marketId,
+        res.outcomeX,
+        `finalize_settle_${marketId}_${globalStore.clock.now()}`
+      );
+    } else {
+      globalStore.engine.voidMarket(
+        marketId,
+        `finalize_void_${marketId}_${globalStore.clock.now()}`
+      );
+    }
+    globalStore.bumpVersion(marketId);
+    await globalStore.persistToD1(c.env);
+    return c.json(globalStore.getFullMarketBundle(marketId));
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+app.post('/api/markets/:id/resolve/reassign-arbiter', async (c) => {
+  try {
+    const marketId = c.req.param('id');
+    const { adminId, newArbiterId } = await c.req.json<{ adminId: string; newArbiterId: string }>();
+    const adminPlayer = globalStore.engine.ledger.getPlayer(adminId);
+    const mkt = globalStore.engine.getMarket(marketId);
+    const updated = globalStore.engine.resolution.reassignArbiter(
+      mkt,
+      adminPlayer.is_admin,
+      newArbiterId
+    );
+    globalStore.engine.createMarket(updated);
+    globalStore.engine.emitWireTrace(
+      marketId,
+      'PLAYER',
+      'MARKET_ENGINE',
+      'ARBITER_REASSIGNED',
+      `Admin ${adminId.toUpperCase()} reassigned 3rd-party arbiter to ${newArbiterId.toUpperCase()}`
+    );
+    globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
@@ -561,7 +816,20 @@ app.post('/api/markets/:id/resolve/settle', async (c) => {
       Number(outcomeX),
       `settle_${marketId}_${globalStore.clock.now()}`
     );
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
+    await globalStore.persistToD1(c.env);
+    return c.json(globalStore.getFullMarketBundle(marketId));
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+app.post('/api/markets/:id/void', async (c) => {
+  try {
+    const marketId = c.req.param('id');
+    globalStore.clock.advance(250);
+    globalStore.engine.voidMarket(marketId, `void_${marketId}_${globalStore.clock.now()}`);
+    globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
@@ -580,6 +848,18 @@ app.post('/api/agents/intake', async (c) => {
     const classification = await runAgent2Classifier(prompt, draft, c.env);
 
     const activeMarkets = globalStore.engine.getAllMarkets();
+    const targetMarketId = activeMarkets[0]?.id || 'mkt_draft';
+    globalStore.engine.recordClassificationLog({
+      id: `clog_${globalStore.clock.now()}_${Math.floor(Math.random() * 1000)}`,
+      market_id: targetMarketId,
+      agent1_parsed_payload: draft,
+      agent2_archetype: classification.archetype,
+      agent2_verifiability: classification.verifiability,
+      agent2_route: classification.route,
+      confidence: classification.confidence,
+      created_at: globalStore.clock.now(),
+    });
+
     if (activeMarkets[0]) {
       globalStore.engine.emitWireTrace(
         activeMarkets[0].id,
@@ -588,7 +868,8 @@ app.post('/api/agents/intake', async (c) => {
         'AGENT1_2_INTAKE_PIPELINE',
         `${(playerId || 'ana').toUpperCase()} prompt -> Agent 1 drafted "${draft.question}" | Agent 2 classified [${classification.archetype.toUpperCase()} / ${classification.route.toUpperCase()}] (conf=${Math.round(classification.confidence * 100)}%)`
       );
-      globalStore.bumpVersion();
+      globalStore.bumpVersion(activeMarkets[0].id);
+      await globalStore.persistToD1(c.env);
     }
 
     return c.json({
@@ -625,7 +906,8 @@ app.post('/api/agents/parse-strategy', async (c) => {
       `PARSE_RULE_${(modality || 'voice').toUpperCase()}`,
       `Transcript: "${transcript}" -> Gate=${proposal.gate_passed ? 'PASSED' : `BLOCKED (missing: ${proposal.missing_risk_gate_fields.join(', ')})`}`
     );
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
+    await globalStore.persistToD1(c.env);
 
     return c.json({
       proposal,
@@ -648,8 +930,9 @@ app.get('/api/agents/recap/:id', async (c) => {
         netPnlByPlayer[e.player_id] = (netPnlByPlayer[e.player_id] ?? 0) + e.delta_toks;
       }
     }
+    const recap = await generateMarketRecapAsync(market, netPnlByPlayer, c.env);
     return c.json({
-      recap: generateMarketRecap(market, netPnlByPlayer),
+      recap,
       netPnlByPlayer,
     });
   } catch (err: any) {
@@ -662,7 +945,7 @@ app.post('/api/markets/:id/replay/step', async (c) => {
   try {
     const marketId = c.req.param('id');
     const tick = stepDeterministicReplay(globalStore, marketId);
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json({
       ...globalStore.getFullMarketBundle(marketId),
@@ -677,7 +960,7 @@ app.post('/api/markets/:id/replay/feed-delayed', async (c) => {
   try {
     const marketId = c.req.param('id');
     toggleFeedDelayedStatus(globalStore, marketId);
-    globalStore.bumpVersion();
+    globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
   } catch (err: any) {
@@ -687,15 +970,78 @@ app.post('/api/markets/:id/replay/feed-delayed', async (c) => {
 
 // 12. Reset Demo State
 app.post('/api/demo/reset', async (c) => {
-  globalStore.reset();
-  await globalStore.persistToD1(c.env);
+  await globalStore.resetAndPersist(c.env);
   return c.json({ ok: true, stateVersion: globalStore.stateVersion });
 });
 
-// Default export for Cloudflare Workers runtime (serves API + falls back to Static Assets)
+// Default export for Cloudflare Workers runtime (serves API, WebSocket Upgrade, & Static Assets)
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+
+    // Handle Cloudflare Workers WebSocket upgrade on /ws or /api/ws
+    if (
+      (url.pathname === '/ws' || url.pathname === '/api/ws') &&
+      request.headers.get('Upgrade')?.toLowerCase() === 'websocket' &&
+      typeof (globalThis as any).WebSocketPair !== 'undefined'
+    ) {
+      const pair = new (globalThis as any).WebSocketPair();
+      const [client, server] = Object.values(pair) as [any, any];
+      server.accept();
+      let selectedMarketId = url.searchParams.get('marketId') || undefined;
+
+      server.send(
+        JSON.stringify({
+          type: 'INITIAL_STATE',
+          payload: globalStore.getTerminalStatePayload(selectedMarketId),
+        })
+      );
+
+      const unsubscribe = globalStore.subscribe((evt) => {
+        try {
+          server.send(
+            JSON.stringify({
+              type: evt.type,
+              payload: globalStore.getTerminalStatePayload(selectedMarketId || evt.marketId),
+            })
+          );
+        } catch {
+          unsubscribe();
+        }
+      });
+
+      server.addEventListener('message', (msgEvent: any) => {
+        try {
+          const data = JSON.parse(String(msgEvent.data));
+          if (data?.type === 'SELECT_MARKET' && typeof data.marketId === 'string') {
+            selectedMarketId = data.marketId;
+            server.send(
+              JSON.stringify({
+                type: 'STATE_UPDATED',
+                payload: globalStore.getTerminalStatePayload(selectedMarketId),
+              })
+            );
+          } else if (data?.type === 'PING') {
+            server.send(
+              JSON.stringify({
+                type: 'PONG',
+                stateVersion: globalStore.stateVersion,
+                serverClockMs: globalStore.clock.now(),
+              })
+            );
+          }
+        } catch {
+          // Ignore malformed WS message
+        }
+      });
+
+      server.addEventListener('close', () => {
+        unsubscribe();
+      });
+
+      return new Response(null, { status: 101, webSocket: client } as any);
+    }
+
     if (url.pathname.startsWith('/api/')) {
       return app.fetch(request, env, ctx);
     }

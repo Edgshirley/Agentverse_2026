@@ -48,6 +48,81 @@ export class ContinuousPoolOrderBook {
     return (this.ordersByMarket.get(marketId) ?? []).map((o) => ({ ...o }));
   }
 
+  public getAllOrders(): Order[] {
+    const all: Order[] = [];
+    for (const list of this.ordersByMarket.values()) {
+      for (const o of list) all.push({ ...o });
+    }
+    return all;
+  }
+
+  public cancelOrder(
+    market: Market,
+    orderId: string,
+    playerId: string,
+    idempotencyKey: string
+  ): Order {
+    const list = this.ordersByMarket.get(market.id) ?? [];
+    const order = list.find((o) => o.id === orderId);
+    if (!order || order.status !== 'open') {
+      throw new PoolOrderBookError(`Order ${orderId} is not open`);
+    }
+    if (order.player_id !== playerId) {
+      throw new PoolOrderBookError(`Only ${order.player_id} can cancel order ${orderId}`);
+    }
+    if (order.escrowed_toks > 0) {
+      this.ledger.releaseEscrow(
+        order.player_id,
+        market.id,
+        order.escrowed_toks,
+        'ESCROW_RELEASE',
+        `${idempotencyKey}:cancel_ord`,
+        `Cancelled open order ${order.id}`
+      );
+      order.escrowed_toks = 0;
+    }
+    order.status = 'cancelled';
+    return { ...order };
+  }
+
+  public exportState() {
+    const positionsByMarket: Record<string, Position[]> = {};
+    for (const [k, v] of this.positionsByMarket.entries()) {
+      positionsByMarket[k] = v.map((p) => ({ ...p }));
+    }
+    const ordersByMarket: Record<string, Order[]> = {};
+    for (const [k, v] of this.ordersByMarket.entries()) {
+      ordersByMarket[k] = v.map((o) => ({ ...o }));
+    }
+    return {
+      positionsByMarket,
+      ordersByMarket,
+      seq: this.seq,
+    };
+  }
+
+  public importState(data: {
+    positionsByMarket?: Record<string, Position[]>;
+    ordersByMarket?: Record<string, Order[]>;
+    seq?: number;
+  }): void {
+    this.positionsByMarket.clear();
+    this.ordersByMarket.clear();
+    this.seq = data.seq ?? 0;
+    for (const [k, list] of Object.entries(data.positionsByMarket ?? {})) {
+      this.positionsByMarket.set(
+        k,
+        list.map((p) => ({ ...p }))
+      );
+    }
+    for (const [k, list] of Object.entries(data.ordersByMarket ?? {})) {
+      this.ordersByMarket.set(
+        k,
+        list.map((o) => ({ ...o }))
+      );
+    }
+  }
+
   private assertTradable(market: Market, playerId?: string): void {
     if (market.state !== 'open' && market.state !== 'live') {
       throw new PoolOrderBookError(

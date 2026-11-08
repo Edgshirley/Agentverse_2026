@@ -356,4 +356,42 @@ export class ToksLedger {
       throw new LedgerError(`Double-entry ledger sum is non-zero: ${entryDeltaSum}`);
     }
   }
+
+  public exportState() {
+    return {
+      players: this.getAllPlayers(),
+      entries: this.getEntries(),
+      processedIdempotencyKeys: Array.from(this.processedIdempotencyKeys),
+      totalMintedToks: this.totalMintedToks,
+      entrySeq: this.entrySeq,
+    };
+  }
+
+  public importState(data: {
+    players?: Player[];
+    entries?: LedgerEntry[];
+    processedIdempotencyKeys?: string[];
+    totalMintedToks?: number;
+    entrySeq?: number;
+  }): void {
+    this.players.clear();
+    this.entries = [];
+    this.processedIdempotencyKeys.clear();
+    this.totalMintedToks = 0;
+    this.entrySeq = data.entrySeq ?? 0;
+
+    for (const p of data.players ?? []) {
+      this.players.set(p.id, { ...p });
+      this.totalMintedToks += p.wallet_balance_toks + p.escrow_balance_toks;
+    }
+    if (typeof data.totalMintedToks === 'number') {
+      this.totalMintedToks = data.totalMintedToks;
+    }
+    for (const e of data.entries ?? []) {
+      this.entries.push({ ...e });
+    }
+    for (const k of data.processedIdempotencyKeys ?? []) {
+      this.processedIdempotencyKeys.add(k);
+    }
+  }
 }

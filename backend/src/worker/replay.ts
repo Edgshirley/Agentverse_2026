@@ -59,6 +59,7 @@ export function stepDeterministicReplay(
       implied_value_after: stepData.implied_value,
       created_at: store.clock.now(),
     };
+    store.engine.recordLiveEvent(marketId, liveEvent);
 
     // Handle VAR correction (SPEC §6.2: pending auto-outcome proposal withdrawn automatically)
     if (stepData.event_type === 'var_correction') {
@@ -167,6 +168,7 @@ export function stepDeterministicReplay(
     implied_value_after: market.live_implied_value,
     created_at: store.clock.now(),
   };
+  store.engine.recordLiveEvent(marketId, liveEvent);
 
   store.engine.emitWireTrace(
     marketId,

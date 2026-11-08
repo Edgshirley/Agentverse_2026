@@ -1,5 +1,5 @@
 """
-Main entry point for the Friend Spreader API (mirrors ../freevo-api/app/src/main.py).
+Main entry point for the MarketMate API (mirrors ../freevo-api/app/src/main.py).
 
     uvicorn src.main:api --host 0.0.0.0 --port 8000
 """

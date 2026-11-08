@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Icon } from './Icon';
 import {
   CAT_AVATAR_OPTIONS,
   CatAvatarId,
@@ -6,7 +7,7 @@ import {
 } from './PixelMascot';
 
 // Gamer-tag style default names (prefix + cat/casino noun + number), themed on
-// SPREAD: cats, cards, chips, odds and trading slang. e.g. "LuckyWhisker_42".
+// MarketMate: cats, cards, chips, odds and trading slang. e.g. "LuckyWhisker_42".
 const NAME_PREFIXES: string[] = [
   'Lucky', 'AllIn', 'HighRoller', 'Sly', 'Velvet', 'Midnight', 'Golden', 'Neon',
   'Pixel', 'Bluff', 'Sharp', 'Wild', 'Purrfect', 'Quant', 'Stealth', 'Turbo',
@@ -41,7 +42,8 @@ interface ProfileModalProps {
   onChangeCustomName: (name: string) => void;
   onRollNewDefaultName: () => void;
   showRulesExclamation: boolean;
-  onResetDemo: () => Promise<void>;
+  /** Dev only; the reset endpoint does not exist in production. */
+  onResetDemo?: () => Promise<void>;
 }
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({
@@ -123,7 +125,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             style={{ padding: '6px 12px', fontSize: 11 }}
             title="Close profile"
           >
-            ✕ CLOSE
+            <Icon name="close" size={14} /> CLOSE
           </button>
         </div>
 
@@ -173,7 +175,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               }}
               title="Roll a random casino-cat gamer handle"
             >
-              🎲 ROLL NAME
+              <Icon name="reload" size={14} /> ROLL NAME
             </button>
           </div>
         </div>
@@ -254,7 +256,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             }}
           >
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              <span>♠ HOW THE GAME WORKS — QUICK START GUIDE</span>
+              <span className="icon-label"><Icon name="star" size={13} /> HOW THE GAME WORKS</span>
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               {showRulesExclamation && (
@@ -285,15 +287,15 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 className="pixel-font"
                 style={{ fontSize: 11, color: 'var(--pastel-gold-border)' }}
               >
-                ★ GETTING STARTED WITH SPREAD (4 SIMPLE STEPS)
+                GETTING STARTED WITH MARKETMATE
               </div>
 
               <div style={{ display: 'grid', gap: 8 }}>
                 <div>
                   <strong style={{ color: 'var(--pastel-gold-border)' }}>
-                    1. 1,000 SPRD STARTING STACK:
+                    1. 1,000 CHIP STARTING STACK:
                   </strong>{' '}
-                  Everyone starts with <strong>1,000 SPRD</strong> play-tokens. All markets are
+                  Everyone starts with <strong>1,000 CHIP</strong> play-tokens. All markets are
                   zero-sum across your friend group.
                 </div>
                 <div>
@@ -337,7 +339,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             borderTop: '1.5px solid var(--border-color)',
           }}
         >
-          <button
+          {onResetDemo && (
+            <button
             type="button"
             disabled={resetting}
             onClick={async () => {
@@ -358,6 +361,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           >
             {resetting ? 'RESETTING...' : '↺ RESET DEMO MARKETS'}
           </button>
+          )}
 
           <button
             type="button"
@@ -365,7 +369,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             style={{ padding: '8px 18px', fontSize: 11.5 }}
             onClick={onClose}
           >
-            ✓ SAVE &amp; DONE
+            <Icon name="check" size={14} /> SAVE
           </button>
         </div>
       </div>

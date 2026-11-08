@@ -328,7 +328,7 @@ export class SpreadMarketBook {
 
   /**
    * Locks the initial take window, revealing hidden takes and transitioning to `live` (SPEC §2.2 step 5).
-   * If no takers entered, the market voids and all escrowed TOKS return.
+   * If no takers entered, the market voids and all escrowed CHIP return.
    */
   public lockTakesAndGoLive(market: Market, idempotencyKey: string): Market {
     const positions = this.positionsByMarket.get(market.id) ?? [];

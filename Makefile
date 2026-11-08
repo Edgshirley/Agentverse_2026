@@ -1,7 +1,7 @@
 .PHONY: dev dev-down prod prod-down api-test
 
 # ============================================================================
-# Friend Spreader (Spread) — Stack Lifecycle Makefile
+# MarketMate — Stack Lifecycle Makefile
 # Targets:
 #   make dev       - Start development stack (UI :5173, FastAPI :8000, Keycloak :8080,
 #                    Postgres, Redis, internal rules engine, seed). Uses dev.env
@@ -23,7 +23,7 @@ dev:
 		API_BASE_URL=http://localhost:4000 python3 backend/scripts/seed_dev.py; \
 		(cd frontend && nohup npm run dev </dev/null > /tmp/spread-frontend-dev.log 2>&1 & echo $$! > /tmp/spread-frontend-dev.pid); \
 		echo "========================================================================"; \
-		echo "SPREAD DEV STACK RUNNING:"; \
+		echo "MARKETMATE DEV STACK RUNNING:"; \
 		echo "  -> Frontend UI: http://localhost:5173"; \
 		echo "  -> Backend API: http://localhost:4000/api/state"; \
 		echo "  -> Stop with:   make dev-down (or Ctrl+C)"; \
@@ -56,7 +56,7 @@ prod:
 		(cd backend && ([ -d node_modules ] || npm install --no-audit) && npm run build && nohup npm run start </dev/null > /tmp/spread-backend-prod.log 2>&1 & echo $$! > /tmp/spread-backend-prod.pid); \
 		(cd frontend && ([ -d node_modules ] || npm install --no-audit) && npm run build && nohup npm run preview </dev/null > /tmp/spread-frontend-prod.log 2>&1 & echo $$! > /tmp/spread-frontend-prod.pid); \
 		echo "========================================================================"; \
-		echo "SPREAD PROD STACK RUNNING:"; \
+		echo "MARKETMATE PROD STACK RUNNING:"; \
 		echo "  -> Frontend UI: http://localhost:3000"; \
 		echo "  -> Backend API: http://localhost:4000/api/state"; \
 		echo "  -> Stop with:   make prod-down"; \

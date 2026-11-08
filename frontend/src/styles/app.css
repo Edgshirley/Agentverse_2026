@@ -1,87 +1,99 @@
 /* ============================================================================
- * SPREAD — 8-Bit Casino Pastel Minimalist UI (SPRD Currency)
- * Cohesive Sage Mint (Us), Pastel Blue (Friends), Casino Pastel Red (Primary/Stops)
+ * 8-Bit Casino UI with a bright, Luma-inspired accent palette
+ * Green (Us / Yes), Blue (Friends), Red (No / Stops), Yellow (Chips), Casino Red (Brand)
+ * Saturated values live on the *-border tokens; *-text tokens stay on light tints
+ * so body copy remains readable.
  * ============================================================================ */
 
 :root,
 [data-theme='dark'] {
-  --bg-canvas: #181a20;
-  --bg-panel: #20232b;
-  --bg-elevated: #272b35;
-  --fg-primary: #f2efe9;
-  --fg-muted: #9da1b0;
-  --fg-dim: #686c7a;
-  --border-color: #343946;
-  --border-strong: #e2dec9;
-  --pixel-shadow: #101116;
+  --bg-canvas: #0d0f12;
+  --bg-panel: #15181c;
+  --bg-elevated: #1c2025;
+  --fg-primary: #e6edf3;
+  --fg-muted: #8b949e;
+  --fg-dim: #6e7681;
+  --border-color: #292e36;
+  --border-strong: #d7dde3;
+  --pixel-shadow: #050607;
 
-  /* Harmonious 3-Tone Casino Palette (No Purple) */
-  /* 1. Sage Mint — For "YOU" (Us) & YES/OVER */
-  --pastel-mint-bg: #1e322c;
-  --pastel-mint-border: #6bc4a2;
-  --pastel-mint-text: #d0f5e6;
+  /* Green — "You" & YES/OVER */
+  --pastel-mint-bg: #143018;
+  --pastel-mint-border: #54c546;
+  --pastel-mint-text: #cdf5c7;
 
-  /* 2. Pastel Blue — For Friends / Other Players */
-  --pastel-sky-bg: #1f2d3a;
-  --pastel-sky-border: #78b7e6;
-  --pastel-sky-text: #d4ecfc;
+  /* Blue — Friends / other players */
+  --pastel-sky-bg: #0f2650;
+  --pastel-sky-border: #287eff;
+  --pastel-sky-text: #cfe1ff;
 
-  /* 3. Casino Pastel Red — Primary Brand Accent, NO/UNDER & Stop-Loss */
-  --pastel-coral-bg: #362226;
-  --pastel-coral-border: #e58585;
-  --pastel-coral-text: #fad6d6;
+  /* Red — NO/UNDER & stop-loss */
+  --pastel-coral-bg: #3b1416;
+  --pastel-coral-border: #f9524e;
+  --pastel-coral-text: #ffd6d4;
 
-  /* 4. Soft Muted Gold — SPRD Chips & Timers */
-  --pastel-gold-bg: #2f2a20;
-  --pastel-gold-border: #dfc06c;
-  --pastel-gold-text: #f7e9c3;
+  /* Yellow — chips & timers */
+  --pastel-gold-bg: #36280a;
+  --pastel-gold-border: #edb541;
+  --pastel-gold-text: #fbe8bb;
+
+  /* Casino red — brand & primary actions. --brand-ink is the shade for text on panels. */
+  --brand-bg: #3a0d12;
+  --brand-border: #e3212f;
+  --brand-text: #ffd8da;
+  --brand-ink: #ff5a60;
 
   /* Calm Dark Felt Surface */
   --felt-bg: #1c2924;
   --felt-inner: #18231f;
   --felt-border: #4d8a70;
 
-  --badge-bg: #e2dec9;
-  --badge-fg: #181a20;
-  --accent-pos: #6bc4a2;
-  --accent-neg: #e58585;
+  --badge-bg: #d7dde3;
+  --badge-fg: #0d0f12;
+  --accent-pos: #54c546;
+  --accent-neg: #f9524e;
 }
 
 [data-theme='light'] {
-  --bg-canvas: #f4f1ea;
-  --bg-panel: #fffdf9;
-  --bg-elevated: #eae5db;
-  --fg-primary: #22232a;
-  --fg-muted: #666874;
-  --fg-dim: #989aa6;
-  --border-color: #d5cfc2;
-  --border-strong: #2c2d35;
-  --pixel-shadow: #cfc8b8;
+  --bg-canvas: #edeff1;
+  --bg-panel: #fafbfc;
+  --bg-elevated: #dfe2e6;
+  --fg-primary: #1a1e23;
+  --fg-muted: #59636e;
+  --fg-dim: #8a939d;
+  --border-color: #cdd2d8;
+  --border-strong: #1f2328;
+  --pixel-shadow: #c5cad1;
 
-  --pastel-mint-bg: #e2f5ec;
-  --pastel-mint-border: #5bb392;
-  --pastel-mint-text: #154d38;
+  --pastel-mint-bg: #e3f7df;
+  --pastel-mint-border: #35a527;
+  --pastel-mint-text: #124a0b;
 
-  --pastel-sky-bg: #e3f1fc;
-  --pastel-sky-border: #64a8db;
-  --pastel-sky-text: #164366;
+  --pastel-sky-bg: #e1edff;
+  --pastel-sky-border: #125dce;
+  --pastel-sky-text: #0b3a82;
 
-  --pastel-coral-bg: #fce6e6;
-  --pastel-coral-border: #dd7676;
-  --pastel-coral-text: #6e1f1f;
+  --pastel-coral-bg: #ffe4e3;
+  --pastel-coral-border: #cf2c31;
+  --pastel-coral-text: #761417;
 
-  --pastel-gold-bg: #fbf2d6;
-  --pastel-gold-border: #d8b04c;
-  --pastel-gold-text: #5e4408;
+  --pastel-gold-bg: #fdf1d3;
+  --pastel-gold-border: #d69712;
+  --pastel-gold-text: #573b04;
+
+  --brand-bg: #fde3e4;
+  --brand-border: #c8102e;
+  --brand-text: #7a0a1c;
+  --brand-ink: #c8102e;
 
   --felt-bg: #dcefe4;
   --felt-inner: #d0e7da;
   --felt-border: #559e7a;
 
-  --badge-bg: #2c2d35;
-  --badge-fg: #fffdf9;
-  --accent-pos: #1e7e5a;
-  --accent-neg: #c43c3c;
+  --badge-bg: #1f2328;
+  --badge-fg: #fafbfc;
+  --accent-pos: #237a18;
+  --accent-neg: #cf2c31;
 }
 
 * {
@@ -143,6 +155,24 @@ button:active:not(:disabled) {
   box-shadow: 1px 1px 0px var(--border-strong);
 }
 
+button:has(> .px-icon) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.px-icon {
+  flex: none;
+  vertical-align: -0.15em;
+}
+
+.icon-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 button:disabled {
   opacity: 0.42;
   cursor: not-allowed;
@@ -177,6 +207,13 @@ button:disabled {
   font-weight: 700;
 }
 
+.btn-brand {
+  background-color: var(--brand-bg);
+  color: var(--brand-text);
+  border: 2px solid var(--brand-border);
+  font-weight: 700;
+}
+
 .btn-sky {
   background-color: var(--pastel-sky-bg);
   color: var(--pastel-sky-text);
@@ -205,10 +242,10 @@ button:disabled {
 }
 
 /* ============================================================================
- * App Shell & Subtle Background Playing Cards / Joker / SPRD Chips Motif
+ * App Shell & Subtle Background Playing Cards / Joker / CHIP Chips Motif
  * ============================================================================ */
 
-.citadel-shell {
+.app-root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -246,7 +283,7 @@ button:disabled {
 }
 
 .floating-card-bg.joker-card {
-  border-color: var(--pastel-coral-border);
+  border-color: var(--brand-border);
   animation: gentleBgFloatAlt 8.8s ease-in-out infinite alternate;
 }
 
@@ -255,8 +292,8 @@ button:disabled {
   width: 58px;
   height: 58px;
   border-radius: 50%;
-  border: 4px dashed var(--pastel-coral-border);
-  background-color: var(--pastel-coral-bg);
+  border: 4px dashed var(--pastel-gold-border);
+  background-color: var(--pastel-gold-bg);
   box-shadow: 3px 3px 0px var(--pixel-shadow);
   display: flex;
   flex-direction: column;
@@ -267,7 +304,7 @@ button:disabled {
   padding: 0;
   font-family: 'Silkscreen', monospace;
   font-size: 9px;
-  color: var(--pastel-coral-text);
+  color: var(--pastel-gold-text);
   user-select: none;
   animation: gentleChipDrift 6.8s ease-in-out infinite alternate;
 }
@@ -349,10 +386,123 @@ button:disabled {
   background-color: var(--bg-panel);
 }
 
-.nav-pills-group {
+.dev-player-switcher select {
+  padding: 4px 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dev-sim-link {
+  display: inline-flex;
+  padding: 6px 8px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--pastel-sky-text);
+  background-color: var(--pastel-sky-bg);
+}
+
+.sim-console {
+  position: fixed;
+  right: max(20px, calc((100vw - 1400px) / 2 + 20px));
+  bottom: 20px;
+  z-index: 30;
+  width: 400px;
   display: flex;
+  flex-direction: column;
   gap: 8px;
+  padding: 10px 12px;
+  border-color: var(--brand-border);
+}
+
+.app-shell:has(.sim-console) .bet-drawer {
+  padding-bottom: 210px;
+}
+
+.sim-console-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sim-progress {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.sim-buttons {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.sim-buttons button {
+  padding: 5px 8px;
+}
+
+.sim-progress-bar {
+  height: 6px;
+  border-radius: 2px;
+  overflow: hidden;
+  background-color: var(--bg-canvas);
+}
+
+.sim-progress-bar > div {
+  height: 100%;
+  background-color: var(--brand-border);
+  transition: width 0.15s ease;
+}
+
+.sim-label {
+  font-size: 12px;
+  min-height: 1.55em;
+}
+
+.sim-chapters {
+  display: flex;
   flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sim-chapters button {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  .sim-console {
+    left: 12px;
+    right: 12px;
+    bottom: 72px;
+    width: auto;
+  }
+}
+
+.login-screen {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: min(420px, 100%);
+  padding: 28px;
+  text-align: center;
+}
+
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-wordmark {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--brand-ink);
 }
 
 .nav-pill-btn {
@@ -369,9 +519,9 @@ button:disabled {
 }
 
 .nav-pill-btn.active {
-  background-color: var(--pastel-coral-bg);
-  color: var(--pastel-coral-text);
-  border-color: var(--pastel-coral-border);
+  background-color: var(--brand-bg);
+  color: var(--brand-text);
+  border-color: var(--brand-border);
   box-shadow: 3px 3px 0px var(--pixel-shadow);
 }
 
@@ -388,14 +538,174 @@ button:disabled {
   gap: 8px;
 }
 
-.screen-container {
+/* ============================================================================
+ * Single-Page Layout: Chat + Right Rail + Bet Drawer
+ * ============================================================================ */
+
+.app-root.app-shell {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-layout {
   position: relative;
   z-index: 1;
   flex: 1;
-  max-width: 1080px;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: 20px;
   width: 100%;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 26px 20px 48px;
+  padding: 16px 20px 20px;
+}
+
+.app-chat-pane {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+
+.app-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.rail-bets {
+  flex: 0 1 auto;
+  max-height: 40%;
+  overflow-y: auto;
+  padding: 2px 6px 6px 2px;
+}
+
+.rail-bot {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 6px 6px 2px;
+}
+
+.live-bets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rail-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+}
+
+.bet-row {
+  padding: 10px 12px;
+}
+
+.ask-bot-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.ask-bot-panel .pastel-card {
+  padding: 12px;
+}
+
+.ask-bot-panel .orb-stage {
+  transform: scale(0.6);
+  margin: -40px 0;
+}
+
+.bet-drawer-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background-color: color-mix(in srgb, var(--pixel-shadow) 60%, transparent);
+  display: flex;
+  justify-content: flex-end;
+  animation: scrimFade 0.15s ease-out;
+}
+
+.bet-drawer {
+  position: relative;
+  width: min(780px, 100%);
+  height: 100%;
+  overflow-y: auto;
+  background-color: var(--bg-canvas);
+  border-left: 2px solid var(--border-strong);
+  padding: 52px 20px 28px;
+  animation: drawerSlideIn 0.18s ease-out;
+}
+
+.bet-drawer-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  padding: 2px 10px;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+@keyframes scrimFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes drawerSlideIn {
+  from { transform: translateX(32px); opacity: 0.6; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.mobile-pane-tabs {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .app-layout {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 10px 12px;
+  }
+
+  .app-rail {
+    gap: 0;
+  }
+
+  .rail-bets {
+    max-height: none;
+    flex: 1 1 0;
+  }
+
+  .app-layout[data-mobile-pane='chat'] .app-rail,
+  .app-layout[data-mobile-pane='bets'] .app-chat-pane,
+  .app-layout[data-mobile-pane='bets'] .rail-bot,
+  .app-layout[data-mobile-pane='bot'] .app-chat-pane,
+  .app-layout[data-mobile-pane='bot'] .rail-bets {
+    display: none;
+  }
+
+  .mobile-pane-tabs {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 8px 12px;
+    border-top: 2px solid var(--border-color);
+    background-color: var(--bg-panel);
+  }
+
+  .mobile-pane-tabs .nav-pill-btn {
+    justify-content: center;
+  }
 }
 
 /* ============================================================================
@@ -438,17 +748,6 @@ button:disabled {
  * Screen 1: 8-Bit Mascot Voice Orb (Casino Pastel Red + Sage Mint)
  * ============================================================================ */
 
-.voice-home-layout {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: calc(100vh - 180px);
-  max-width: 720px;
-  margin: 0 auto;
-  gap: 24px;
-}
-
 .orb-stage {
   position: relative;
   width: 204px;
@@ -469,7 +768,7 @@ button:disabled {
 .orb-ring-1 {
   width: 138px;
   height: 138px;
-  border: 3px dashed var(--pastel-coral-border);
+  border: 3px dashed var(--brand-border);
   animation: orbBreath 3.2s ease-in-out infinite, orbSpin 28s linear infinite;
 }
 
@@ -495,7 +794,7 @@ button:disabled {
 }
 
 .orb-stage.listening .orb-ring-2 {
-  border-color: var(--pastel-coral-border);
+  border-color: var(--brand-border);
   animation: orbListenPulse 0.8s ease-in-out infinite 0.15s;
   opacity: 0.9;
 }
@@ -506,7 +805,7 @@ button:disabled {
   border-radius: 50%;
   background-color: var(--bg-panel);
   color: var(--fg-primary);
-  border: 4px dashed var(--pastel-coral-border);
+  border: 4px dashed var(--brand-border);
   box-shadow: 4px 4px 0px var(--pixel-shadow);
   display: flex;
   flex-direction: column;
@@ -543,9 +842,9 @@ button:disabled {
   width: 22px;
   height: 22px;
   border-radius: 4px;
-  background-color: var(--pastel-coral-bg);
-  color: var(--pastel-coral-text);
-  border: 2px solid var(--pastel-coral-border);
+  background-color: var(--brand-bg);
+  color: var(--brand-text);
+  border: 2px solid var(--brand-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -658,15 +957,15 @@ button:disabled {
 }
 
 .race-seg.filled-mint {
-  background-color: #5bc49f;
+  background-color: var(--pastel-mint-border);
 }
 
 .race-seg.filled-coral {
-  background-color: #e57368;
+  background-color: var(--pastel-coral-border);
 }
 
 .race-seg.filled-sky {
-  background-color: #78b7e6;
+  background-color: var(--pastel-sky-border);
 }
 
 .race-avatar-pin {
@@ -694,7 +993,7 @@ button:disabled {
   font-family: 'Silkscreen', monospace;
   font-size: 9px;
   white-space: nowrap;
-  color: var(--pastel-coral-border);
+  color: var(--brand-ink);
 }
 
 /* Center-Spine BID (Left / Green) vs ASK & STOP-LOSS (Right / Coral) Graph (Screenshot 3 Style) */
@@ -752,13 +1051,17 @@ button:disabled {
 .depth-bar-bid {
   height: 28px;
   border-radius: 7px 3px 3px 7px;
-  background: linear-gradient(90deg, rgba(61, 138, 104, 0.88) 0%, rgba(42, 85, 67, 0.35) 100%);
-  border-left: 3px solid #6bc4a2;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--pastel-mint-border) 45%, transparent) 0%,
+    color-mix(in srgb, var(--pastel-mint-border) 14%, transparent) 100%
+  );
+  border-left: 3px solid var(--pastel-mint-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 10px;
-  color: #e2faef;
+  color: var(--pastel-mint-text);
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
@@ -769,13 +1072,17 @@ button:disabled {
 .depth-bar-ask {
   height: 28px;
   border-radius: 3px 7px 7px 3px;
-  background: linear-gradient(270deg, rgba(168, 72, 66, 0.88) 0%, rgba(92, 42, 40, 0.35) 100%);
-  border-right: 3px solid #e58585;
+  background: linear-gradient(
+    270deg,
+    color-mix(in srgb, var(--pastel-coral-border) 45%, transparent) 0%,
+    color-mix(in srgb, var(--pastel-coral-border) 14%, transparent) 100%
+  );
+  border-right: 3px solid var(--pastel-coral-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 10px;
-  color: #fde4e2;
+  color: var(--pastel-coral-text);
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
@@ -798,9 +1105,9 @@ button:disabled {
 }
 
 .depth-center-pill.is-window {
-  background-color: rgba(107, 196, 162, 0.16);
-  border-color: #6bc4a2;
-  color: #d0f5e6;
+  background-color: var(--pastel-mint-bg);
+  border-color: var(--pastel-mint-border);
+  color: var(--pastel-mint-text);
 }
 
 .depth-center-pill.is-current {
@@ -813,19 +1120,6 @@ button:disabled {
  * Chat Screen & Bottom-Right 8-Bit Mascot Pop-Up Widget
  * ============================================================================ */
 
-.chat-screen-grid {
-  display: grid;
-  grid-template-columns: 1.15fr 1fr;
-  gap: 20px;
-  align-items: start;
-}
-
-@media (max-width: 900px) {
-  .chat-screen-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 .chat-feed-box {
   position: relative;
   border: 2px solid var(--border-color);
@@ -834,7 +1128,8 @@ button:disabled {
   box-shadow: 4px 4px 0px var(--pixel-shadow);
   display: flex;
   flex-direction: column;
-  height: 540px;
+  flex: 1;
+  min-height: 0;
 }
 
 .chat-messages-scroll {
@@ -862,7 +1157,7 @@ button:disabled {
   color: var(--pastel-mint-text);
 }
 
-/* Pastel Blue for Friends / Other Players */
+/* Blue for Friends / Other Players */
 .chat-bubble.friend-msg {
   align-self: flex-start;
   background-color: var(--pastel-sky-bg);
@@ -876,7 +1171,7 @@ button:disabled {
   bottom: 72px;
   right: 16px;
   max-width: 310px;
-  border: 2px solid var(--pastel-coral-border);
+  border: 2px solid var(--brand-border);
   border-radius: 10px;
   background-color: var(--bg-panel);
   padding: 12px 14px;

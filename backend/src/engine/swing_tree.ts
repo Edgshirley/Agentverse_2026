@@ -57,7 +57,7 @@ export function computeSwingTree(
       id: `branch_${branchIdx}_${level}`,
       trigger_level: level,
       direction,
-      label: `IF @ ${level}% [${cluster.length}x ${typesSummary} :: ${totalVolume} TOKS]`,
+      label: `IF @ ${level}% [${cluster.length}x ${typesSummary} :: ${totalVolume} CHIP]`,
       orders_triggered: cluster.length,
       total_volume_toks: totalVolume,
       implied_value_after: impliedAfter,

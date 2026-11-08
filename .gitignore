@@ -22,3 +22,6 @@ spread-storage/
 .pytest_cache/
 .venv/
 prod.env
+
+# Keycloak client secret written by make dev
+spread-storage/

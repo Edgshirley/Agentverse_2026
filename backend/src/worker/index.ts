@@ -5,6 +5,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { streamSSE } from 'hono/streaming';
+import { createMiddleware } from 'hono/factory';
 import { Env, globalStore } from './db';
 import { Market, OrderType, PositionSide, StrategyMandate } from '../shared/types';
 import {
@@ -30,7 +31,7 @@ app.use('/api/*', cors());
 // Root status endpoint when visiting http://localhost:4000/ directly in a browser
 app.get('/', async (c) => {
   return c.json({
-    service: 'Friend Spreader (Spread) — Citadel Poker Terminal Backend API',
+    service: 'MarketMate Backend API',
     status: 'ONLINE',
     stateVersion: globalStore.stateVersion,
     frontendUrl: 'http://localhost:5173',
@@ -60,6 +61,21 @@ function ensurePlayerRegistered(rawIdOrNick: string): string {
   return cleanId;
 }
 
+function devToolsEnabled(env?: Env): boolean {
+  const flag = env?.DEV_TOOLS ?? (typeof process !== 'undefined' ? process.env.DEV_TOOLS : undefined);
+  return flag === '1';
+}
+
+// Off unless DEV_TOOLS=1 (set by `npm run dev`), so these routes do not exist in production.
+const devToolsOnly = createMiddleware<{ Bindings: Env }>(async (c, next) => {
+  if (!devToolsEnabled(c.env)) {
+    return c.json({ error: 'Not found' }, 404);
+  }
+  await next();
+});
+app.use('/api/dev/*', devToolsOnly);
+app.use('/api/demo/*', devToolsOnly);
+
 // 0. Healthcheck, Dependency Status (Postgres / Redis / Bus) & Database Inspector
 // Authentication, sessions and client WebSockets are handled by the FastAPI
 // gateway (../api); this engine is only reachable on the internal network.
@@ -85,7 +101,7 @@ app.get('/api/health', async (c) => {
   const db = globalStore.getDatabase(c.env);
   return c.json({
     ok: true,
-    service: 'friend-spreader-engine',
+    service: 'marketmate-engine',
     stateVersion: globalStore.stateVersion,
     serverClockMs: globalStore.clock.now(),
     databaseConnected: Boolean(db) || PostgresConnectionSingleton.getStatus() === 'connected',
@@ -201,6 +217,26 @@ app.post('/api/groups/join', async (c) => {
       player: globalStore.engine.ledger.getPlayer(id),
       stateVersion: globalStore.stateVersion,
     });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+// 2b. Group chat
+app.post('/api/chat', async (c) => {
+  try {
+    const body = await c.req.json<{ playerId: string; text: string }>();
+    const text = (body.text || '').trim();
+    if (!text) {
+      return c.json({ error: 'Message is empty' }, 400);
+    }
+    if (text.length > 1000) {
+      return c.json({ error: 'Message is too long (1000 characters max)' }, 400);
+    }
+    const message = globalStore.addChatMessage(ensurePlayerRegistered(body.playerId), text);
+    globalStore.bumpVersion();
+    await globalStore.persistToD1(c.env);
+    return c.json({ message, stateVersion: globalStore.stateVersion });
   } catch (err: any) {
     return c.json({ error: err.message }, 400);
   }
@@ -362,18 +398,15 @@ app.post('/api/markets/:id/auction/quote', async (c) => {
     const { playerId, L } = await c.req.json<{ playerId: string; L: number }>();
     const market = globalStore.engine.getMarket(marketId);
     const effectiveMm = market.mm_player_id || ensurePlayerRegistered(playerId);
+    // The market stays `open` for takes; /lock-takes moves it to `live` once someone has bet.
     const quoted = globalStore.engine.auction.submitQuote(market, effectiveMm, Number(L));
-    const liveMarket = globalStore.engine.spreadBook.lockTakesAndGoLive(
-      quoted,
-      `go_live_${marketId}_${globalStore.clock.now()}`
-    );
-    globalStore.engine.createMarket(liveMarket);
+    globalStore.engine.createMarket(quoted);
     globalStore.engine.emitWireTrace(
       marketId,
       'PLAYER',
       'MARKET_ENGINE',
       'MM_QUOTE_SUBMITTED',
-      `MM ${effectiveMm.toUpperCase()} quoted [${liveMarket.L}, ${liveMarket.H}]`
+      `MM ${effectiveMm.toUpperCase()} quoted [${quoted.L}, ${quoted.H}]`
     );
     globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
@@ -395,7 +428,7 @@ app.post('/api/markets/:id/auction/timeout', async (c) => {
       'MARKET_ENGINE',
       'BROADCAST',
       'MM_QUOTE_TIMEOUT_FORFEIT',
-      `MM missed 3m deadline -> forfeited ${market.lot_stake_k} TOKS ante to ${updated.mm_player_id ?? 'VOID'}`
+      `MM missed 3m deadline -> forfeited ${market.lot_stake_k} CHIP ante to ${updated.mm_player_id ?? 'VOID'}`
     );
     globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
@@ -486,7 +519,7 @@ app.post('/api/markets/:id/withdraw', async (c) => {
           refund,
           'PARTIAL_WITHDRAWAL',
           key,
-          `${playerId} withdrew ${refund} SPRD from window market`
+          `${playerId} withdrew ${refund} CHIP from window market`
         );
         const remaining = Math.max(0, pos.staked_toks - refund);
         positions[posIdx] = {
@@ -541,14 +574,14 @@ app.post('/api/markets/:id/orders', async (c) => {
       playerId,
       'LIVE',
       'L',
-      `${type.toUpperCase()} @ ${triggerLevel}% (${sizeToks} TOKS)`
+      `${type.toUpperCase()} @ ${triggerLevel}% (${sizeToks} CHIP)`
     );
     globalStore.engine.emitWireTrace(
       marketId,
       'PLAYER',
       'MARKET_ENGINE',
       `PLACE_${type.toUpperCase()}`,
-      `${playerId.toUpperCase()} placed public ${type.toUpperCase()} on ${side} @ ${triggerLevel}% for ${sizeToks} TOKS`
+      `${playerId.toUpperCase()} placed public ${type.toUpperCase()} on ${side} @ ${triggerLevel}% for ${sizeToks} CHIP`
     );
     globalStore.engine.logCascadesToWireAndSwimlanes(marketId, res.cascades);
     globalStore.bumpVersion(marketId);
@@ -605,7 +638,7 @@ app.post('/api/markets/:id/p2p/bid', async (c) => {
       buyerId,
       'LIVE',
       'L',
-      `P2P Bid ${priceToks} TOKS (1x ${side})`,
+      `P2P Bid ${priceToks} CHIP (1x ${side})`,
       -Number(priceToks)
     );
     globalStore.engine.emitWireTrace(
@@ -613,7 +646,7 @@ app.post('/api/markets/:id/p2p/bid', async (c) => {
       'PLAYER',
       'MARKET_ENGINE',
       'P2P_STANDING_BID',
-      `${buyerId.toUpperCase()} posted standing bid: ${priceToks} TOKS for 1x ${side}`,
+      `${buyerId.toUpperCase()} posted standing bid: ${priceToks} CHIP for 1x ${side}`,
       -Number(priceToks)
     );
     if (res.autoMatchedSale) {
@@ -622,7 +655,7 @@ app.post('/api/markets/:id/p2p/bid', async (c) => {
         res.autoMatchedSale.sellerId,
         'LIVE',
         'W',
-        `Auto-Sold 1x ${side} @ ${res.autoMatchedSale.priceToks} TOKS`,
+        `Auto-Sold 1x ${side} @ ${res.autoMatchedSale.priceToks} CHIP`,
         res.autoMatchedSale.priceToks
       );
     }
@@ -661,8 +694,8 @@ app.post('/api/markets/:id/p2p/ask', async (c) => {
       'LIVE',
       res.autoMatchedSale ? 'W' : 'L',
       res.autoMatchedSale
-        ? `Matched ${orderKind} 1x ${side} @ ${res.autoMatchedSale.priceToks} TOKS`
-        : `${orderKind} 1x ${side} @ ${minPriceToks} TOKS`,
+        ? `Matched ${orderKind} 1x ${side} @ ${res.autoMatchedSale.priceToks} CHIP`
+        : `${orderKind} 1x ${side} @ ${minPriceToks} CHIP`,
       res.autoMatchedSale ? res.autoMatchedSale.priceToks : undefined
     );
     globalStore.engine.emitWireTrace(
@@ -670,7 +703,7 @@ app.post('/api/markets/:id/p2p/ask', async (c) => {
       'PLAYER',
       'MARKET_ENGINE',
       `P2P_${orderKind}`,
-      `${sellerId.toUpperCase()} posted ${orderKind} for 1x ${side} @ ${minPriceToks} TOKS`
+      `${sellerId.toUpperCase()} posted ${orderKind} for 1x ${side} @ ${minPriceToks} CHIP`
     );
     globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
@@ -697,7 +730,7 @@ app.post('/api/markets/:id/p2p/cashout', async (c) => {
       sellerId,
       'LIVE',
       'W',
-      `P2P Cash-Out 1x ${side} to ${res.matchedBid.buyer_id.toUpperCase()} (+${res.matchedBid.price_toks} TOKS)`,
+      `P2P Cash-Out 1x ${side} to ${res.matchedBid.buyer_id.toUpperCase()} (+${res.matchedBid.price_toks} CHIP)`,
       res.matchedBid.price_toks
     );
     globalStore.engine.emitWireTrace(
@@ -705,7 +738,7 @@ app.post('/api/markets/:id/p2p/cashout', async (c) => {
       'PLAYER',
       'MARKET_ENGINE',
       'P2P_INSTANT_CASHOUT',
-      `${sellerId.toUpperCase()} cashed out 1x ${side} lot to ${res.matchedBid.buyer_id.toUpperCase()} @ ${res.matchedBid.price_toks} TOKS`,
+      `${sellerId.toUpperCase()} cashed out 1x ${side} lot to ${res.matchedBid.buyer_id.toUpperCase()} @ ${res.matchedBid.price_toks} CHIP`,
       res.matchedBid.price_toks
     );
     globalStore.bumpVersion(marketId);
@@ -1111,6 +1144,35 @@ app.post('/api/markets/:id/replay/feed-delayed', async (c) => {
   } catch (err: any) {
     return c.json({ error: err.message }, 400);
   }
+});
+
+// 11d. Dev personas: the team's names in French
+const DEV_PERSONAS = [
+  { id: 'edouard', nickname: 'ÉDOUARD' },
+  { id: 'jules', nickname: 'JULES' },
+  { id: 'andre', nickname: 'ANDRÉ' },
+  { id: 'michel', nickname: 'MICHEL' },
+  { id: 'nathalie', nickname: 'NATHALIE' },
+];
+
+app.post('/api/dev/personas', async (c) => {
+  const ledger = globalStore.engine.ledger;
+  const existing = new Set(ledger.getAllPlayers().map((p) => p.id));
+  const missing = DEV_PERSONAS.filter((p) => !existing.has(p.id));
+  for (const persona of missing) {
+    ledger.registerPlayer({
+      ...persona,
+      group_id: globalStore.group.id,
+      is_admin: false,
+      wallet_balance_toks: 1000,
+      escrow_balance_toks: 0,
+    });
+  }
+  if (missing.length > 0) {
+    globalStore.bumpVersion();
+    await globalStore.persistToD1(c.env);
+  }
+  return c.json({ players: ledger.getAllPlayers(), stateVersion: globalStore.stateVersion });
 });
 
 // 12. Reset Demo State

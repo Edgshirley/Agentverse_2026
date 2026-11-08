@@ -14,7 +14,7 @@ services:
   api:
     build:
       context: ./api
-    container_name: spread-api
+    container_name: marketmate-api
     ports:
       - "8000:8000"
     volumes:
@@ -82,7 +82,7 @@ services:
   db-migrate:
     build:
       context: ./api
-    container_name: spread-db-migrate
+    container_name: marketmate-db-migrate
     command: [ "python", "-m", "src.migrate" ]
     volumes:
       - ./api:/usr/src/app
@@ -103,13 +103,14 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: dev
-    container_name: spread-engine
+    container_name: marketmate-engine
     expose:
       - "4000"
     environment:
       - NODE_ENV=development
       - ENV=${ENV}
       - PORT=4000
+      - DEV_TOOLS=1
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_USER=${SPREAD_USER}
       - POSTGRES_PASSWORD=${SPREAD_PASSWORD}
@@ -137,7 +138,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: dev
-    container_name: spread-frontend-dev
+    container_name: marketmate-frontend-dev
     ports:
       - "5173:5173"
     environment:
@@ -154,7 +155,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.seed
-    container_name: spread-seed-dev
+    container_name: marketmate-seed-dev
     environment:
       # Seeds the engine directly over the internal network (like freevo's
       # seed writing straight to Postgres), so it needs no user session.
@@ -169,7 +170,7 @@ services:
 
   redis:
     image: redis:7.4-alpine
-    container_name: spread-redis
+    container_name: marketmate-redis
     command: [ "redis-server", "--appendonly", "yes" ]
     ports:
       - "6379:6379"
@@ -183,7 +184,7 @@ services:
 
   postgres:
     image: postgres:17-alpine
-    container_name: spread-postgres
+    container_name: marketmate-postgres
     configs:
       - source: postgres_init
         target: /docker-entrypoint-initdb.d/init.sql
@@ -205,7 +206,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.6.2
-    container_name: spread-keycloak
+    container_name: marketmate-keycloak
     depends_on:
       postgres:
         condition: service_healthy
@@ -247,7 +248,7 @@ services:
   kc-config:
     build:
       context: ./kc
-    container_name: spread-kc-config
+    container_name: marketmate-kc-config
     depends_on:
       keycloak:
         condition: service_healthy

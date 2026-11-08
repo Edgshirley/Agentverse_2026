@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
+  ChatMessage,
   Group,
   LedgerEntry,
   LiveEvent,
@@ -43,6 +44,7 @@ export interface TerminalStatePayload {
   players: Player[];
   markets: Market[];
   activeBundle: ActiveMarketBundle | null;
+  chatMessages: ChatMessage[];
   ledgerEntries: LedgerEntry[];
 }
 
@@ -68,7 +70,7 @@ const POLL_WITH_WS_MS = 15000;
 export function useMarketSync() {
   const [data, setData] = useState<TerminalStatePayload | null>(null);
   const [selectedMarketId, setSelectedMarketId] = useState<string>('');
-  const [activePlayerId, setActivePlayerId] = useState<string>('you');
+  
   const [loading, setLoading] = useState<boolean>(true);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus>('checking');
@@ -89,7 +91,6 @@ export function useMarketSync() {
       }
       const json = await res.json();
       setAuthUser(json.user as AuthUser);
-      setActivePlayerId(json.user.player_id);
       setAuthStatus('authenticated');
     } catch {
       setAuthStatus('disabled');
@@ -234,8 +235,7 @@ export function useMarketSync() {
       setSelectedMarketId(id);
       fetchState(id);
     },
-    activePlayerId,
-    setActivePlayerId,
+    
     refresh: fetchState,
     dispatchAction,
     authStatus,

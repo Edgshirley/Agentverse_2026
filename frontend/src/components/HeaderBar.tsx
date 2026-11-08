@@ -1,16 +1,13 @@
 import React from 'react';
-import { Group, Player } from '../shared/types';
-import { AppScreen } from '../App';
-import { CatAvatarId, PixelCatAvatar } from './PixelMascot';
+import { Icon } from './Icon';
+import { Player } from '../shared/types';
+import { CatAvatarId, PixelCatAvatar, PixelMascot } from './PixelMascot';
 
 interface HeaderBarProps {
-  group: Group;
   activePlayer: Player;
-  marketCount: number;
-  activeScreen: AppScreen;
-  onNavigateScreen: (screen: AppScreen) => void;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
+  playerSwitcher?: React.ReactNode;
   username?: string;
   onLogout?: () => void;
   selectedAvatar: CatAvatarId;
@@ -20,13 +17,10 @@ interface HeaderBarProps {
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
-  group,
   activePlayer,
-  marketCount,
-  activeScreen,
-  onNavigateScreen,
   theme,
   onToggleTheme,
+  playerSwitcher,
   username,
   onLogout,
   selectedAvatar,
@@ -36,52 +30,39 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 }) => {
   return (
     <header className="terminal-header">
-      {/* Brand + Group Name */}
+      {/* Brand */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span className="btn-coral pixel-font" style={{ padding: '5px 12px', fontSize: 13 }}>
-          ♠ SPREAD
+        <span className="brand-lockup">
+          <PixelMascot size={32} />
+          <span className="pixel-font brand-wordmark">MarketMate</span>
         </span>
-        <span style={{ fontWeight: 700, fontSize: 13 }}>{group.name}</span>
       </div>
 
-      {/* Clean 3-Tab Navigation: ASK BOT · LIVE BETS · CHAT */}
-      <nav className="nav-pills-group">
-        <button
-          className={`nav-pill-btn ${activeScreen === 'voice' ? 'active' : ''}`}
-          onClick={() => onNavigateScreen('voice')}
-        >
-          ASK BOT
-        </button>
-        <button
-          className={`nav-pill-btn ${activeScreen === 'table' ? 'active' : ''}`}
-          onClick={() => onNavigateScreen('table')}
-        >
-          LIVE BETS {marketCount > 0 ? `(${marketCount})` : ''}
-        </button>
-        <button
-          className={`nav-pill-btn ${activeScreen === 'chat' ? 'active' : ''}`}
-          onClick={() => onNavigateScreen('chat')}
-        >
-          CHAT
-        </button>
-      </nav>
-
-      {/* Your SPRD Balance, Theme & Cat Profile Button */}
+      {/* Your CHIP Balance, Theme & Cat Profile Button */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {playerSwitcher}
+
         <div className="chip-wallet-badge">
+          <Icon name="coins" size={15} />
           <span className="pixel-font">{activePlayer.wallet_balance_toks.toLocaleString()}</span>
           <span className="pixel-font" style={{ fontSize: 11, opacity: 0.9 }}>
-            SPRD
+            CHIP
           </span>
           {activePlayer.escrow_balance_toks > 0 && (
-            <span style={{ fontSize: 11, opacity: 0.75 }}>
-              ({activePlayer.escrow_balance_toks} IN PLAY)
+            <span className="icon-label" style={{ fontSize: 11, opacity: 0.75 }} title="Chips in play">
+              <Icon name="lock" size={12} />
+              {activePlayer.escrow_balance_toks}
             </span>
           )}
         </div>
 
-        <button onClick={onToggleTheme} style={{ padding: '5px 10px', fontSize: 11 }}>
-          {theme === 'dark' ? '☀ LIGHT' : '☾ DARK'}
+        <button
+          onClick={onToggleTheme}
+          style={{ padding: '6px 8px' }}
+          title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
+          aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+        >
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
         </button>
 
         {/* Cat Profile Button (replaces START FRESH) with First-Startup [!] Badge */}
@@ -89,7 +70,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           type="button"
           onClick={onOpenProfile}
           className="profile-header-btn"
-          title="Customize your Cat Avatar, Display Handle & view How the Game Works"
+          title="Profile and how the game works"
+          aria-label="Profile and how the game works"
         >
           {showProfileExclamation && (
             <span
@@ -116,10 +98,12 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         {onLogout && (
           <button
             onClick={onLogout}
-            style={{ padding: '5px 10px', fontSize: 11 }}
-            title={username ? `Logged in as ${username}` : undefined}
+            style={{ padding: '5px 8px', fontSize: 11 }}
+            title={username ? `Log out ${username}` : 'Log out'}
+            aria-label={username ? `Log out ${username}` : 'Log out'}
           >
-            LOG OUT{username ? ` ${username.toUpperCase()}` : ''}
+            <Icon name="logout" size={15} />
+            {username}
           </button>
         )}
       </div>

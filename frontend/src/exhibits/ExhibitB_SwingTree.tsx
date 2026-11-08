@@ -77,7 +77,7 @@ export const ExhibitB_SwingTree: React.FC<ExhibitBSwingTreeProps> = ({
                 </span>
                 {Object.entries(branch.player_swings).map(([pid, delta]) => (
                   <span key={pid} style={{ marginRight: 8, fontWeight: 600 }}>
-                    {getNick(pid)}:{delta >= 0 ? `+${delta}` : delta} TOKS
+                    {getNick(pid)}:{delta >= 0 ? `+${delta}` : delta} CHIP
                   </span>
                 ))}
               </div>
@@ -104,13 +104,13 @@ export const ExhibitB_SwingTree: React.FC<ExhibitBSwingTreeProps> = ({
             {openOrders.map((o) => (
               <span key={o.id} className="badge-outline">
                 {getNick(o.player_id)} :: {o.type.toUpperCase()} {o.side} @ {o.trigger_level} (
-                {o.size_toks} TOKS)
+                {o.size_toks} CHIP)
               </span>
             ))}
             {openP2P.map((b) => (
               <span key={b.id} className="badge-inverted">
                 P2P {b.kind} :: {getNick(b.buyer_id || b.seller_id || '')} 1x {b.side} @{' '}
-                {b.price_toks} TOKS
+                {b.price_toks} CHIP
               </span>
             ))}
           </div>

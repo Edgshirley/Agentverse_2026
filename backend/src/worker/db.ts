@@ -4,7 +4,7 @@
 
 import { DeterministicClock } from '../engine/clock';
 import { SpreadEngine } from '../engine/state_machine';
-import { Group, Market } from '../shared/types';
+import { ChatMessage, Group, Market } from '../shared/types';
 import { PostgresConnectionSingleton } from '../backend/postgres';
 import { REDIS } from '../backend/redis';
 import { MESSAGE_BUS } from '../backend/bus';
@@ -19,6 +19,7 @@ export interface Env {
   OPENAI_API_KEY?: string;
   OPENAI_BASE_URL?: string;
   OPENAI_MODEL?: string;
+  DEV_TOOLS?: string;
 }
 
 export interface StateUpdateNotification {
@@ -197,12 +198,15 @@ const INITIAL_SCHEMA_STATEMENTS: string[] = [
   )`,
 ];
 
+export const MAX_CHAT_MESSAGES = 200;
+
 export class EdgeStateStore {
   public clock: DeterministicClock;
   public engine: SpreadEngine;
   public group: Group;
   public stateVersion: number = 1;
   public replayIndexByMarket: Map<string, number> = new Map();
+  public chatMessages: ChatMessage[] = [];
   private d1Initialized: boolean = false;
   private defaultDb?: D1Database;
   private listeners: Set<StateChangeListener> = new Set();
@@ -214,9 +218,9 @@ export class EdgeStateStore {
     this.clock = new DeterministicClock(1762542000000);
     this.engine = new SpreadEngine(this.clock);
     this.group = {
-      id: 'grp_citadel',
-      name: seedDemoFixtures ? 'CITADEL // NORTH LONDON SYNDICATE' : 'FRIENDS BETTING CLUB',
-      invite_code: 'SPREAD-2026',
+      id: 'grp_main',
+      name: seedDemoFixtures ? 'NORTH LONDON SYNDICATE' : 'FRIENDS BETTING CLUB',
+      invite_code: 'MARKETMATE-2026',
       created_at: this.clock.now(),
     };
     if (this.seedDemoFixtures) {
@@ -294,10 +298,11 @@ export class EdgeStateStore {
     this.clock = new DeterministicClock(1762542000000);
     this.engine = new SpreadEngine(this.clock);
     this.replayIndexByMarket.clear();
+    this.chatMessages = [];
     this.stateVersion += 1;
     this.group = {
       ...this.group,
-      name: this.seedDemoFixtures ? 'CITADEL // NORTH LONDON SYNDICATE' : 'FRIENDS BETTING CLUB',
+      name: this.seedDemoFixtures ? 'NORTH LONDON SYNDICATE' : 'FRIENDS BETTING CLUB',
     };
     if (this.seedDemoFixtures) {
       this.seedInitialState();
@@ -305,6 +310,17 @@ export class EdgeStateStore {
       this.seedCleanFirstPersonState();
     }
     this.notifyListeners('DEMO_RESET');
+  }
+
+  public addChatMessage(playerId: string, text: string): ChatMessage {
+    const message: ChatMessage = {
+      id: crypto.randomUUID(),
+      player_id: playerId,
+      text,
+      created_at: Date.now(),
+    };
+    this.chatMessages = [...this.chatMessages, message].slice(-MAX_CHAT_MESSAGES);
+    return message;
   }
 
   public bumpVersion(marketId?: string): number {
@@ -346,7 +362,7 @@ export class EdgeStateStore {
 
     // ========================================================================
     // Market 1: Flagship Spread / MM Market (SPEC §2.3 Golden Example)
-    // "When will Arsenal score first?" (0..95 min, k = 10 TOKS, Ana MM @ [35, 43])
+    // "When will Arsenal score first?" (0..95 min, k = 10 CHIP, Ana MM @ [35, 43])
     // ========================================================================
     let m1: Market = {
       id: 'mkt_arsenal',
@@ -404,7 +420,7 @@ export class EdgeStateStore {
     );
     this.engine.createMarket(lockedM1);
 
-    // Post standing P2P bid from Cat for 20 TOKS on 1 OVER lot (ready for 1-tap Cash Out or P2P match!)
+    // Post standing P2P bid from Cat for 20 CHIP on 1 OVER lot (ready for 1-tap Cash Out or P2P match!)
     this.engine.p2p.postStandingBid(
       this.engine.getMarket('mkt_arsenal'),
       'cat',
@@ -412,13 +428,13 @@ export class EdgeStateStore {
       20,
       'seed_cat_standing_bid_20'
     );
-    this.engine.recordSwimlane('mkt_arsenal', 'cat', 'MID', 'L', 'Standing Bid 20 TOKS (1x OVER)', -20);
+    this.engine.recordSwimlane('mkt_arsenal', 'cat', 'MID', 'L', 'Standing Bid 20 CHIP (1x OVER)', -20);
     this.engine.emitWireTrace(
       'mkt_arsenal',
       'PLAYER',
       'MARKET_ENGINE',
       'P2P_STANDING_BID',
-      'CAT posted balance-backed standing bid: 20 TOKS for 1 OVER lot',
+      'CAT posted balance-backed standing bid: 20 CHIP for 1 OVER lot',
       -20
     );
 
@@ -473,8 +489,8 @@ export class EdgeStateStore {
         player_id: 'ana',
         input_modality: 'voice',
         raw_transcript:
-          'Put 100 TOKS on YES, take profit if odds hit 72%, cut me at 44% stop floor',
-        parsed_strategy_summary: 'LONG YES 100 TOKS | TP @ 72% | HARD STOP @ 44%',
+          'Put 100 CHIP on YES, take profit if odds hit 72%, cut me at 44% stop floor',
+        parsed_strategy_summary: 'LONG YES 100 CHIP | TP @ 72% | HARD STOP @ 44%',
         side: 'YES',
         stake_toks: 100,
         entry_trigger_level: null,
@@ -496,7 +512,7 @@ export class EdgeStateStore {
       80,
       'seed_m2_ben_stop'
     );
-    this.engine.recordSwimlane('mkt_weather', 'ben', 'MID', 'L', 'Stop-Loss @ 48% (80 TOKS)');
+    this.engine.recordSwimlane('mkt_weather', 'ben', 'MID', 'L', 'Stop-Loss @ 48% (80 CHIP)');
 
     this.engine.poolBook.placeOrder(
       m2Current,
@@ -507,7 +523,7 @@ export class EdgeStateStore {
       60,
       'seed_m2_dan_limbuy'
     );
-    this.engine.recordSwimlane('mkt_weather', 'dan', 'MID', 'L', 'Limit Buy YES @ 46% (60 TOKS)', -60);
+    this.engine.recordSwimlane('mkt_weather', 'dan', 'MID', 'L', 'Limit Buy YES @ 46% (60 CHIP)', -60);
 
     // ========================================================================
     // Market 3: Stacked (Meta / Derivative) Market referencing Market 1
@@ -519,10 +535,10 @@ export class EdgeStateStore {
       proposer_id: 'cat',
       archetype: 'stacked',
       question: 'STACKED // Will ANA finish Arsenal Market M1 with positive P&L?',
-      unit: 'TOKS P&L',
+      unit: 'CHIP P&L',
       bounds: [0, 100],
       no_event_value: 0,
-      criteria: 'Settles YES (100) if ANA net P&L on mkt_arsenal > 0 TOKS at settlement.',
+      criteria: 'Settles YES (100) if ANA net P&L on mkt_arsenal > 0 CHIP at settlement.',
       resolution_source: 'Parent Market mkt_arsenal Ledger',
       payoff_mode: 'pot',
       lot_stake_k: 40,
@@ -985,6 +1001,7 @@ export class EdgeStateStore {
         group: this.group,
         stateVersion: this.stateVersion,
         replayIndices,
+        chatMessages: this.chatMessages,
         engineSnapshot: this.engine.exportSnapshot(),
       });
 
@@ -1024,6 +1041,7 @@ export class EdgeStateStore {
       group: this.group,
       stateVersion: this.stateVersion,
       replayIndices,
+      chatMessages: this.chatMessages,
       engineSnapshot: this.engine.exportSnapshot(),
     };
     const snapshotJson = JSON.stringify(snapshotPayloadObj);
@@ -1089,6 +1107,7 @@ export class EdgeStateStore {
           for (const [k, v] of Object.entries(parsed.replayIndices ?? {})) {
             this.replayIndexByMarket.set(k, Number(v));
           }
+          this.chatMessages = parsed.chatMessages ?? [];
           this.engine.importSnapshot(parsed.engineSnapshot);
           return true;
         }
@@ -1112,6 +1131,7 @@ export class EdgeStateStore {
           for (const [k, v] of Object.entries(parsed.replayIndices ?? {})) {
             this.replayIndexByMarket.set(k, Number(v));
           }
+          this.chatMessages = parsed.chatMessages ?? [];
           this.engine.importSnapshot(parsed.engineSnapshot);
           return true;
         }
@@ -1148,7 +1168,9 @@ export class EdgeStateStore {
           for (const [k, v] of Object.entries(parsed.replayIndices ?? {})) {
             this.replayIndexByMarket.set(k, Number(v));
           }
-          this.engine.importSnapshot(parsed.engineSnapshot);
+          this.chatMessages = parsed.chatMessages ?? [];
+          this.chatMessages = parsed.chatMessages ?? [];
+         this.engine.importSnapshot(parsed.engineSnapshot);
           return true;
         }
       }
@@ -1267,6 +1289,7 @@ export class EdgeStateStore {
       players: this.engine.ledger.getAllPlayers(),
       markets,
       activeBundle,
+      chatMessages: this.chatMessages,
       ledgerEntries: activeMarketId
         ? this.engine.ledger.getEntries(activeMarketId)
         : [],

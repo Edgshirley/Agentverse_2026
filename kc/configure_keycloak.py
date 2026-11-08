@@ -125,7 +125,7 @@ def main() -> None:
         kc,
         {
             "clientId": KEYCLOAK_BACKEND_CLIENT_ID,
-            "name": "Friend Spreader API",
+            "name": "MarketMate API",
             "description": "Confidential backend client (token introspection)",
             "enabled": True,
             "publicClient": False,
@@ -149,7 +149,7 @@ def main() -> None:
         kc,
         {
             "clientId": KEYCLOAK_FRONTEND_CLIENT_ID,
-            "name": "Friend Spreader UI",
+            "name": "MarketMate UI",
             "description": "Public frontend client",
             "enabled": True,
             "publicClient": True,
@@ -181,7 +181,7 @@ def main() -> None:
 
     # 3. Users: a permanent admin + the default ring traders
     admin_id = ensure_user(
-        kc, KC_ADMIN_USERNAME, "Spread", "Administrator", KC_ADMIN_EMAIL, KC_ADMIN_PASSWORD
+        kc, KC_ADMIN_USERNAME, "MarketMate", "Administrator", KC_ADMIN_EMAIL, KC_ADMIN_PASSWORD
     )
     kc.assign_realm_roles(admin_id, [kc.get_realm_role("admin")])
     for username, first, last in SEED_USERS:

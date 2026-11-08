@@ -158,7 +158,7 @@ export class ContinuousPoolOrderBook {
       stakeToks,
       'ESCROW_LOCK',
       `${idempotencyKey}:pool_enter`,
-      `${playerId} enters ${side} pool with ${stakeToks} TOKS`
+      `${playerId} enters ${side} pool with ${stakeToks} CHIP`
     );
 
     const positions = this.positionsByMarket.get(market.id) ?? [];
@@ -216,7 +216,7 @@ export class ContinuousPoolOrderBook {
    * Anytime Partial or Full Pool Withdrawal (SPEC §2.4.B.1 & §6.2):
    * Any participant with `live_equity_toks > 0` can withdraw fraction `fractionP` in (0, 1].
    * Rejects immediately when `live_equity_toks == 0`.
-   * Releases the liquidated TOKS back to the player's wallet and shifts implied odds for remaining holders.
+   * Releases the liquidated CHIP back to the player's wallet and shifts implied odds for remaining holders.
    */
   public withdrawPoolPosition(
     market: Market,
@@ -255,7 +255,7 @@ export class ContinuousPoolOrderBook {
       withdrawnToks,
       'PARTIAL_WITHDRAWAL',
       `${idempotencyKey}:withdraw`,
-      `Pool withdrawal (${Math.round(fractionP * 100)}%) of ${withdrawnToks} TOKS from ${side}`
+      `Pool withdrawal (${Math.round(fractionP * 100)}%) of ${withdrawnToks} CHIP from ${side}`
     );
 
     const costSlice =
@@ -319,7 +319,7 @@ export class ContinuousPoolOrderBook {
         sizeToks,
         'ESCROW_LOCK',
         `${idempotencyKey}:limit_lock`,
-        `Limit Buy escrow lock (${sizeToks} TOKS @ ${triggerLevel})`
+        `Limit Buy escrow lock (${sizeToks} CHIP @ ${triggerLevel})`
       );
       escrowedToks = sizeToks;
     } else {
@@ -493,7 +493,7 @@ export class ContinuousPoolOrderBook {
   }
 
   /**
-   * Voids a pool market and refunds all escrowed TOKS (e.g. parent market voided per SPEC §6.2).
+   * Voids a pool market and refunds all escrowed CHIP (e.g. parent market voided per SPEC §6.2).
    */
   public voidPoolMarket(market: Market, idempotencyKey: string): Market {
     const orders = this.ordersByMarket.get(market.id) ?? [];
@@ -790,7 +790,7 @@ export class ContinuousPoolOrderBook {
               releaseAmt,
               'STOP_CASCADE_FILL',
               `${idempotencyKey}:c_${iter}_stop`,
-              `Cascade execution of ${nextOrder.type} (${releaseAmt} TOKS)`
+              `Cascade execution of ${nextOrder.type} (${releaseAmt} CHIP)`
             );
             pos.staked_toks -= releaseAmt;
             pos.live_equity_toks -= releaseAmt;
@@ -841,7 +841,7 @@ export class ContinuousPoolOrderBook {
     if (order.type === 'stop_loss') {
       const pos = positions.find((p) => p.player_id === order.player_id && p.side === order.side);
       if (!pos || pos.live_equity_toks <= 0) return false;
-      // When trigger_level > 100, it represents a TOKS balance floor; when <= 100, it is an implied odds % threshold
+      // When trigger_level > 100, it represents a CHIP balance floor; when <= 100, it is an implied odds % threshold
       if (order.trigger_level > 100) {
         return pos.live_equity_toks <= order.trigger_level;
       }

@@ -15,7 +15,7 @@ services:
   api:
     build:
       context: ./api
-    container_name: spread-api-prod
+    container_name: marketmate-api-prod
     restart: unless-stopped
     command: [ "uvicorn", "src.main:api", "--host", "0.0.0.0", "--port", "8000" ]
     ports:
@@ -23,7 +23,7 @@ services:
     environment:
       - ENV=prod
       - VERSION=${VERSION:-0.0.0}
-      - TITLE=${TITLE:-Friend Spreader API}
+      - TITLE=${TITLE:-MarketMate API}
 
       # Database Configuration
       - POSTGRES_HOST=postgres
@@ -82,7 +82,7 @@ services:
   db-migrate:
     build:
       context: ./api
-    container_name: spread-db-migrate-prod
+    container_name: marketmate-db-migrate-prod
     command: [ "python", "-m", "src.migrate" ]
     environment:
       - ENV=prod
@@ -101,7 +101,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: prod
-    container_name: spread-engine-prod
+    container_name: marketmate-engine-prod
     restart: unless-stopped
     expose:
       - "4000"
@@ -136,7 +136,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: prod
-    container_name: spread-frontend-prod
+    container_name: marketmate-frontend-prod
     restart: unless-stopped
     ports:
       - "127.0.0.1:3900:3000"
@@ -150,7 +150,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.6.2
-    container_name: spread-keycloak-prod
+    container_name: marketmate-keycloak-prod
     restart: unless-stopped
     ports:
       - "127.0.0.1:8980:8080"
@@ -190,7 +190,7 @@ services:
 
   redis:
     image: redis:7.4-alpine
-    container_name: spread-redis-prod
+    container_name: marketmate-redis-prod
     restart: unless-stopped
     command:
       - redis-server
@@ -211,7 +211,7 @@ services:
 
   postgres:
     image: postgres:17-alpine
-    container_name: spread-postgres-prod
+    container_name: marketmate-postgres-prod
     restart: unless-stopped
     configs:
       - source: postgres_init

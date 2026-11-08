@@ -1,5 +1,5 @@
 # ============================================================================
-# Friend Spreader (Spread) — Python Dev Seed Container (dev compose only)
+# MarketMate — Python Dev Seed Container (dev compose only)
 # ============================================================================
 
 FROM python:3.12-slim

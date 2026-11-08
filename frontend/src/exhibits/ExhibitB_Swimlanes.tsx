@@ -63,7 +63,7 @@ export const ExhibitB_Swimlanes: React.FC<ExhibitBSwimlanesProps> = ({
                         <span
                           key={ev.id}
                           className="swim-node"
-                          title={`${ev.label}${ev.delta_toks != null ? ` (${ev.delta_toks >= 0 ? '+' : ''}${ev.delta_toks} TOKS)` : ''}`}
+                          title={`${ev.label}${ev.delta_toks != null ? ` (${ev.delta_toks >= 0 ? '+' : ''}${ev.delta_toks} CHIP)` : ''}`}
                         >
                           {ev.code}
                         </span>

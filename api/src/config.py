@@ -1,5 +1,5 @@
 """
-Configuration module for the Friend Spreader API (mirrors ../freevo-api/app/src/config.py).
+Configuration module for the MarketMate API (mirrors ../freevo-api/app/src/config.py).
 Loads every setting from environment variables.
 """
 
@@ -19,7 +19,7 @@ class Configuration:
 
     ENV: str = os.getenv("ENV", "dev")
     VERSION: str = os.getenv("VERSION") or "0.0.0"
-    TITLE: str = os.getenv("TITLE") or "Friend Spreader API"
+    TITLE: str = os.getenv("TITLE") or "MarketMate API"
 
     FRONTEND_EXT_URL: str = os.getenv("FRONTEND_EXT_URL", "http://localhost:5173")
     FRONTEND_COOKIE_SECURE: bool = os.getenv("FRONTEND_COOKIE_SECURE") == "true"
@@ -96,7 +96,7 @@ class Configuration:
             sys.exit(1)
 
         if self.ENV == "dev":
-            logger.info("Loading Friend Spreader API in development mode...")
+            logger.info("Loading MarketMate API in development mode...")
             width = max(len(k) for k in self.__dict__)
             for key, value in self.__dict__.items():
                 if "PASSWORD" in key or "SECRET" in key:

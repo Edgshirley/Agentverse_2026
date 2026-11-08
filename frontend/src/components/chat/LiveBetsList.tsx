@@ -2,23 +2,25 @@ import React from 'react';
 import { Market } from '../../shared/types';
 import { ActiveMarketBundle } from '../../hooks/useMarketSync';
 import { PixelMascot } from '../PixelMascot';
-import { AppScreen } from '../../App';
+import { AppPanel } from '../../App';
 
 interface LiveBetsListProps {
   activeBundle: ActiveMarketBundle | null;
   allMarkets: Market[];
   onSelectMarket: (marketId: string) => void;
-  onNavigateScreen: (screen: AppScreen) => void;
+  onOpenPanel: (panel: AppPanel) => void;
+  onNewBet: () => void;
 }
 
 export const LiveBetsList: React.FC<LiveBetsListProps> = ({
   activeBundle,
   allMarkets,
   onSelectMarket,
-  onNavigateScreen,
+  onOpenPanel,
+  onNewBet,
 }) => {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div className="live-bets-list">
       <div
         style={{
           display: 'flex',
@@ -29,31 +31,21 @@ export const LiveBetsList: React.FC<LiveBetsListProps> = ({
         <span className="pixel-font" style={{ fontSize: 12 }}>
           YOUR GROUP&apos;S BETS ({allMarkets.length})
         </span>
-        <button className="btn-mint pixel-font" onClick={() => onNavigateScreen('voice')}>
+        <button className="btn-mint pixel-font" onClick={onNewBet}>
           + NEW BET
         </button>
       </div>
 
       {allMarkets.length === 0 ? (
-        <div className="pastel-card" style={{ textAlign: 'center', padding: 28 }}>
-          <div style={{ marginBottom: 10 }}>
-            <PixelMascot size={46} />
-          </div>
-          <div className="pixel-font" style={{ marginBottom: 8 }}>
-            NO BETS CREATED YET
-          </div>
-          <p style={{ fontSize: 12, color: 'var(--fg-muted)', marginBottom: 14 }}>
-            Type a bet idea in Chat or ask the Tuxedo Cat Bot on the Main Page!
-          </p>
-          <button className="btn-brand pixel-font" onClick={() => onNavigateScreen('voice')}>
-            ASK BOT TO CREATE BET
-          </button>
+        <div className="pastel-card rail-empty">
+          <PixelMascot size={36} />
+          <span className="pixel-font">NO BETS YET</span>
         </div>
       ) : (
         allMarkets.map((m, idx) => (
           <div
             key={m.id}
-            className={`pastel-card ${m.id === activeBundle?.market.id ? 'mint' : ''}`}
+            className={`pastel-card bet-row ${m.id === activeBundle?.market.id ? 'mint' : ''}`}
             style={{
               cursor: 'pointer',
               display: 'flex',
@@ -63,7 +55,7 @@ export const LiveBetsList: React.FC<LiveBetsListProps> = ({
             }}
             onClick={() => {
               onSelectMarket(m.id);
-              onNavigateScreen('table');
+              onOpenPanel('bet');
             }}
           >
             <div>

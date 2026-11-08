@@ -1,14 +1,10 @@
 import React from 'react';
 import { Group, Player } from '../shared/types';
-import { AppScreen } from '../App';
 import { PixelMascot } from './PixelMascot';
 
 interface HeaderBarProps {
   group: Group;
   activePlayer: Player;
-  marketCount: number;
-  activeScreen: AppScreen;
-  onNavigateScreen: (screen: AppScreen) => void;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
   onResetDemo: () => void;
@@ -17,9 +13,6 @@ interface HeaderBarProps {
 export const HeaderBar: React.FC<HeaderBarProps> = ({
   group,
   activePlayer,
-  marketCount,
-  activeScreen,
-  onNavigateScreen,
   theme,
   onToggleTheme,
   onResetDemo,
@@ -34,28 +27,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         </span>
         <span style={{ fontWeight: 700, fontSize: 13 }}>{group.name}</span>
       </div>
-
-      {/* Clean 3-Tab Navigation: ASK BOT · LIVE BETS · CHAT */}
-      <nav className="nav-pills-group">
-        <button
-          className={`nav-pill-btn ${activeScreen === 'voice' ? 'active' : ''}`}
-          onClick={() => onNavigateScreen('voice')}
-        >
-          ASK BOT
-        </button>
-        <button
-          className={`nav-pill-btn ${activeScreen === 'table' ? 'active' : ''}`}
-          onClick={() => onNavigateScreen('table')}
-        >
-          LIVE BETS {marketCount > 0 ? `(${marketCount})` : ''}
-        </button>
-        <button
-          className={`nav-pill-btn ${activeScreen === 'chat' ? 'active' : ''}`}
-          onClick={() => onNavigateScreen('chat')}
-        >
-          CHAT
-        </button>
-      </nav>
 
       {/* Your CHIP Balance & Theme */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

@@ -100,6 +100,7 @@ export const BotPromptBox: React.FC<{ bot: AskBot }> = ({ bot }) => {
 
       <div style={{ display: 'flex', gap: 10 }}>
         <textarea
+          id="ask-bot-input"
           rows={2}
           value={intentMode === 'propose' ? proposeInput : strategyInput}
           onChange={(e) =>

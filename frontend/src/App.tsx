@@ -1,16 +1,21 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useMarketSync } from './hooks/useMarketSync';
 import { HeaderBar } from './components/HeaderBar';
-import { VoiceBotScreen } from './screens/VoiceBotScreen';
-import {
-  GroupChatScreen,
-  LocalChatMessage,
-  MascotWidgetAlert,
-} from './screens/GroupChatScreen';
-import { MarketTableScreen } from './screens/MarketTableScreen';
+import { AskBotPanel } from './components/askbot/AskBotPanel';
+import { ChatFeed, LocalChatMessage, MascotWidgetAlert } from './components/chat/ChatFeed';
+import { LiveBetsList } from './components/chat/LiveBetsList';
+import { BetDrawer } from './components/market/BetDrawer';
+import { MarketDetail } from './components/market/MarketDetail';
 import { PixelJokerCard, PixelPokerChip } from './components/PixelMascot';
 
-export type AppScreen = 'voice' | 'table' | 'chat';
+export type AppPanel = 'askbot' | 'bet' | 'chat';
+type MobilePane = 'chat' | 'bets' | 'bot';
+
+const MOBILE_TABS: { pane: MobilePane; label: string }[] = [
+  { pane: 'chat', label: 'CHAT' },
+  { pane: 'bets', label: 'BETS' },
+  { pane: 'bot', label: 'BOT' },
+];
 
 export const App: React.FC = () => {
   const {
@@ -24,13 +29,30 @@ export const App: React.FC = () => {
   } = useMarketSync();
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [activeScreen, setActiveScreen] = useState<AppScreen>('voice');
   const [showUnitLadder, setShowUnitLadder] = useState<boolean>(true);
+  const [mobilePane, setMobilePane] = useState<MobilePane>('chat');
+  const [betDrawerOpen, setBetDrawerOpen] = useState<boolean>(false);
+  const [newBetRequest, setNewBetRequest] = useState<number>(0);
 
-  // Persistent Chat State across tabs + Chat-to-Main-Page Mascot Handoff
   const [chatMessages, setChatMessages] = useState<LocalChatMessage[]>([]);
   const [chatMascotAlert, setChatMascotAlert] = useState<MascotWidgetAlert | null>(null);
   const [forwardedChatPrompt, setForwardedChatPrompt] = useState<string | null>(null);
+
+  const closeBetDrawer = useCallback(() => setBetDrawerOpen(false), []);
+
+  const openPanel = useCallback((panel: AppPanel) => {
+    if (panel === 'bet') {
+      setBetDrawerOpen(true);
+      return;
+    }
+    setBetDrawerOpen(false);
+    setMobilePane(panel === 'askbot' ? 'bot' : 'chat');
+  }, []);
+
+  const startNewBet = useCallback(() => {
+    openPanel('askbot');
+    setNewBetRequest((n) => n + 1);
+  }, [openPanel]);
 
   if (loading || !data) {
     return (
@@ -53,7 +75,7 @@ export const App: React.FC = () => {
     };
 
   return (
-    <div className="citadel-shell" data-theme={theme}>
+    <div className="citadel-shell app-shell" data-theme={theme}>
       {/* Subtle Gently-Floating 8-Bit Playing Cards, Joker Card & Centered CHIP Poker Chips */}
       <div className="bg-betting-decor" aria-hidden="true">
         <div
@@ -108,9 +130,6 @@ export const App: React.FC = () => {
       <HeaderBar
         group={group}
         activePlayer={activePlayer}
-        marketCount={markets.length}
-        activeScreen={activeScreen}
-        onNavigateScreen={setActiveScreen}
         theme={theme}
         onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
         onResetDemo={async () => {
@@ -118,7 +137,8 @@ export const App: React.FC = () => {
           setChatMessages([]);
           setChatMascotAlert(null);
           setForwardedChatPrompt(null);
-          setActiveScreen('voice');
+          setBetDrawerOpen(false);
+          setMobilePane('chat');
         }}
       />
 
@@ -143,24 +163,62 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      <main className="screen-container">
-        {activeScreen === 'voice' && (
-          <VoiceBotScreen
-            activeMarket={activeBundle?.market ?? null}
-            allMarkets={markets}
+      <main className="app-layout" data-mobile-pane={mobilePane}>
+        <section className="app-chat-pane" aria-label="Group chat">
+          <ChatFeed
             activePlayer={activePlayer}
-            forwardedChatPrompt={forwardedChatPrompt}
-            onClearForwardedChatPrompt={() => setForwardedChatPrompt(null)}
-            showUnitLadder={showUnitLadder}
-            onToggleUnitLadder={setShowUnitLadder}
-            onSelectMarket={setSelectedMarketId}
-            onDispatch={dispatchAction}
-            onNavigateScreen={setActiveScreen}
+            chatMessages={chatMessages}
+            setChatMessages={setChatMessages}
+            mascotAlert={chatMascotAlert}
+            setMascotAlert={setChatMascotAlert}
+            onForwardChatPrompt={setForwardedChatPrompt}
+            onOpenPanel={openPanel}
           />
-        )}
+        </section>
 
-        {activeScreen === 'table' && (
-          <MarketTableScreen
+        <aside className="app-rail">
+          <section className="rail-bets" aria-label="Live bets">
+            <LiveBetsList
+              activeBundle={activeBundle}
+              allMarkets={markets}
+              onSelectMarket={setSelectedMarketId}
+              onOpenPanel={openPanel}
+              onNewBet={startNewBet}
+            />
+          </section>
+          <section className="rail-bot" aria-label="Ask bot">
+            <AskBotPanel
+              activeMarket={activeBundle?.market ?? null}
+              allMarkets={markets}
+              activePlayer={activePlayer}
+              forwardedChatPrompt={forwardedChatPrompt}
+              onClearForwardedChatPrompt={() => setForwardedChatPrompt(null)}
+              showUnitLadder={showUnitLadder}
+              onToggleUnitLadder={setShowUnitLadder}
+              onSelectMarket={setSelectedMarketId}
+              onDispatch={dispatchAction}
+              onOpenPanel={openPanel}
+              newBetRequest={newBetRequest}
+            />
+          </section>
+        </aside>
+      </main>
+
+      <nav className="mobile-pane-tabs" aria-label="Sections">
+        {MOBILE_TABS.map((t) => (
+          <button
+            key={t.pane}
+            className={`nav-pill-btn ${mobilePane === t.pane ? 'active' : ''}`}
+            onClick={() => setMobilePane(t.pane)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </nav>
+
+      {betDrawerOpen && activeBundle && (
+        <BetDrawer onClose={closeBetDrawer}>
+          <MarketDetail
             activeBundle={activeBundle}
             allMarkets={markets}
             players={players}
@@ -170,26 +228,9 @@ export const App: React.FC = () => {
             onToggleUnitLadder={setShowUnitLadder}
             onSelectMarket={setSelectedMarketId}
             onDispatch={dispatchAction}
-            onNavigateScreen={setActiveScreen}
           />
-        )}
-
-        {activeScreen === 'chat' && (
-          <GroupChatScreen
-            activeBundle={activeBundle}
-            allMarkets={markets}
-            activePlayer={activePlayer}
-            chatMessages={chatMessages}
-            setChatMessages={setChatMessages}
-            mascotAlert={chatMascotAlert}
-            setMascotAlert={setChatMascotAlert}
-            onForwardChatPromptToMainPage={setForwardedChatPrompt}
-            onSelectMarket={setSelectedMarketId}
-            onDispatch={dispatchAction}
-            onNavigateScreen={setActiveScreen}
-          />
-        )}
-      </main>
+        </BetDrawer>
+      )}
     </div>
   );
 };

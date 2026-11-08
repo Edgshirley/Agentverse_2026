@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Player } from '../../shared/types';
 import { PixelMascot } from '../PixelMascot';
-import { AppScreen } from '../../App';
+import { AppPanel } from '../../App';
 
 export interface LocalChatMessage {
   id: string;
@@ -13,8 +13,6 @@ export interface LocalChatMessage {
 
 export interface MascotWidgetAlert {
   question: string;
-  archetype: string;
-  route: string;
 }
 
 interface ChatFeedProps {
@@ -23,9 +21,8 @@ interface ChatFeedProps {
   setChatMessages: React.Dispatch<React.SetStateAction<LocalChatMessage[]>>;
   mascotAlert: MascotWidgetAlert | null;
   setMascotAlert: React.Dispatch<React.SetStateAction<MascotWidgetAlert | null>>;
-  onForwardChatPromptToMainPage: (promptText: string) => void;
-  onDispatch: (path: string, body?: Record<string, any>) => Promise<any>;
-  onNavigateScreen: (screen: AppScreen) => void;
+  onForwardChatPrompt: (promptText: string) => void;
+  onOpenPanel: (panel: AppPanel) => void;
 }
 
 export const ChatFeed: React.FC<ChatFeedProps> = ({
@@ -34,11 +31,17 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
   setChatMessages,
   mascotAlert,
   setMascotAlert,
-  onForwardChatPromptToMainPage,
-  onDispatch,
-  onNavigateScreen,
+  onForwardChatPrompt,
+  onOpenPanel,
 }) => {
   const [chatInput, setChatInput] = useState('');
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Keep the newest message in view
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [chatMessages.length]);
 
   // Heuristic check so casual greetings like "hi!" do not trigger the bet widget,
   // while any bet/market/F1/sport/temperature message triggers the Tuxedo Cat handoff!
@@ -69,28 +72,8 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
     ]);
     setChatInput('');
 
-    // If the chat message looks like a bet idea (e.g. "lets make a bet on f1"),
-    // queue it onto the Main Page (ASK BOT) and pop up the Tuxedo Cat widget!
     if (looksLikeBetProposal(trimmed)) {
-      onForwardChatPromptToMainPage(trimmed);
-      try {
-        const res = await onDispatch('/api/agents/intake', {
-          prompt: trimmed,
-          playerId: activePlayer.id,
-        });
-        const c = res.classification;
-        setMascotAlert({
-          question: trimmed.replace(/TOKS/gi, 'CHIP'),
-          archetype: c.archetype === 'spread' ? 'LINEAR WINDOW' : c.archetype.toUpperCase(),
-          route: c.route,
-        });
-      } catch {
-        setMascotAlert({
-          question: trimmed,
-          archetype: 'BET',
-          route: 'auto',
-        });
-      }
+      setMascotAlert({ question: trimmed });
     }
   };
 
@@ -115,12 +98,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
         isMine: false,
       },
     ]);
-    onForwardChatPromptToMainPage(pick.text);
-    setMascotAlert({
-      question: pick.text,
-      archetype: pick.text.toLowerCase().includes('f1') ? 'LINEAR WINDOW' : 'SIMPLE',
-      route: 'auto',
-    });
+    setMascotAlert({ question: pick.text });
   };
 
   return (
@@ -149,7 +127,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
         </div>
       </div>
 
-      <div className="chat-messages-scroll">
+      <div className="chat-messages-scroll" ref={scrollRef}>
         {chatMessages.length === 0 && (
           <div style={{ color: 'var(--fg-muted)', textAlign: 'center', margin: 'auto 0' }}>
             No messages yet — say hi to your group or type a bet idea (e.g. &ldquo;lets make a bet
@@ -180,7 +158,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
         ))}
       </div>
 
-      {/* Bottom-Right Floating 8-Bit Tuxedo Cat Widget with Animated [!] Exclamation */}
+      {/* Bottom-right tuxedo cat offer to turn a chat message into a bet */}
       {mascotAlert && (
         <div className="chat-mascot-widget">
           <PixelMascot size={44} showExclamation={true} />
@@ -194,27 +172,29 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
               }}
             >
               <span className="pixel-font" style={{ fontSize: 10, color: 'var(--pastel-gold-text)' }}>
-                TUX CAT DEALER · {mascotAlert.archetype}
+                BET IDEA?
               </span>
               <button
                 onClick={() => setMascotAlert(null)}
                 style={{ padding: '0px 5px', fontSize: 10 }}
+                aria-label="Dismiss"
               >
                 ×
               </button>
             </div>
             <div style={{ fontSize: 11.5, marginBottom: 8 }}>
-              Hey! I&apos;ve put your chat message (&ldquo;{mascotAlert.question.slice(0, 48)}
-              &rdquo;) on the Main Page to make the bet!
+              &ldquo;{mascotAlert.question.slice(0, 64)}&rdquo;
             </div>
             <button
               className="btn-brand pixel-font"
               style={{ fontSize: 10, padding: '5px 10px', width: '100%' }}
               onClick={() => {
-                onNavigateScreen('voice');
+                onForwardChatPrompt(mascotAlert.question);
+                setMascotAlert(null);
+                onOpenPanel('askbot');
               }}
             >
-              GO TO MAIN PAGE &amp; MAKE BET -&gt;
+              MAKE THIS A BET -&gt;
             </button>
           </div>
         </div>

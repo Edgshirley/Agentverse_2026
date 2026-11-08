@@ -8,7 +8,7 @@ import {
   Player,
 } from '../shared/types';
 import { usePushToTalk } from './usePushToTalk';
-import { AppScreen } from '../App';
+import { AppPanel } from '../App';
 
 export interface AskBotOptions {
   activeMarket: Market | null;
@@ -20,7 +20,9 @@ export interface AskBotOptions {
   onToggleUnitLadder: (show: boolean) => void;
   onSelectMarket: (marketId: string) => void;
   onDispatch: (path: string, body?: Record<string, any>) => Promise<any>;
-  onNavigateScreen: (screen: AppScreen) => void;
+  onOpenPanel: (panel: AppPanel) => void;
+  /** Increments each time the rest of the page asks to start a new bet. */
+  newBetRequest: number;
 }
 
 /** All Ask Bot state and server calls, shared by the panel's sub-components. */
@@ -33,14 +35,14 @@ export function useAskBot({
   onToggleUnitLadder,
   onSelectMarket,
   onDispatch,
-  onNavigateScreen,
+  onOpenPanel,
+  newBetRequest,
 }: AskBotOptions) {
   const [intentMode, setIntentMode] = useState<'propose' | 'strategy'>(
     allMarkets.length === 0 || forwardedChatPrompt ? 'propose' : 'strategy'
   );
   const [isProcessing, setIsProcessing] = useState(false);
   const [gateError, setGateError] = useState<string | null>(null);
-  const [chatHandoffBanner, setChatHandoffBanner] = useState<string | null>(null);
 
   // Market Creation (Agent 1 Intake -> Agent 2 Classifier)
   const [proposeInput, setProposeInput] = useState<string>(
@@ -79,17 +81,22 @@ export function useAskBot({
       ? activeMarket.unit
       : 'units';
 
-  // When a bet message is forwarded from the CHAT tab, show the Tuxedo Cat banner and auto-classify it!
+  // When a chat message is turned into a bet, load it here and classify it straight away
   useEffect(() => {
     if (forwardedChatPrompt) {
       setIntentMode('propose');
       setProposeInput(forwardedChatPrompt);
-      setChatHandoffBanner(forwardedChatPrompt);
       onClearForwardedChatPrompt();
       handleSendToBot('propose', forwardedChatPrompt);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [forwardedChatPrompt]);
+
+  useEffect(() => {
+    if (newBetRequest === 0) return;
+    setIntentMode('propose');
+    document.getElementById('ask-bot-input')?.focus();
+  }, [newBetRequest]);
 
   useEffect(() => {
     if (allMarkets.length === 0 && !forwardedChatPrompt) {
@@ -257,12 +264,11 @@ export function useAskBot({
       }
       setDraft(null);
       setClassification(null);
-      setChatHandoffBanner(null);
 
-      // If this is a Linear Window (Spread) market, go straight to LIVE BETS so friends can bid
+      // A Linear Window (Spread) market opens its bet drawer so friends can bid
       // on the Window Width [L, H], the Window Winner selects the window, and players bet Above & Below!
       if (createdMarket?.archetype === 'spread') {
-        onNavigateScreen('table');
+        onOpenPanel('bet');
         return;
       }
 
@@ -327,7 +333,7 @@ export function useAskBot({
         confirmed_at: Date.now(),
       });
       setShowRiskGateCard(false);
-      onNavigateScreen('table');
+      onOpenPanel('bet');
     } catch (err: any) {
       setGateError(err.message);
     } finally {
@@ -350,8 +356,6 @@ export function useAskBot({
     isProcessing,
     gateError,
     setGateError,
-    chatHandoffBanner,
-    setChatHandoffBanner,
     proposeInput,
     setProposeInput,
     draft,

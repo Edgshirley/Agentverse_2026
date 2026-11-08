@@ -10,7 +10,8 @@ Drives the real browser flow through the UI's dev server (:5173):
   3. Keycloak -> /api/v1/system/callback -> session_id cookie
   4. /api/v1/system/me, /api/state through the gateway
   5. a market proposed "as bob" is created by alice (identity binding)
-  6. the WebSocket receives the engine's bus event for that trade
+  6. the WebSocket streams the bet pipeline: received -> AI review -> created
+  7. bob logs in and trades on alice's new bet
 """
 
 import asyncio
@@ -25,6 +26,7 @@ import websockets
 
 UI = os.getenv("UI_URL", "http://localhost:5173")
 USERNAME = os.getenv("LIVE_USERNAME", "alice")
+OTHER_USERNAME = os.getenv("LIVE_OTHER_USERNAME", "bob")
 PASSWORD = os.getenv("LIVE_PASSWORD", "spread123")
 
 
@@ -37,7 +39,7 @@ def fail(msg: str) -> None:
     sys.exit(1)
 
 
-def browser_login(client: httpx.Client) -> str:
+def browser_login(client: httpx.Client, username: str = USERNAME) -> str:
     page = client.get(f"{UI}/api/v1/system/login", follow_redirects=True)
     if "kc-form-login" not in page.text:
         fail(f"expected the Keycloak login form, got {page.status_code} {page.url}")
@@ -52,7 +54,7 @@ def browser_login(client: httpx.Client) -> str:
     action = html.unescape(re.search(r'id="kc-form-login"[^>]*action="([^"]+)"', page.text).group(1))
     res = client.post(
         action,
-        data={"username": USERNAME, "password": PASSWORD, "credentialId": ""},
+        data={"username": username, "password": PASSWORD, "credentialId": ""},
         follow_redirects=True,
     )
     session_id = client.cookies.get("session_id")
@@ -62,18 +64,28 @@ def browser_login(client: httpx.Client) -> str:
     return session_id
 
 
-async def ws_wait_for_event(session_id: str, trigger) -> dict:
+BET_STEPS = ["BET_RECEIVED", "BET_AI_REVIEWING", "BET_AI_REVIEWED", "BET_CREATED"]
+
+
+async def ws_collect_bet(session_id: str, trigger) -> list[dict]:
+    """Run `trigger` and collect the bet pipeline frames up to BET_CREATED / BET_FAILED."""
+
     ws_url = UI.replace("http", "ws", 1) + "/api/v1/ws?device_id=live-check"
     async with websockets.connect(ws_url, additional_headers={"cookie": f"session_id={session_id}"}) as ws:
         hello = json.loads(await asyncio.wait_for(ws.recv(), 5))
         if hello.get("event") != "connected":
             fail(f"unexpected ws hello {hello}")
         step(f"WebSocket connected as {hello['data']['player_id']}")
-        await asyncio.to_thread(trigger)
+        task = asyncio.create_task(asyncio.to_thread(trigger))
+        frames = []
         while True:
-            frame = json.loads(await asyncio.wait_for(ws.recv(), 10))
-            if frame.get("event") not in ("connected", "pong"):
-                return frame
+            frame = json.loads(await asyncio.wait_for(ws.recv(), 30))
+            if frame.get("event", "").startswith("BET_"):
+                frames.append(frame)
+                if frame["event"] in ("BET_CREATED", "BET_FAILED"):
+                    break
+        await task
+        return frames
 
 
 def main() -> None:
@@ -106,8 +118,35 @@ def main() -> None:
                 fail(f"market proposed 'as bob' was created by {proposer}")
             step(f"market sent with proposer_id='bob' was created by {proposer}")
 
-        frame = asyncio.run(ws_wait_for_event(session_id, spoofed_create))
-        step(f"WebSocket pushed {frame['event']} (stateVersion={frame['data'].get('stateVersion')})")
+        frames = asyncio.run(ws_collect_bet(session_id, spoofed_create))
+        events = [f["event"] for f in frames]
+        if events != BET_STEPS:
+            fail(f"bet pipeline over WebSocket was {events}, expected {BET_STEPS}")
+        review = frames[2]["data"]
+        step(f"WebSocket streamed {' -> '.join(events)}")
+        step(
+            f"AI review ({review['mode']}, {review['model']}, {review['latency_ms']} ms): "
+            f"{review['review']['summary']} fair value={review['review']['fair_value']}"
+        )
+        market_id = frames[3]["data"]["market_id"]
+
+    # Another player trades on the new bet
+    with httpx.Client(timeout=20) as other:
+        browser_login(other, OTHER_USERNAME)
+        res = other.post(f"{UI}/api/markets/{market_id}/take", json={"side": "YES", "amount": 1})
+        if res.status_code != 200:
+            fail(f"{OTHER_USERNAME} could not trade on the new bet: {res.status_code} {res.text[:200]}")
+        positions = [
+            p for p in other.get(f"{UI}/api/state", params={"marketId": market_id}).json()["activeBundle"]["positions"]
+            if p.get("player_id") == OTHER_USERNAME
+        ]
+        if not positions:
+            fail(f"{OTHER_USERNAME}'s trade left no position on {market_id}")
+        step(f"{OTHER_USERNAME} traded on {player_id}'s bet ({len(positions)} position(s))")
+        other.post(f"{UI}/api/v1/system/logout")
+
+    with httpx.Client(timeout=20) as client:
+        client.cookies.set("session_id", session_id)
 
         if client.post(f"{UI}/api/v1/system/logout").status_code != 204:
             fail("logout failed")

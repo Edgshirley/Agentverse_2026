@@ -17,7 +17,9 @@ import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 import src.auth as auth_module  # noqa: E402
+import src.routers.bets as bets_module  # noqa: E402
 import src.routers.core as core_module  # noqa: E402
+from src.config import config  # noqa: E402
 from src.auth import player_id_for  # noqa: E402
 from src.backend.engine import ENGINE  # noqa: E402
 from src.main import api  # noqa: E402
@@ -110,13 +112,27 @@ def stack(monkeypatch):
     keycloak = FakeKeycloak()
     users = FakeUsers()
     engine_calls: list[dict] = []
+    engine_state = {"reject_markets": False}
+    bus_events: list[dict] = []
 
     def engine_handler(request: httpx.Request) -> httpx.Response:
         body = json.loads(request.content) if request.content else None
         engine_calls.append({"method": request.method, "path": request.url.path, "body": body})
         if request.url.path == "/api/state":
             return httpx.Response(200, json={"stateVersion": 7, "players": []})
+        if request.url.path == "/api/markets" and request.method == "POST":
+            if engine_state["reject_markets"]:
+                return httpx.Response(400, json={"error": "Bounds are inverted"})
+            return httpx.Response(200, json={"market": {"id": "mkt_1", **body}, "bundle": {}})
         return httpx.Response(200, json={"ok": True, "echo": body})
+
+    class RecordingBus:
+        async def publish(self, event):
+            bus_events.append(event)
+
+    monkeypatch.setattr(bets_module, "MESSAGE_BUS", lambda: RecordingBus())
+    monkeypatch.setattr(config, "GEMINI_API", None)
+    monkeypatch.setattr(config, "GEMINI_SIMULATED_DELAY_SECONDS", 0)
 
     for module in (auth_module, core_module):
         monkeypatch.setattr(module, "REDIS", redis)
@@ -144,6 +160,8 @@ def stack(monkeypatch):
             "keycloak": keycloak,
             "users": users,
             "engine_calls": engine_calls,
+            "engine_state": engine_state,
+            "bus_events": bus_events,
         }
 
 

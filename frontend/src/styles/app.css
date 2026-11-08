@@ -1457,3 +1457,112 @@ button:disabled {
   box-shadow: 2px 2px 0px var(--pixel-shadow);
   animation: exclaimJump 0.75s steps(2, end) infinite;
 }
+
+/* ============================================================================
+ * Live bet pipeline (BetActivityFeed): placed -> AI review -> open to all
+ * ============================================================================ */
+
+.bet-activity-feed {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  width: min(340px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.bet-activity-card {
+  pointer-events: auto;
+  padding: 12px 14px;
+  font-size: 12px;
+  animation: bet-activity-in 180ms ease-out;
+}
+
+.bet-activity-headline {
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.bet-activity-question {
+  font-weight: 700;
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+
+.bet-activity-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+}
+
+.bet-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-size: 10px;
+  opacity: 0.4;
+}
+
+.bet-step.done {
+  opacity: 1;
+}
+
+.bet-step.active {
+  opacity: 1;
+  animation: bet-step-pulse 900ms ease-in-out infinite;
+}
+
+.bet-step.failed {
+  opacity: 1;
+  font-weight: 700;
+}
+
+.bet-activity-review {
+  margin-top: 4px;
+}
+
+.bet-activity-meta {
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.bet-activity-flags {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  font-size: 11px;
+}
+
+.bet-activity-open {
+  margin-top: 8px;
+  padding: 4px 10px;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@keyframes bet-activity-in {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes bet-step-pulse {
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bet-activity-card,
+  .bet-step.active {
+    animation: none;
+  }
+}

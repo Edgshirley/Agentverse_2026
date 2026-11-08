@@ -3,6 +3,7 @@ import { useMarketSync } from './hooks/useMarketSync';
 import { useActivePlayerId } from './hooks/useActivePlayerId';
 import { PlayerSwitcher } from './dev/PlayerSwitcher';
 import { HeaderBar } from './components/HeaderBar';
+import { BetActivityFeed } from './components/BetActivityFeed';
 import { ProfileModal, generateThemedGamerName } from './components/ProfileModal';
 import { AskBotPanel } from './components/askbot/AskBotPanel';
 import { ChatFeed, MascotWidgetAlert } from './components/chat/ChatFeed';
@@ -88,6 +89,7 @@ export const App: React.FC = () => {
     refreshAuth,
     login,
     logout,
+    betActivity,
   } = useMarketSync();
   const [activePlayerId, setActivePlayerId] = useActivePlayerId(authUser?.player_id);
 
@@ -435,6 +437,12 @@ export const App: React.FC = () => {
           />
         </Suspense>
       )}
+
+      <BetActivityFeed
+        bets={betActivity}
+        activePlayerId={activePlayerId}
+        onOpenMarket={setSelectedMarketId}
+      />
 
       {betDrawerOpen && activeBundle && (
         <BetDrawer onClose={closeBetDrawer}>

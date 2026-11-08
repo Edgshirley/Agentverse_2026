@@ -52,7 +52,7 @@ Open http://localhost:5173 and log in as `alice`, `bob`, `carol` or `dave` (pass
 
 Every `/api/*` call needs a session, and the gateway binds each action to the signed-in player. Browsers get live updates on `/api/v1/ws`.
 
-For production, copy `prod.env.example` to `prod.env` and run `make prod`. Create the `spread-api` and `spread-ui` Keycloak clients once and set `KEYCLOAK_CLIENT_SECRET`.
+For production, copy `prod.env.example` to `prod.env` and run `make prod`. Create the `spread-api` (confidential) and `spread-ui` (public) Keycloak clients once, give `spread-ui` an Audience mapper that adds `spread-api` to access tokens (otherwise logins fail with "inactive token"), and set `KEYCLOAK_CLIENT_SECRET`.
 
 Run the tests:
 
@@ -64,7 +64,9 @@ cd backend && npm test
 make api-test
 ```
 
-The bot works without keys using built-in rules. Set `GEMINI_API_KEY` in `dev.env` or `prod.env` for LLM parsing and the outside-odds panel, which uses Google Search to show what other sites say about a market.
+Every new bet is reviewed by Gemini before its market opens: a one-line take, a fair value in the bet's unit, settlement criteria and any problems. All players watch it happen live over the WebSocket (`BET_RECEIVED` → `BET_AI_REVIEWING` → `BET_AI_REVIEWED` → `BET_CREATED`), then anyone can trade on it. The review is advisory and never blocks a bet; if Gemini fails, a simulated review is used instead.
+
+Put your Gemini key in `prod.env` as `GEMINI_API` (required in prod). It also powers the bot's LLM parsing and the outside-odds panel, which uses Google Search to show what other sites say about a market. `dev.env` leaves it empty, so dev uses simulated reviews and the bot's built-in rules. `GEMINI_BET_MODEL` picks the review model (default `gemini-3.8-flash`).
 
 ## Dev tools
 

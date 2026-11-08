@@ -52,34 +52,47 @@ def bind_identity(path: str, payload: Dict[str, Any], auth_ctx: Dict[str, Any]) 
     return payload
 
 
+async def read_json_object(request: Request) -> Dict[str, Any]:
+    """The request body as a JSON object ({} when empty).
+
+    The engine parses every body as JSON whatever its content-type, so every
+    body is validated and bound here: a non-object (array, scalar, text) would
+    make the engine fall back to a default player id instead of the caller's.
+    """
+
+    body = await request.body()
+    if not body.strip():
+        return {}
+    try:
+        payload = json.loads(body)
+    except ValueError as e:
+        raise BadRequestError(detail="Request body must be a JSON object") from e
+    if not isinstance(payload, dict):
+        raise BadRequestError(detail="Request body must be a JSON object")
+    return payload
+
+
+def engine_headers(request: Request, auth_ctx: Dict[str, Any]) -> Dict[str, str]:
+    return {
+        "content-type": "application/json",
+        "accept": request.headers.get("accept", "application/json"),
+        "x-spread-user-id": auth_ctx["uid"],
+        "x-spread-player-id": auth_ctx["player_id"],
+    }
+
+
 @router.api_route(
     "/api/{path:path}",
     methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     summary="Rules engine gateway",
 )
 async def forward(path: str, request: Request, auth_ctx: Dict[str, Any] = Depends(auth())):
-    body = await request.body()
+    body = b""
+    if request.method != "GET":
+        payload = bind_identity(path, await read_json_object(request), auth_ctx)
+        body = json.dumps(payload).encode()
 
-    # The engine parses every body as JSON whatever its content-type, so every
-    # body is bound here: a non-object (array, scalar, text) would make the
-    # engine fall back to a default player id instead of the caller's.
-    if request.method != "GET" and not body.strip():
-        body = b"{}"
-    if body.strip():
-        try:
-            payload = json.loads(body)
-        except ValueError as e:
-            raise BadRequestError(detail="Request body must be a JSON object") from e
-        if not isinstance(payload, dict):
-            raise BadRequestError(detail="Request body must be a JSON object")
-        body = json.dumps(bind_identity(path, payload, auth_ctx)).encode()
-
-    headers = {
-        "content-type": "application/json",
-        "accept": request.headers.get("accept", "application/json"),
-        "x-spread-user-id": auth_ctx["uid"],
-        "x-spread-player-id": auth_ctx["player_id"],
-    }
+    headers = engine_headers(request, auth_ctx)
 
     upstream = ENGINE.client.build_request(
         request.method,

@@ -29,6 +29,16 @@ class Configuration:
     ENGINE_URL: str = os.getenv("ENGINE_URL", "http://engine:4000")
     ENGINE_TIMEOUT_SECONDS: float = float(os.getenv("ENGINE_TIMEOUT_SECONDS") or 30)
 
+    # Gemini bet review (src/backend/gemini.py). With GEMINI_API set every new
+    # bet is reviewed by the real model; without it (dev) the review is simulated.
+    GEMINI_API: str = os.getenv("GEMINI_API") or None
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL") or "gemini-3.8-flash"
+    GEMINI_TIMEOUT_SECONDS: float = float(os.getenv("GEMINI_TIMEOUT_SECONDS") or 20)
+    # Pause of the simulated review, so the WebSocket steps are visible in dev
+    GEMINI_SIMULATED_DELAY_SECONDS: float = float(
+        os.getenv("GEMINI_SIMULATED_DELAY_SECONDS") or 1.5
+    )
+
     # Database Configuration
     POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "localhost")
     POSTGRES_PORT: int = int(os.getenv("POSTGRES_PORT") or 5432)
@@ -99,7 +109,7 @@ class Configuration:
             logger.info("Loading MarketMate API in development mode...")
             width = max(len(k) for k in self.__dict__)
             for key, value in self.__dict__.items():
-                if "PASSWORD" in key or "SECRET" in key:
+                if "PASSWORD" in key or "SECRET" in key or key == "GEMINI_API":
                     value = "***"
                 logger.info("%-*s -> %s", width, key, value)
 

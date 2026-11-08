@@ -3,6 +3,7 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { applyBetFrame, BetActivity, isBetFrame } from './betActivity';
 import {
   ChatMessage,
   Group,
@@ -77,6 +78,7 @@ export function useMarketSync() {
   const [authStatus, setAuthStatus] = useState<AuthStatus>('checking');
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [wsConnected, setWsConnected] = useState<boolean>(false);
+  const [betActivity, setBetActivity] = useState<BetActivity[]>([]);
 
   const refreshAuth = useCallback(async () => {
     try {
@@ -170,7 +172,10 @@ export function useMarketSync() {
       socket.onmessage = (msg) => {
         try {
           const frame = JSON.parse(msg.data);
-          if (frame.event !== 'connected' && frame.event !== 'pong') {
+          if (isBetFrame(frame)) {
+            // Bet pipeline steps; the engine's own STATE_UPDATED triggers the refetch
+            setBetActivity((prev) => applyBetFrame(prev, frame));
+          } else if (frame.event !== 'connected' && frame.event !== 'pong') {
             fetchStateRef.current();
           }
         } catch {
@@ -245,5 +250,6 @@ export function useMarketSync() {
     login,
     logout,
     wsConnected,
+    betActivity,
   };
 }

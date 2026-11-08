@@ -17,10 +17,11 @@ from fastapi.responses import JSONResponse
 from src import ws_worker
 from src.backend.bus import MessageBusSingleton
 from src.backend.engine import ENGINE
+from src.backend.gemini import GEMINI
 from src.backend.postgres import PostgresConnectionSingleton
 from src.backend.redis import REDIS
 from src.config import config
-from src.routers import core, engine, ws
+from src.routers import bets, core, engine, ws
 
 logger = logging.getLogger("uvicorn")
 
@@ -37,6 +38,7 @@ async def lifespan(_app: FastAPI):
         await ws_worker_task
     await MessageBusSingleton.close()
     await ENGINE.close()
+    await GEMINI.close()
     await REDIS.close()
     await PostgresConnectionSingleton.close()
 
@@ -70,5 +72,7 @@ async def http_exception_handler(_request: Request, exc: HTTPException):
 
 api.include_router(core.router)
 api.include_router(ws.router)
+# Bet placement (Gemini review + live WebSocket steps) before the generic gateway
+api.include_router(bets.router)
 # Catch-all gateway to the rules engine: must stay last.
 api.include_router(engine.router)

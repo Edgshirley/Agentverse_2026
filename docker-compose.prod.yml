@@ -53,6 +53,10 @@ services:
       # Rules engine (internal)
       - ENGINE_URL=http://engine:4000
 
+      # Gemini bet review (live in prod)
+      - GEMINI_API=${GEMINI_API:?GEMINI_API must be set}
+      - GEMINI_MODEL=${GEMINI_BET_MODEL:-gemini-3.8-flash}
+
       # Frontend Configuration
       - FRONTEND_EXT_URL=${FRONTEND_EXT_URL:?FRONTEND_EXT_URL must be set}
       - FRONTEND_COOKIE_SAMESITE=${FRONTEND_COOKIE_SAMESITE:-lax}
@@ -117,7 +121,8 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - MESSAGE_BUS=redis
       - BUS_CHANNEL=${BUS_CHANNEL:-spread-messages}
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      # Same GEMINI_API token for the engine's draft / outside-odds agents
+      - GEMINI_API_KEY=${GEMINI_API:-}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
     volumes:
       - engine-spread-prod:/app/data

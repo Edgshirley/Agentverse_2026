@@ -15,8 +15,13 @@ import {
   runAgent2Classifier,
 } from './agents';
 import { stepDeterministicReplay, toggleFeedDelayedStatus } from './replay';
+import { config } from '../config';
+import { PostgresConnectionSingleton } from '../backend/postgres';
+import { REDIS } from '../backend/redis';
+import { MESSAGE_BUS } from '../backend/bus';
 
 export { globalStore, EdgeStateStore } from './db';
+export { config, PostgresConnectionSingleton, REDIS, MESSAGE_BUS };
 
 export const app = new Hono<{ Bindings: Env }>();
 
@@ -55,15 +60,35 @@ function ensurePlayerRegistered(rawIdOrNick: string): string {
   return cleanId;
 }
 
-// 0. Healthcheck & SQLite / D1 Database Inspector
+// 0. Healthcheck, Dependency Status (Postgres / Redis / Bus) & Database Inspector
+// Authentication, sessions and client WebSockets are handled by the FastAPI
+// gateway (../api); this engine is only reachable on the internal network.
+app.get('/api/system/status', async (c) => {
+  const [pgConnected, redisConnected] = await Promise.all([
+    PostgresConnectionSingleton.ping(),
+    REDIS.ping(),
+  ]);
+  return c.json({
+    ok: true,
+    service: config.TITLE,
+    version: config.VERSION,
+    env: config.ENV,
+    stateVersion: globalStore.stateVersion,
+    serverClockMs: globalStore.clock.now(),
+    postgres: { connected: pgConnected, host: config.POSTGRES_HOST, database: config.POSTGRES_DB },
+    redis: { connected: redisConnected, host: config.REDIS_HOST, db: 2 },
+    messageBus: { driver: config.MESSAGE_BUS, channel: config.BUS_CHANNEL },
+  });
+});
+
 app.get('/api/health', async (c) => {
   const db = globalStore.getDatabase(c.env);
   return c.json({
     ok: true,
-    service: 'friend-spreader-backend',
+    service: 'friend-spreader-engine',
     stateVersion: globalStore.stateVersion,
     serverClockMs: globalStore.clock.now(),
-    databaseConnected: Boolean(db),
+    databaseConnected: Boolean(db) || PostgresConnectionSingleton.getStatus() === 'connected',
   });
 });
 

@@ -11,6 +11,8 @@ interface HeaderBarProps {
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
   onResetDemo: () => void;
+  username?: string;
+  onLogout?: () => void;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
@@ -22,6 +24,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   theme,
   onToggleTheme,
   onResetDemo,
+  username,
+  onLogout,
 }) => {
   return (
     <header className="terminal-header">
@@ -79,6 +83,15 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         >
           START FRESH
         </button>
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            style={{ padding: '5px 10px', fontSize: 11 }}
+            title={username ? `Logged in as ${username}` : undefined}
+          >
+            LOG OUT{username ? ` ${username.toUpperCase()}` : ''}
+          </button>
+        )}
       </div>
     </header>
   );

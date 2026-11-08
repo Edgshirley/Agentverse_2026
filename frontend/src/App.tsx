@@ -21,6 +21,11 @@ export const App: React.FC = () => {
     setSelectedMarketId,
     activePlayerId,
     dispatchAction,
+    authStatus,
+    authUser,
+    refreshAuth,
+    login,
+    logout,
   } = useMarketSync();
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -32,7 +37,23 @@ export const App: React.FC = () => {
   const [chatMascotAlert, setChatMascotAlert] = useState<MascotWidgetAlert | null>(null);
   const [forwardedChatPrompt, setForwardedChatPrompt] = useState<string | null>(null);
 
-  if (loading || !data) {
+  if (authStatus === 'anonymous') {
+    return (
+      <div className="citadel-shell" data-theme={theme} style={{ padding: 40, textAlign: 'center' }}>
+        <div className="pastel-card" style={{ maxWidth: 420, margin: '80px auto', padding: 28 }}>
+          <div className="pixel-font" style={{ fontSize: 18, marginBottom: 12 }}>
+            ♠ SPREAD
+          </div>
+          <p style={{ marginBottom: 20 }}>Log in to take a seat at your group's table.</p>
+          <button className="btn-coral pixel-font" onClick={login} style={{ padding: '10px 18px' }}>
+            LOG IN
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (authStatus === 'checking' || loading || !data) {
     return (
       <div className="citadel-shell" data-theme={theme} style={{ padding: 40, textAlign: 'center' }}>
         <span className="pixel-font">♠ LOADING SPREAD...</span>
@@ -113,8 +134,12 @@ export const App: React.FC = () => {
         onNavigateScreen={setActiveScreen}
         theme={theme}
         onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+        username={authUser?.username}
+        onLogout={authStatus === 'authenticated' ? logout : undefined}
         onResetDemo={async () => {
           await dispatchAction('/api/demo/reset', {});
+          // The reset empties the ring: re-seat the logged-in player
+          if (authStatus === 'authenticated') await refreshAuth();
           setChatMessages([]);
           setChatMascotAlert(null);
           setForwardedChatPrompt(null);

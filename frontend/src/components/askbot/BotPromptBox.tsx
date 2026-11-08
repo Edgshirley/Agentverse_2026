@@ -6,9 +6,11 @@ import { AskBot } from '../../hooks/useAskBot';
 export const BotPromptBox: React.FC<{ bot: AskBot }> = ({ bot }) => {
   const { proposeInput, setProposeInput, askBot, isProcessing, activeMarket } = bot;
 
-  const placeholder = activeMarket
-    ? 'New bet, or a strategy: "bet 50 on above, sell at 6, stop at 2"'
-    : 'Describe your bet: "pit stops in the F1 race tomorrow"';
+  const placeholder = !activeMarket
+    ? 'Describe your bet: "pit stops in the F1 race tomorrow"'
+    : activeMarket.archetype === 'spread'
+      ? 'New bet, or a strategy: "bet 50 on above, sell at 6, stop at 2"'
+      : 'New bet, or a strategy: "bet 50 on yes, sell at 70%, stop at 35%"';
 
   return (
     <form

@@ -161,6 +161,44 @@ export async function callLlmJson<T>(
 /**
  * Agent 1 (Intake & Structuring): `draft_market` + `lint_criteria` + `suggest_width` (SPEC §3.1 & §3.4)
  */
+// ---------------------------------------------------------------------------
+// Rule-based question shape (used when no LLM answers)
+// ---------------------------------------------------------------------------
+
+/** Something to count or measure: bet ABOVE / BELOW a window. */
+const QUANTITY_RE =
+  /\b(how many|how much|how long|how far|how fast|when will|what (time|minute|lap|temp(erature)?)|which (lap|minute)|minute of|number of|count of|pit ?stops?|laps?|temperature|°c|degrees|lap ?time|fastest lap time|window|spread|range|linear|over\/under|over or under)\b/i;
+
+/** A claim that either happens or doesn't: a YES / NO market. */
+const YES_NO_RE =
+  /\b(there will be|there'?ll be|will there be|is there going to be|i bet (that )?[\w']+ (will|won'?t|is|isn'?t|are|aren'?t|gets?|wins?|crash(es)?)|will [\w']+( [\w']+)? (be|win|crash|happen|rain|snow|finish|beat|lose|score|make|get|retire|lead)|whether|yes or no|crash(es)?|dnf|retires?|safety car|red flag)\b/i;
+
+export type QuestionShape = 'quantity' | 'yes_no' | 'unknown';
+
+export function detectQuestionShape(prompt: string): QuestionShape {
+  if (QUANTITY_RE.test(prompt)) return 'quantity';
+  if (YES_NO_RE.test(prompt)) return 'yes_no';
+  return 'unknown';
+}
+
+/** Turn "lets bet on f1, i bet there will be a crash" into "Will there be a crash in the F1 race?" */
+export function yesNoQuestionFromPrompt(prompt: string): string {
+  const text = prompt.trim().replace(/[?.!]+$/, '');
+  const isF1 = /\b(f1|formula ?1|grand prix)\b/i.test(text);
+  const thereWillBe = text.match(/there(?: will|'?ll) be (.+)$/i);
+  if (thereWillBe) {
+    const thing = thereWillBe[1].trim();
+    const where = isF1 && !/\b(f1|race|grand prix)\b/i.test(thing) ? ' in the F1 race' : '';
+    return `Will there be ${thing}${where}?`;
+  }
+  const willClause = text.match(/\b(will [^,]+)$/i);
+  if (willClause) {
+    const q = willClause[1].trim();
+    return `${q.charAt(0).toUpperCase()}${q.slice(1)}?`;
+  }
+  return `${text}?`;
+}
+
 export async function runAgent1Intake(
   prompt: string,
   env?: Env
@@ -245,7 +283,21 @@ Return JSON with:
   else if (lower.includes('binary')) payoffMode = 'binary';
   else if (lower.includes('log')) payoffMode = 'log';
 
-  if (isF1OrRacing && !isStacked) {
+  const shape = detectQuestionShape(prompt);
+  let ruleQuestion: string | null = null;
+
+  if (shape === 'yes_no' && !isStacked) {
+    // "I bet there will be a crash": a YES / NO market, not a number window
+    ruleQuestion = yesNoQuestionFromPrompt(prompt);
+    bounds = [0, 100];
+    unit = 'binary';
+    noEventValue = 0;
+    resolutionSource = isF1OrRacing
+      ? 'Official FIA / Formula 1 race report'
+      : 'Group / Public Oracle Feed';
+    criteria = `Resolves YES if this happens: "${ruleQuestion.replace(/\?$/, '')}". Otherwise NO.`;
+    payoffMode = 'pot';
+  } else if (isF1OrRacing && !isStacked) {
     bounds = [0, 12];
     unit = lower.includes('lap') ? 'laps' : 'pit stops';
     noEventValue = 0;
@@ -290,9 +342,11 @@ Return JSON with:
     question:
       typeof aiDraft?.question === 'string' && aiDraft.question.trim()
         ? aiDraft.question.trim()
-        : prompt.trim().endsWith('?')
-          ? prompt.trim()
-          : `${prompt.trim()}?`,
+        : ruleQuestion
+          ? ruleQuestion
+          : prompt.trim().endsWith('?')
+            ? prompt.trim()
+            : `${prompt.trim()}?`,
     unit: typeof aiDraft?.unit === 'string' && aiDraft.unit.trim() ? aiDraft.unit.trim() : unit,
     bounds: validBounds,
     resolution_source:
@@ -421,6 +475,8 @@ Classify the market into:
     lower.includes('odds hit')
   ) {
     archetype = 'stacked';
+  } else if (draft.unit === 'binary' || detectQuestionShape(prompt) === 'yes_no') {
+    archetype = 'simple'; // a claim that happens or doesn't: YES / NO
   } else if (
     lower.includes('when will') ||
     lower.includes('how many') ||

@@ -77,8 +77,12 @@ export function useAskBot({
   const [tpField, setTpField] = useState<string>('');
   const [floorField, setFloorField] = useState<string>('');
 
-  const betUnitLabel =
-    activeMarket?.unit && activeMarket.unit !== 'binary' && activeMarket.unit !== '%'
+  // Window bets move in the market's unit (pit stops, min...). Yes/no bets trade the
+  // chance of YES (0-100%), whatever the topic is, so their stops are in %.
+  const isWindowMarket = activeMarket?.archetype === 'spread';
+  const betUnitLabel = !isWindowMarket
+    ? '% chance of YES'
+    : activeMarket?.unit && activeMarket.unit !== 'binary' && activeMarket.unit !== '%'
       ? activeMarket.unit
       : 'units';
 
@@ -105,14 +109,18 @@ export function useAskBot({
     }
   }, [allMarkets.length, forwardedChatPrompt]);
 
+  // Reset the default side only when switching to a different market. The market object
+  // is replaced on every live update, and resetting then would flip a parsed NO back to YES.
+  const activeMarketId = activeMarket?.id;
+  const activeArchetype = activeMarket?.archetype;
   useEffect(() => {
-    if (activeMarket) {
-      setSideField(activeMarket.archetype === 'spread' ? 'OVER' : 'YES');
+    if (activeMarketId) {
+      setSideField(activeArchetype === 'spread' ? 'OVER' : 'YES');
       if (!parentMarketId) {
-        setParentMarketId(activeMarket.id);
+        setParentMarketId(activeMarketId);
       }
     }
-  }, [activeMarket, parentMarketId]);
+  }, [activeMarketId, activeArchetype, parentMarketId]);
 
   const ptt = usePushToTalk((transcript) => {
     setProposeInput(transcript);
@@ -126,6 +134,7 @@ export function useAskBot({
     const mode = classifyBotRequest(trimmed, !!activeMarket);
     setIntentMode(mode);
     if (mode === 'strategy') setStrategyInput(trimmed);
+    setProposeInput(''); // clear the box like a chat input; the card below shows what was asked
     handleSendToBot(mode, trimmed);
   };
 
@@ -214,8 +223,10 @@ export function useAskBot({
               ? 'min'
               : draft.unit);
 
-      const finalBounds: [number, number] =
-        finalUnit === 'pit stops'
+      const isWindow = classification.archetype === 'spread';
+      const finalBounds: [number, number] = !isWindow
+        ? [0, 100] // yes/no: priced as the chance of YES
+        : finalUnit === 'pit stops'
           ? [0, 12]
           : finalUnit === '°C'
             ? [15, 32]
@@ -253,8 +264,13 @@ export function useAskBot({
           classification.archetype === 'stacked' ? draft.parent_metric || 'odds' : null,
         parent_trigger_target:
           classification.archetype === 'stacked' ? draft.parent_trigger_target ?? 75 : null,
-        live_implied_value:
-          finalUnit === 'pit stops' ? 4 : finalUnit === '°C' ? 24 : 50,
+        live_implied_value: !isWindow
+          ? 50
+          : finalUnit === 'pit stops'
+            ? 4
+            : finalUnit === '°C'
+              ? 24
+              : 50,
         toggles: {
           max_lots: 3,
           forced_trading: false,
@@ -282,12 +298,12 @@ export function useAskBot({
 
       // Otherwise for a Simple/Stacked market, flow into the 3-Part Strategy & Risk Tolerance Confirmation Card
       setIntentMode('strategy');
-      const isDeg = createdMarket?.unit === '°C';
+      // Yes/no levels are the chance of YES in %
       setSummaryField(`YES ${createdMarket?.lot_stake_k ?? 50} CHIP`);
       setStakeField(String(createdMarket?.lot_stake_k ?? 50));
       setSideField('YES');
-      setTpField(isDeg ? '27' : '70');
-      setFloorField(isDeg ? '21' : '35');
+      setTpField('70');
+      setFloorField('35');
       setShowRiskGateCard(true);
     } catch (err: any) {
       setGateError(err.message);

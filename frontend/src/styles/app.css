@@ -1618,7 +1618,9 @@ button:disabled {
 
 .chat-market-card {
   align-self: center;
-  width: min(100%, 520px);
+  width: 100%;
+  max-width: 520px;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1655,7 +1657,10 @@ button:disabled {
   padding-top: 14px;
 }
 
-/* Let the floating card / chip background show through the chat box */
+/* Let the floating card / chip background show through the chat box.
+   min-width: 0 keeps long one-line market questions from widening the chat
+   column into the right rail. */
 .chat-feed-box {
+  min-width: 0;
   background-color: color-mix(in srgb, var(--bg-panel) 55%, transparent);
 }

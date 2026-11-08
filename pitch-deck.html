@@ -8,7 +8,7 @@
   <!-- Google Web Fonts: Silkscreen (8-bit arcade) & JetBrains Mono (clean code/prose) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Silkscreen:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
 
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -429,16 +429,16 @@
     /* 1. CAT RUN TRANSITION */
     .trans-cat-wrap {
       position: absolute;
-      top: 45%;
-      left: -120px;
+      top: 40%;
+      left: -460px;
       display: flex;
       align-items: center;
       gap: 16px;
-      animation: cat-sprint 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      animation: cat-sprint 2.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
     }
     @keyframes cat-sprint {
       0% { transform: translateX(0) scaleX(1); }
-      100% { transform: translateX(calc(100vw + 240px)) scaleX(1); }
+      100% { transform: translateX(calc(100vw + 560px)) scaleX(1); }
     }
     .trans-cat-dust {
       width: 14px;
@@ -698,6 +698,71 @@
       .slide { padding: 20px 16px; justify-content: flex-start; }
       .tl-mark .tl-tag { font-size: 10px; padding: 2px 5px; }
     }
+
+    /* ===== Click-the-cat detail pop-ups ===== */
+    .cat-help { position: absolute; right: 36px; bottom: 22px; z-index: 6; display: flex; align-items: center; gap: 10px;
+      background: none; border: 0; padding: 0; box-shadow: none; cursor: pointer; }
+    .cat-help:hover .cat-help-cat { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--border-strong); }
+    .cat-help-cat { position: relative; width: 58px; height: 58px; display: flex; align-items: center; justify-content: center;
+      background: var(--bg-panel); border: 2px solid var(--brand-border); border-radius: 10px;
+      box-shadow: 3px 3px 0 var(--pixel-shadow); animation: mascotBounce 2.2s ease-in-out infinite; transition: transform 0.08s, box-shadow 0.08s; }
+    .cat-help-bubble { font-family: 'Silkscreen', monospace; font-size: 10px; letter-spacing: 0.04em; padding: 6px 10px;
+      background: var(--brand-bg); color: var(--brand-text); border: 2px solid var(--brand-border); border-radius: 6px;
+      box-shadow: 2px 2px 0 var(--pixel-shadow); white-space: nowrap; }
+    .pixel-exclamation-badge { position: absolute; top: -10px; right: -8px; width: 22px; height: 22px; border-radius: 4px;
+      background: var(--brand-bg); color: var(--brand-text); border: 2px solid var(--brand-border);
+      display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700;
+      box-shadow: 2px 2px 0 var(--pixel-shadow); animation: exclaimJump 0.75s steps(2, end) infinite; }
+    @keyframes mascotBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+    @keyframes exclaimJump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+    .detail-backdrop { position: fixed; inset: 0; z-index: 9000; display: flex; align-items: center; justify-content: center; padding: 16px;
+      background: color-mix(in srgb, var(--pixel-shadow) 70%, transparent); animation: detailFade 0.15s ease-out; }
+    .detail-backdrop[hidden] { display: none; }
+    .detail-card { width: min(720px, 100%); max-height: calc(100vh - 80px); overflow-y: auto; background: var(--bg-panel);
+      border: 2px solid var(--border-strong); border-radius: 10px; box-shadow: 6px 6px 0 var(--pixel-shadow); padding: 22px 24px;
+      animation: detailPop 0.2s steps(4, end); }
+    .detail-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 14px;
+      margin-bottom: 14px; border-bottom: 2px solid var(--border-color); }
+    .detail-title { font-family: 'Silkscreen', monospace; font-size: 18px; color: var(--fg-primary); }
+    .detail-body { font-size: 14px; line-height: 1.6; color: var(--fg-primary); }
+    .detail-body h4 { font-family: 'Silkscreen', monospace; font-size: 12px; color: var(--brand-ink); margin: 16px 0 6px; letter-spacing: 0.05em; }
+    .detail-body h4:first-child { margin-top: 0; }
+    .detail-body ul { display: flex; flex-direction: column; gap: 6px; }
+    .detail-body li { display: flex; gap: 10px; }
+    .detail-body li::before { content: '▸'; color: var(--pastel-gold-border); flex: none; }
+    .detail-body strong { color: var(--pastel-gold-border); font-weight: 600; }
+    .detail-body code { color: var(--pastel-mint-border); font-size: 12.5px; }
+    .detail-body .note { margin-top: 14px; padding: 10px 12px; border: 2px dashed var(--pastel-gold-border); border-radius: 6px;
+      background: var(--pastel-gold-bg); color: var(--pastel-gold-text); font-size: 13px; }
+    @keyframes detailFade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes detailPop { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    @media (max-width: 760px) {
+      .cat-help { right: 16px; bottom: 12px; }
+      .cat-help-bubble { display: none; }
+    }
+
+    /* Running cat: lit box so the dark cat reads on the dark canvas */
+    .trans-cat-box { background: var(--bg-panel); border: 3px solid var(--brand-border); border-radius: 12px; padding: 10px;
+      box-shadow: 4px 4px 0 var(--pixel-shadow), 0 0 0 4px var(--bg-canvas), 0 0 0 6px var(--pastel-gold-border);
+      animation: catHop 0.32s steps(2, end) infinite; }
+    body.theme-light .trans-cat-box { background: #15181c; }
+    @keyframes catHop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+
+    /* Wordmark and headlines: Press Start 2P has a clear M (Silkscreen's reads as H) */
+    .brand-wordmark, .headline { font-family: 'Press Start 2P', 'Silkscreen', monospace; letter-spacing: 0; }
+    .headline { font-weight: 400; line-height: 1.35; font-size: clamp(20px, 3.2vw, 38px); }
+
+    /* Bigger, louder help cat */
+    .cat-help { right: 32px; bottom: 20px; gap: 14px; }
+    .cat-help-cat { width: 92px; height: 92px; border-width: 3px; border-radius: 14px; box-shadow: 4px 4px 0 var(--pixel-shadow); }
+    .cat-help-cat::after { content: ''; position: absolute; inset: -9px; border: 3px solid var(--brand-border); border-radius: 18px;
+      animation: helpPulse 1.6s ease-out infinite; pointer-events: none; }
+    @keyframes helpPulse { 0% { transform: scale(0.92); opacity: 0.9; } 100% { transform: scale(1.25); opacity: 0; } }
+    .cat-help .pixel-exclamation-badge { z-index: 2; width: 30px; height: 30px; top: -14px; right: -12px; font-size: 18px; border-width: 3px; }
+    .cat-help-bubble { font-size: 13px; padding: 9px 14px; border-width: 3px; box-shadow: 3px 3px 0 var(--pixel-shadow); }
+    @media (max-width: 760px) { .cat-help-cat { width: 72px; height: 72px; } }
   </style>
 </head>
 
@@ -764,7 +829,7 @@
 
     <!-- Slide Breadcrumb Pill -->
     <div class="hidden md:flex items-center gap-2 bg-[var(--bg-panel)] border border-[var(--border-color)] px-3 py-1 rounded">
-      <span class="pixel-font text-xs text-[var(--pastel-gold-border)]" id="slide-num-pill">01 / 10</span>
+      <span class="pixel-font text-xs text-[var(--pastel-gold-border)]" id="slide-num-pill">01 / 12</span>
       <span class="text-[var(--fg-dim)] text-xs">|</span>
       <span class="text-xs font-mono text-[var(--fg-primary)]" id="slide-title-pill">Put your chips where your mouth is</span>
     </div>
@@ -869,10 +934,125 @@
           </div>
         </div>
       </div>
+      <button class="cat-help" onclick="openDetail(this)" aria-label="Show more details">
+        <span class="cat-help-bubble">CLICK ME FOR THE DETAILS</span>
+        <span class="cat-help-cat"><svg width="64" height="64" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+          <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+          <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+          <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+          <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+          <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+          <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+          <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+          <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+        </svg><span class="pixel-exclamation-badge">!</span></span>
+      </button>
+      <div class="slide-detail" hidden data-detail-title="WHY BETS DIE IN THE CHAT">
+        <h4>WHAT GOES WRONG</h4>
+        <ul>
+          <li><span><strong>No bookie.</strong> Someone has to hold the stakes, track who owes what and chase people. Nobody volunteers.</span></li>
+          <li><span><strong>Vague terms.</strong> "Before half time": does stoppage time count? The argument about the bet replaces the bet.</span></li>
+          <li><span><strong>No settlement.</strong> The result comes in, the loser goes quiet, and the bet is quietly forgotten.</span></li>
+        </ul>
+        <h4>WHY EXISTING OPTIONS DON'T FIT</h4>
+        <ul>
+          <li><span>Betting apps use real money and house odds, and won't price "minute of the first goal" for five mates.</span></li>
+          <li><span>Notes and spreadsheets need a volunteer accountant. See "no bookie".</span></li>
+        </ul>
+        <div class="note">Our angle: friends set the price themselves through an auction, and an engine holds the chips and settles.</div>
+      </div>
+
+    </section>
+
+    <!-- WHO IT HELPS -->
+    <section class="slide" data-slide="2" data-title="Who it helps">
+      <div class="slide-inner space-y-8">
+        <div class="space-y-3">
+          <div class="kicker">WHO IT HELPS</div>
+          <h2 class="headline">Anyone who's ever typed "bet?"</h2>
+        </div>
+        <div class="grid md:grid-cols-3 gap-4">
+          <div class="pastel-card mint-accent"><div class="text-3xl">⚽</div><div class="pixel-font text-sm mt-3">FRIEND GROUPS</div><div class="text-sm mt-2">The Arsenal v Chelsea crowd. Our core user.</div></div>
+          <div class="pastel-card sky-accent"><div class="text-3xl">🎟️</div><div class="pixel-font text-sm mt-3">FANS WITH OPINIONS</div><div class="text-sm mt-2">Skin in the game, without risking the rent.</div></div>
+          <div class="pastel-card gold-accent"><div class="text-3xl">💼</div><div class="pixel-font text-sm mt-3">TEAMS &amp; OFFICES</div><div class="text-sm mt-2">Sales targets, with the boss as referee. Coming next.</div></div>
+        </div>
+      </div>
+      <button class="cat-help" onclick="openDetail(this)" aria-label="Show more details">
+        <span class="cat-help-bubble">CLICK ME FOR THE DETAILS</span>
+        <span class="cat-help-cat"><svg width="64" height="64" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+          <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+          <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+          <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+          <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+          <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+          <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+          <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+          <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+        </svg><span class="pixel-exclamation-badge">!</span></span>
+      </button>
+      <div class="slide-detail" hidden data-detail-title="WHO IT HELPS">
+        <h4>WHO WE BUILT IT FOR</h4>
+        <ul>
+          <li><span><strong>Friend groups</strong> who already argue about sport, weather and trivia in a group chat. This is the core user.</span></li>
+          <li><span><strong>Fans who want a stake</strong> without real-money gambling. <code>CHIP</code> is play money with no cash value.</span></li>
+          <li><span><strong>Teams and offices</strong> running private bets (sales targets, rankings) with a referee who isn't allowed to bet. The engine already enforces this; the invite flow is next.</span></li>
+        </ul>
+        <h4>WHY PLAY MONEY</h4>
+        <ul>
+          <li><span>No licence, no deposits, no one loses rent. The currency is bragging rights.</span></li>
+        </ul>
+      </div>
+
     </section>
 
     <!-- 03 SOLUTION -->
-    <section class="slide" data-slide="2" data-title="The fix">
+    <section class="slide" data-slide="3" data-title="The fix">
       <div class="slide-inner space-y-6">
         <div class="text-center space-y-3">
           <div class="kicker">THE FIX</div>
@@ -886,7 +1066,7 @@
     </section>
 
     <!-- 04 HOW A BET WORKS -->
-    <section class="slide" data-slide="3" data-title="How a bet works">
+    <section class="slide" data-slide="4" data-title="How a bet works">
       <div class="slide-inner space-y-8">
         <div class="space-y-3">
           <div class="kicker">HOW A BET WORKS</div>
@@ -918,10 +1098,57 @@
           <span>🎯</span><div>Goal lands inside the window? The house wins. The house is Édouard. Édouard is insufferable about it.</div>
         </div>
       </div>
+      <button class="cat-help" onclick="openDetail(this)" aria-label="Show more details">
+        <span class="cat-help-bubble">CLICK ME FOR THE DETAILS</span>
+        <span class="cat-help-cat"><svg width="64" height="64" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+          <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+          <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+          <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+          <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+          <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+          <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+          <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+          <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+        </svg><span class="pixel-exclamation-badge">!</span></span>
+      </button>
+      <div class="slide-detail" hidden data-detail-title="HOW A BET WORKS, PROPERLY">
+        <ul>
+          <li><span><strong>Propose.</strong> Anyone types a claim. The cat drafts the question, unit, bounds, stake per lot, payout mode and result source.</span></li>
+          <li><span><strong>Bid it down.</strong> Friends bid the window width. Each bid must be narrower than the last, and the server closes the auction when the clock runs out.</span></li>
+          <li><span><strong>Be the house.</strong> The tightest bidder becomes market maker and picks the low edge <code>L</code>. The high edge is <code>H = L + width</code>.</span></li>
+          <li><span><strong>Pick a side.</strong> Everyone else bets above <code>H</code> or below <code>L</code>, 1 to 5 lots each.</span></li>
+          <li><span><strong>Edges count as inside.</strong> A result exactly on <code>L</code> or <code>H</code> goes to the market maker.</span></li>
+        </ul>
+        <div class="note">Yes/no and stacked markets skip the auction and go straight to betting.</div>
+      </div>
+
     </section>
 
     <!-- 05 MATCH NIGHT -->
-    <section class="slide" data-slide="4" data-title="Match night">
+    <section class="slide" data-slide="5" data-title="Match night">
       <div class="slide-inner space-y-4">
         <div class="space-y-3">
           <div class="kicker">MATCH NIGHT · ARSENAL v CHELSEA</div>
@@ -942,10 +1169,56 @@
           <div class="pastel-card"><div class="pixel-font text-sm text-[var(--fg-primary)]">NOBODY ARGUED</div><div class="text-sm mt-1 text-[var(--fg-muted)]">The engine settled it on the official result. (Michel argued.)</div></div>
         </div>
       </div>
+      <button class="cat-help" onclick="openDetail(this)" aria-label="Show more details">
+        <span class="cat-help-bubble">CLICK ME FOR THE DETAILS</span>
+        <span class="cat-help-cat"><svg width="64" height="64" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+          <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+          <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+          <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+          <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+          <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+          <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+          <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+          <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+        </svg><span class="pixel-exclamation-badge">!</span></span>
+      </button>
+      <div class="slide-detail" hidden data-detail-title="WHAT HAPPENED UNDER THE HOOD">
+        <ul>
+          <li><span>Our test replays a <strong>recorded match feed</strong>, so it plays out the same way every time. Live bets settle from published results instead.</span></li>
+          <li><span><strong>38'</strong> Havertz scores. The feed proposes a result of 38, inside the window, but nothing is settled yet.</span></li>
+          <li><span><strong>40'</strong> VAR rules it out. The proposal is withdrawn automatically and the market goes back to live.</span></li>
+          <li><span><strong>50'</strong> Ødegaard scores. 50 is above 43, so the Above side gets paid and the engine settles.</span></li>
+        </ul>
+        <div class="note">This whole sequence, VAR included, runs as an automated end-to-end test.</div>
+      </div>
+
     </section>
 
     <!-- 06 PAYOUT MODES -->
-    <section class="slide" data-slide="5" data-title="Payout modes">
+    <section class="slide" data-slide="6" data-title="Payout modes">
       <div class="slide-inner space-y-8">
         <div class="space-y-3">
           <div class="kicker">PAYOUT MODES</div>
@@ -960,13 +1233,126 @@
         </div>
         <p class="text-xs text-[var(--fg-dim)]">Landing exactly on the edge of the window counts as inside. We don't make the rules. (We do. That's the rule.)</p>
       </div>
+      <button class="cat-help" onclick="openDetail(this)" aria-label="Show more details">
+        <span class="cat-help-bubble">CLICK ME FOR THE DETAILS</span>
+        <span class="cat-help-cat"><svg width="64" height="64" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+          <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+          <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+          <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+          <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+          <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+          <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+          <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+          <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+        </svg><span class="pixel-exclamation-badge">!</span></span>
+      </button>
+      <div class="slide-detail" hidden data-detail-title="THE MATHS, FOR THE CURIOUS">
+        <h4>THE KNOBS</h4>
+        <ul>
+          <li><span><code>k</code> is the stake per lot, <code>w = H − L</code> is the window width, and <code>c</code> caps how many widths a bet can win or lose (default 3).</span></li>
+        </ul>
+        <h4>PER LOT</h4>
+        <ul>
+          <li><span><strong>Binary:</strong> win <code>k</code> or lose <code>k</code>.</span></li>
+          <li><span><strong>Linear:</strong> <code>k × (distance past the edge ÷ w)</code>, capped at ±<code>c</code>.</span></li>
+          <li><span><strong>Log:</strong> the same, with distance measured on a log scale. Needs <code>L &gt; 0</code>.</span></li>
+          <li><span><strong>Pot:</strong> winners split the pot by lots. Inside the window, the market maker takes it.</span></li>
+        </ul>
+        <div class="note">Each player's worst case is locked in escrow up front, so nobody can owe more than they have.</div>
+      </div>
+
+    </section>
+
+    <!-- OUR DATA -->
+    <section class="slide" data-slide="7" data-title="Our data">
+      <div class="slide-inner space-y-8">
+        <div class="space-y-3">
+          <div class="kicker">OUR DATA</div>
+          <h2 class="headline">Four feeds. Zero spreadsheets.</h2>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">CHAT</div><div class="text-sm mt-2">What friends type becomes a market draft.</div></div>
+          <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">RESULTS</div><div class="text-sm mt-2">Published results, found and cited by the cat.</div></div>
+          <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">THE WEB</div><div class="text-sm mt-2">Gemini + Google Search: briefings and outside odds, with sources.</div></div>
+          <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">LEDGER</div><div class="text-sm mt-2">Every chip movement, written down. Twice.</div></div>
+        </div>
+      </div>
+      <button class="cat-help" onclick="openDetail(this)" aria-label="Show more details">
+        <span class="cat-help-bubble">CLICK ME FOR THE DETAILS</span>
+        <span class="cat-help-cat"><svg width="64" height="64" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+          <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+          <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+          <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+          <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+          <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+          <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+          <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+          <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+        </svg><span class="pixel-exclamation-badge">!</span></span>
+      </button>
+      <div class="slide-detail" hidden data-detail-title="WHERE THE NUMBERS COME FROM">
+        <ul>
+          <li><span><strong>Chat.</strong> Messages are stored on the server and only recent history is kept. Empty and oversized messages are rejected.</span></li>
+          <li><span><strong>Results.</strong> At the resolve time the cat looks up the published result, cites its sources and proposes it. Nothing settles until a 30-minute challenge window passes.</span></li>
+          <li><span><strong>The web.</strong> Gemini with Google Search finds the real event behind a bet, briefs every bidder, and shows outside odds. No sources, no number. Links must be https, and lookups are cached to save quota.</span></li>
+          <li><span><strong>Replays.</strong> For tests and dev, recorded matches (goals, VAR, half time) replay at any speed, the same way every time.</span></li>
+          <li><span><strong>Ledger.</strong> Every chip movement is a wallet or escrow entry in Postgres. Redis carries sessions and live updates.</span></li>
+        </ul>
+      </div>
+
     </section>
 
     <!-- 07 AI + ENGINE -->
-    <section class="slide" data-slide="6" data-title="The cat and the engine">
+    <section class="slide" data-slide="8" data-title="Agent limits & risk controls">
       <div class="slide-inner space-y-8">
         <div class="space-y-3">
-          <div class="kicker">THE AI BIT</div>
+          <div class="kicker">AGENT LIMITS &amp; RISK CONTROLS</div>
           <h2 class="headline">The cat talks. The maths pays.</h2>
         </div>
         <div class="grid md:grid-cols-2 gap-6">
@@ -1005,10 +1391,10 @@
           <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
         </svg><span class="pixel-font text-base">THE CAT (GEMINI)</span></div>
             <ul class="text-sm space-y-1.5">
-              <li>▸ Spots a bet hiding in the chat</li>
-              <li>▸ Drafts the market for you</li>
-              <li>▸ Checks what the internet thinks the odds are</li>
-              <li>▸ Won't place a strategy until you confirm the stop-loss</li>
+              <li>▸ Finds the real event and drafts the bet</li>
+              <li>▸ Briefs every bidder with sourced facts</li>
+              <li>▸ Settles from published results</li>
+              <li>▸ Asks a question instead of guessing</li>
             </ul>
           </div>
           <div class="pastel-card gold-accent space-y-3">
@@ -1021,27 +1407,137 @@
             </ul>
           </div>
         </div>
-        <div class="sidenote-banner" style="font-size: 14px;"><span>🔒</span><div>The AI can't move a single chip. It suggests; the engine decides. No API key? The cat falls back to built-in rules.</div></div>
+        <div class="sidenote-banner" style="font-size: 14px;"><span>🔒</span><div>The AI can't move a single chip. It suggests; the engine decides. No API key? The cat says it's off duty. It never makes things up.</div></div>
       </div>
+      <button class="cat-help" onclick="openDetail(this)" aria-label="Show more details">
+        <span class="cat-help-bubble">CLICK ME FOR THE DETAILS</span>
+        <span class="cat-help-cat"><svg width="64" height="64" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+          <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+          <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+          <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+          <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+          <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+          <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+          <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+          <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+        </svg><span class="pixel-exclamation-badge">!</span></span>
+      </button>
+      <div class="slide-detail" hidden data-detail-title="AGENT LIMITS & RISK CONTROLS">
+        <h4>WHAT THE AI CAN'T DO</h4>
+        <ul>
+          <li><span>Move chips. Agents return proposals only; the deterministic engine is the only thing that changes balances.</span></li>
+          <li><span>Run a strategy you didn't confirm. Typed or spoken strategies are <strong>blocked</strong> until you confirm all three: what you're doing, your take-profit, and your loss floor.</span></li>
+          <li><span>Make things up. No sources, no number: outside odds, briefings and results all need web sources behind them.</span></li>
+          <li><span>Guess. If a message isn't clearly a bet, the cat asks a question instead of inventing a market.</span></li>
+          <li><span>Settle on a hunch. It only proposes an in-range result backed by sources, then waits out a 30-minute challenge window.</span></li>
+        </ul>
+        <h4>WHAT THE ENGINE ENFORCES</h4>
+        <ul>
+          <li><span>Worst-case loss is escrowed before a bet is accepted. Max 1 to 5 lots per take.</span></li>
+          <li><span>Idempotency keys, so a double tap can't bet twice.</span></li>
+          <li><span>The gateway ties every action to the signed-in player. You can't bet as someone else.</span></li>
+          <li><span>A referee can't trade in their own market, and a countdown locks bets at zero.</span></li>
+          <li><span>Manual results on bot-settled bets, and the dev and demo routes, are blocked in production.</span></li>
+        </ul>
+        <div class="note">No API key? The cat says it's unavailable and never invents a market, a fact or a result.</div>
+      </div>
+
     </section>
 
     <!-- 08 PROOF -->
-    <section class="slide" data-slide="7" data-title="Every chip accounted for">
-      <div class="slide-inner space-y-10">
+    <section class="slide" data-slide="9" data-title="How we know it works">
+      <div class="slide-inner space-y-8">
         <div class="space-y-3 text-center">
-          <div class="kicker">TRUST ISSUES? GOOD.</div>
-          <h2 class="headline">Every chip accounted for.</h2>
+          <div class="kicker">EVALUATION &amp; KEY STATS</div>
+          <h2 class="headline">Trust issues? Good. Us too.</h2>
         </div>
-        <div class="grid md:grid-cols-3 gap-6 text-center">
-          <div class="pastel-card mint-accent py-8"><div class="big-stat">0</div><div class="text-sm mt-3">chips created or lost, in any settlement. Property-tested.</div></div>
-          <div class="pastel-card sky-accent py-8"><div class="big-stat">50+</div><div class="text-sm mt-3">automated tests across the engine and the gateway</div></div>
-          <div class="pastel-card gold-accent py-8"><div class="big-stat">ℤ</div><div class="text-sm mt-3">Integers only. No 0.1 + 0.2 drama. Leftover chips go to the market maker.</div></div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div class="pastel-card mint-accent py-6"><div class="big-stat">50</div><div class="text-sm mt-3">engine and agent tests, all green</div></div>
+          <div class="pastel-card sky-accent py-6"><div class="big-stat">100</div><div class="text-sm mt-3">random markets stress-tested every run</div></div>
+          <div class="pastel-card gold-accent py-6"><div class="big-stat">0</div><div class="text-sm mt-3">chips created or lost. Ever.</div></div>
+          <div class="pastel-card coral-accent py-6"><div class="big-stat">1</div><div class="text-sm mt-3">full match replayed, VAR drama included</div></div>
         </div>
+        <p class="sub text-center">Benchmark: the spec's hand-calculated example, reproduced <span style="color: var(--pastel-gold-border)">to the chip</span>.</p>
       </div>
+      <button class="cat-help" onclick="openDetail(this)" aria-label="Show more details">
+        <span class="cat-help-bubble">CLICK ME FOR THE DETAILS</span>
+        <span class="cat-help-cat"><svg width="64" height="64" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+          <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+          <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+          <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+          <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+          <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+          <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+          <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+          <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+        </svg><span class="pixel-exclamation-badge">!</span></span>
+      </button>
+      <div class="slide-detail" hidden data-detail-title="HOW WE EVALUATED IT">
+        <h4>THE BENCHMARK</h4>
+        <ul>
+          <li><span>The spec has a <strong>worked example computed by hand</strong>: Ana, Ben, Cat and Dan, window 35–43, a mid-match lot sale at 20 CHIP. The engine matches every payout for results of 50 and 39.</span></li>
+        </ul>
+        <h4>THE TESTS</h4>
+        <ul>
+          <li><span><strong>Property tests:</strong> each run generates 60 random window markets across all 4 payout modes, plus 40 random withdrawal and stop-loss sequences, and checks that chips are never created or lost, nobody goes negative, and replays are identical.</span></li>
+          <li><span><strong>End-to-end:</strong> the full Arsenal match, VAR included, replayed through the engine.</span></li>
+          <li><span><strong>Risk gate:</strong> strategies missing a take-profit or a loss floor are blocked.</span></li>
+          <li><span><strong>Live agents:</strong> 22 tests: no key means no invented market, non-bets get a question, results need evidence and a challenge window, and repeat checks don't burn quota.</span></li>
+          <li><span><strong>Gateway:</strong> 18 tests for login, sessions, player binding and WebSocket auth.</span></li>
+        </ul>
+        <div class="note">Not benchmarked yet: how accurately the AI reads chat messages. Next step: a labelled set of real messages (bets vs. chatter), scoring how often Gemini spots the bet and finds the right event.</div>
+      </div>
+
     </section>
 
     <!-- 09 STACK -->
-    <section class="slide" data-slide="8" data-title="Under the hood">
+    <section class="slide" data-slide="10" data-title="Under the hood">
       <div class="slide-inner space-y-10">
         <div class="space-y-3">
           <div class="kicker">UNDER THE HOOD</div>
@@ -1051,7 +1547,7 @@
           <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">UI</div><div class="text-sm mt-2">React + Vite</div></div>
           <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">GATEWAY</div><div class="text-sm mt-2">FastAPI + Keycloak</div></div>
           <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">LIVE</div><div class="text-sm mt-2">Redis + WebSockets</div></div>
-          <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">AGENTS</div><div class="text-sm mt-2">Gemini</div></div>
+          <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">AGENTS</div><div class="text-sm mt-2">Gemini + Google Search</div></div>
           <div class="pastel-card col-span-2 md:col-span-1"><div class="pixel-font text-xs text-[var(--brand-ink)]">ENGINE</div><div class="text-sm mt-2">TypeScript + Postgres</div></div>
         </div>
         <div class="pastel-card max-w-md mx-auto text-center" style="background: var(--bg-canvas);">
@@ -1062,7 +1558,7 @@
     </section>
 
     <!-- 10 NEXT + CLOSE -->
-    <section class="slide" data-slide="9" data-title="What's next">
+    <section class="slide" data-slide="11" data-title="What's next">
       <div class="slide-inner grid md:grid-cols-2 gap-12 items-center">
         <div class="space-y-5">
           <div class="kicker">WHAT'S NEXT</div>
@@ -1108,12 +1604,60 @@
           <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
         </svg></div>
           <h2 class="headline">Settle it.</h2>
-          <a href="https://github.com/Edgshirley/Agentverse_2026" target="_blank" class="btn-8bit active text-sm">github.com/Edgshirley/Agentverse_2026 ↗</a>
+          <div class="pastel-card gold-accent w-full max-w-sm space-y-3 text-left">
+            <div class="pixel-font text-sm" style="color: var(--pastel-gold-text);">GIVE IT A GO</div>
+            <a href="https://agentverse.generic.fyi/" target="_blank" rel="noopener" class="btn-8bit active text-sm w-full justify-center">agentverse.generic.fyi ↗</a>
+            <div class="text-xs" style="color: var(--pastel-gold-text);">Grab a login from us, pick a side, and argue with the cat.</div>
+          </div>
+          <a href="https://github.com/Edgshirley/Agentverse_2026" target="_blank" rel="noopener" class="text-xs text-[var(--fg-muted)] underline">github.com/Edgshirley/Agentverse_2026</a>
         </div>
       </div>
     </section>
 
   </main>
+
+  <!-- Detail pop-up opened by the help cat -->
+  <div id="detail-modal" class="detail-backdrop" hidden onclick="if (event.target === this) closeDetail()">
+    <div class="detail-card" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+      <div class="detail-head">
+        <div class="flex items-center gap-3"><svg width="36" height="36" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+          <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+          <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+          <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+          <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+          <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+          <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+          <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+          <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+        </svg><div class="detail-title" id="detail-title"></div></div>
+        <button class="btn-8bit" onclick="closeDetail()">GOT IT ✕</button>
+      </div>
+      <div class="detail-body" id="detail-body"></div>
+    </div>
+  </div>
 
   <!-- =========================================================================
        BOTTOM NAVIGATION & TRANSITION CONTROLS STRIP
@@ -1189,6 +1733,25 @@
       }
 
       // 8-bit Tuxedo Cat Alert Chirp (Square wave two-note perk-up)
+      // Cat alert: chirp + ding, played when the help cat is clicked
+      playCatAlert() {
+        const ctx = this.getContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        this.playTone(880, now, 0.06, 0.12, 'square');
+        this.playTone(1318.5, now + 0.07, 0.08, 0.13, 'square');
+        this.playTone(1760, now + 0.16, 0.18, 0.12, 'triangle');
+      }
+
+      // Used by the SFX toggle
+      playCoinDing() {
+        const ctx = this.getContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        this.playTone(1318.5, now, 0.06, 0.12, 'triangle');
+        this.playTone(1975.5, now + 0.05, 0.14, 0.10, 'triangle');
+      }
+
       playCatChirp() {
         const ctx = this.getContext();
         if (!ctx) return;
@@ -1276,6 +1839,7 @@
     const TRANSITIONS = ['cat-run', 'chips-falling', 'f1-speed', 'pixel-blinds', 'card-fan', 'scanline-matrix'];
     let currentTransIndex = 0;
     let transitionMode = 'auto'; // 'auto' or specific name
+    let isTransitioning = false;
 
     function executeTransitionEffect(effectType, onMidpoint) {
       const overlay = document.getElementById('transition-overlay');
@@ -1292,7 +1856,11 @@
         sound.playCatChirp();
         overlay.innerHTML = `
           <div class="trans-cat-wrap">
-            <svg width="48" height="48" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+            <div class="pixel-font text-base text-[var(--pastel-gold-border)] font-bold">10 CHIP ★</div>
+            <div class="trans-cat-dust"></div>
+            <div class="trans-cat-dust"></div>
+            <div class="trans-cat-box">
+            <svg width="96" height="96" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
               <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
               <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
               <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
@@ -1325,8 +1893,7 @@
               <rect x="13" y="11" width="2" height="3" fill="#14161E" />
               <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
             </svg>
-            <div class="trans-cat-dust"></div>
-            <div class="pixel-font text-xs text-[var(--pastel-gold-border)] font-bold">10 CHIP ★</div>
+            </div>
           </div>
         `;
       } else if (effectType === 'chips-falling') {
@@ -1374,15 +1941,18 @@
       }
 
       // Trigger slide switch midway through transition
+      const timing = effectType === 'cat-run' ? { mid: 1300, end: 2700 } : { mid: 350, end: 900 };
+      isTransitioning = true;
       setTimeout(() => {
         if (onMidpoint) onMidpoint();
-      }, 350);
+      }, timing.mid);
 
       // Clean up overlay after animation ends
       setTimeout(() => {
         overlay.style.display = 'none';
         overlay.innerHTML = '';
-      }, 900);
+        isTransitioning = false;
+      }, timing.end);
     }
 
     function triggerTransitionDemo(effectType) {
@@ -1417,7 +1987,7 @@
     }
 
     function goToSlide(targetIdx) {
-      if (targetIdx < 0 || targetIdx >= totalSlides || targetIdx === currentSlide) return;
+      if (isTransitioning || targetIdx < 0 || targetIdx >= totalSlides || targetIdx === currentSlide) return;
 
       // Pick next transition
       let chosenEffect = transitionMode;
@@ -1441,8 +2011,33 @@
       }
     }
 
+
+    // =========================================================================
+    // CLICK-THE-CAT DETAIL POP-UPS
+    // =========================================================================
+    const detailModal = document.getElementById('detail-modal');
+    function openDetail(btn) {
+      const detail = btn.closest('section').querySelector('.slide-detail');
+      if (!detail) return;
+      sound.playCatAlert();
+      setTimeout(() => {
+        document.getElementById('detail-title').textContent = detail.dataset.detailTitle;
+        document.getElementById('detail-body').innerHTML = detail.innerHTML;
+        detailModal.hidden = false;
+      }, 140);
+    }
+    function closeDetail() {
+      if (detailModal.hidden) return;
+      detailModal.hidden = true;
+      sound.playBlindsClick();
+    }
+
     // Keyboard Shortcuts
     window.addEventListener('keydown', (e) => {
+      if (!detailModal.hidden) {
+        if (e.key === 'Escape') closeDetail();
+        return;
+      }
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
         e.preventDefault();
         navigateSlide(1);

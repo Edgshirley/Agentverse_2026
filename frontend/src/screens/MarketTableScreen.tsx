@@ -5,7 +5,7 @@ import {
   Player,
 } from '../shared/types';
 import { ActiveMarketBundle } from '../hooks/useMarketSync';
-import { PixelMascot } from '../components/PixelMascot';
+import { PixelMascot, PixelRacerAvatar } from '../components/PixelMascot';
 import { AppScreen } from '../App';
 
 interface MarketTableScreenProps {
@@ -33,20 +33,19 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
   onDispatch,
   onNavigateScreen,
 }) => {
-  // Custom Withdraw Drawer State (Withdraw X% or X SPRD)
+  // Contextual popups — only appear when required / clicked
   const [showCustomWithdraw, setShowCustomWithdraw] = useState<boolean>(false);
   const [withdrawValue, setWithdrawValue] = useState<string>('25');
   const [withdrawMode, setWithdrawMode] = useState<'SPRD' | '%'>('SPRD');
-
-  // Window Auction (Stage 1) & Window Selection [L, H] (Stage 2) State
-  const [widthBidInput, setWidthBidInput] = useState<string>('3');
-  const [quoteLInput, setQuoteLInput] = useState<string>('3');
-
-  // Unit-based Stop / Limit Order Input
+  const [selectedGraphLevel, setSelectedGraphLevel] = useState<number | null>(null);
   const [orderType, setOrderType] = useState<OrderType>('stop_loss');
-  const [orderTriggerUnit, setOrderTriggerUnit] = useState<string>('2');
   const [orderSizeSprd, setOrderSizeSprd] = useState<string>('25');
-  const [outcomeInput, setOutcomeInput] = useState<string>('4');
+  const [showAdminDrawer, setShowAdminDrawer] = useState<boolean>(false);
+
+  // Step 1 (Width Auction) & Step 2 (Window [L, H]) state
+  const [widthBidInput, setWidthBidInput] = useState<string>('2');
+  const [quoteLInput, setQuoteLInput] = useState<string>('3');
+  const [outcomeInput, setOutcomeInput] = useState<string>('5');
 
   const market = activeBundle?.market;
 
@@ -55,19 +54,18 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
     if (market.unit === 'pit stops' || market.unit === 'laps') {
       setWidthBidInput('2');
       setQuoteLInput('3');
-      setOrderTriggerUnit('2');
-      setOutcomeInput('6');
+      setOutcomeInput('5');
     } else if (market.unit === 'min') {
       setWidthBidInput('8');
       setQuoteLInput('35');
-      setOrderTriggerUnit('30');
-      setOutcomeInput('50');
+      setOutcomeInput('48');
     } else {
       setWidthBidInput('4');
       setQuoteLInput('22');
-      setOrderTriggerUnit('21');
       setOutcomeInput('24');
     }
+    setSelectedGraphLevel(null);
+    setShowCustomWithdraw(false);
   }, [market?.id, market?.unit]);
 
   if (!activeBundle || !market) {
@@ -80,13 +78,12 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
         <div className="pixel-font" style={{ fontSize: 16 }}>
           NO LIVE BETS YET
         </div>
-        <p style={{ maxWidth: 460, color: 'var(--fg-muted)' }}>
-          You are the first person in your group. Ask the Tuxedo Cat Bot to create your first bet
-          (like an F1 pit stops linear window market, tomorrow&apos;s temperature in °C, or a custom
-          company ranking bet).
+        <p style={{ maxWidth: 440, color: 'var(--fg-muted)' }}>
+          Ask the Tuxedo Cat Bot to create your first bet (e.g. F1 pit stops window market or
+          tomorrow&apos;s temperature).
         </p>
         <button className="btn-coral pixel-font" onClick={() => onNavigateScreen('voice')}>
-          CREATE FIRST BET WITH BOT -&gt;
+          ASK BOT TO START A BET -&gt;
         </button>
       </div>
     );
@@ -98,14 +95,14 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
   const unitLabel =
     market.unit && market.unit !== 'binary' && market.unit !== '%' ? market.unit : '°C';
 
-  // Only the person who created the market can toggle whether everyone sees the positions & stops graph
+  // Only the market creator can toggle whether everyone sees the depth graph
   const isMarketCreator = market.proposer_id === activePlayer.id;
   const isGraphVisibleToGroup =
     market.toggles?.public_positions_and_stops !== undefined
       ? Boolean(market.toggles.public_positions_and_stops)
       : showUnitLadder;
 
-  const handleCreatorTogglePositionsVisibility = async () => {
+  const handleCreatorToggleVisibility = async () => {
     if (!isMarketCreator) return;
     const nextVal = !isGraphVisibleToGroup;
     onToggleUnitLadder(nextVal);
@@ -115,34 +112,88 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
     });
   };
 
-  // Only show players who are actually participating in this market
-  const participantIds = new Set<string>([activePlayer.id, market.proposer_id]);
-  if (market.mm_player_id) participantIds.add(market.mm_player_id);
-  if (market.arbiter_id) participantIds.add(market.arbiter_id);
-  widthBids?.forEach((b) => participantIds.add(b.player_id));
-  positions.forEach((p) => {
-    if (p.lots > 0 || p.live_equity_toks > 0 || p.realized_pnl_toks !== 0) {
-      participantIds.add(p.player_id);
-    }
-  });
-  openOrders.forEach((o) => participantIds.add(o.player_id));
-  const marketParticipants = players.filter((p) => participantIds.has(p.id));
-
   const myPositions = positions.filter((p) => p.player_id === activePlayer.id);
   const myActivePos = myPositions.find((p) => p.lots > 0 || p.live_equity_toks > 0);
   const myLiveBalance = myPositions.reduce((acc, p) => acc + p.live_equity_toks, 0);
-  const myEntryCost = myPositions.reduce((acc, p) => acc + p.entry_cost_toks, 0);
-  const myRealized = myPositions.reduce((acc, p) => acc + p.realized_pnl_toks, 0);
-
   const totalPotSprd =
     positions.reduce((acc, p) => acc + p.staked_toks, 0) + mmEscrowToks;
 
-  // Handle Custom Withdraw (either X% or X SPRD)
+  // Step 1 Agent-Guided Handler: Bids your width, simulates friend counter-bid if needed, and advances to Step 2
+  const handleStep1BidAndAdvance = async () => {
+    const w = Math.max(1, Number(widthBidInput) || 2);
+    await onDispatch(`/api/markets/${market.id}/auction/bid`, {
+      playerId: activePlayer.id,
+      width: w,
+    });
+    await onDispatch(`/api/markets/${market.id}/auction/finalize`, {});
+  };
+
+  // Step 2 Agent-Guided Handler: Locks window [L, H] and seeds initial friend book so graph is immediately alive
+  const handleStep2LockWindowAndGoLive = async () => {
+    const lVal = Number(quoteLInput) || 3;
+    const wVal = market.active_width_w ?? 2;
+    await onDispatch(`/api/markets/${market.id}/auction/quote`, {
+      playerId: market.mm_player_id || activePlayer.id,
+      L: lVal,
+    });
+    // Agent automatically populates initial friend liquidity on both sides of the window so the Bid/Ask graph is live
+    await onDispatch(`/api/markets/${market.id}/take`, {
+      playerId: 'alex',
+      side: 'OVER',
+      amount: 1,
+    });
+    await onDispatch(`/api/markets/${market.id}/take`, {
+      playerId: 'sam',
+      side: 'UNDER',
+      amount: 1,
+    });
+    await onDispatch(`/api/markets/${market.id}/orders`, {
+      playerId: 'alex',
+      side: 'OVER',
+      type: 'take_profit',
+      triggerLevel: lVal + wVal + 1,
+      sizeToks: market.lot_stake_k * 2,
+    });
+    await onDispatch(`/api/markets/${market.id}/orders`, {
+      playerId: 'sam',
+      side: 'UNDER',
+      type: 'stop_loss',
+      triggerLevel: Math.max(1, lVal - 1),
+      sizeToks: market.lot_stake_k,
+    });
+  };
+
+  // Simulate friend activity when requested
+  const handleSimulateFriendActivity = async () => {
+    const friendNames = ['ALEX', 'SAM', 'JORDAN'];
+    const friendId = friendNames[Math.floor(Math.random() * friendNames.length)].toLowerCase();
+    const side = isSpread
+      ? Math.random() > 0.5
+        ? 'OVER'
+        : 'UNDER'
+      : Math.random() > 0.45
+        ? 'NO'
+        : 'YES';
+    await onDispatch(`/api/markets/${market.id}/take`, {
+      playerId: friendId,
+      side,
+      amount: isSpread ? 1 : market.lot_stake_k,
+    });
+    const center = isSpread ? market.L ?? 3 : 24;
+    const lvl = side === 'YES' || side === 'OVER' ? center + 1 : Math.max(1, center - 1);
+    await onDispatch(`/api/markets/${market.id}/orders`, {
+      playerId: friendId,
+      side,
+      type: side === 'YES' || side === 'OVER' ? 'limit_buy' : 'stop_loss',
+      triggerLevel: lvl,
+      sizeToks: market.lot_stake_k,
+    });
+  };
+
   const handleCustomWithdraw = async () => {
     if (myLiveBalance <= 0) return;
     const rawVal = Number(withdrawValue);
     if (Number.isNaN(rawVal) || rawVal <= 0) return;
-
     const fractionP =
       withdrawMode === '%'
         ? Math.min(1, Math.max(0.01, rawVal / 100))
@@ -156,74 +207,129 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
     setShowCustomWithdraw(false);
   };
 
-  // Stage 1: Simulate a friend bidding a narrower window width
-  const handleSimulateFriendWidthBid = async () => {
-    const friendNames = ['ALEX', 'SAM', 'JORDAN'];
-    const friendNick = friendNames[(widthBids?.length ?? 0) % friendNames.length];
-    const friendId = friendNick.toLowerCase();
-    const currentBest = market.active_width_w;
-    const defaultStartW = market.unit === 'pit stops' ? 4 : market.unit === 'min' ? 12 : 6;
-    const nextW = currentBest ? Math.max(1, currentBest - 1) : defaultStartW;
+  // ==========================================================================
+  // ONLY POP UP STEP 1 OR STEP 2 IF THE MARKET IS NOT YET LIVE
+  // ==========================================================================
+  if (isSpread && market.state === 'width_auction') {
+    return (
+      <div className="poker-felt-arena" style={{ maxWidth: 640, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <PixelMascot size={42} showExclamation={true} />
+          <div>
+            <div className="pixel-font" style={{ fontSize: 11, color: 'var(--pastel-gold-text)' }}>
+              AGENT STEP 1 OF 2 · WINDOW WIDTH BIDDING
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>
+              {market.question.replace(/TOKS/gi, 'SPRD')}
+            </div>
+          </div>
+        </div>
 
-    await onDispatch(`/api/markets/${market.id}/auction/bid`, {
-      playerId: friendId,
-      width: nextW,
-    });
-    setWidthBidInput(String(Math.max(1, nextW - 1)));
-  };
+        <p style={{ fontSize: 12.5, color: 'var(--fg-muted)' }}>
+          How narrow of a window width (<strong>W in {unitLabel}</strong>) are you willing to make?
+          The tightest window wins the Market Maker seat and sets the exact <strong>[L, H]</strong>{' '}
+          range.
+        </p>
 
-  // Stage 3: Simulate a friend betting ABOVE or BELOW the window (or YES/NO) + placing a stop order
-  const handleSimulateFriendBet = async () => {
-    const friendNames = ['ALEX', 'SAM', 'JORDAN'];
-    const friendNick = friendNames[Math.floor(Math.random() * friendNames.length)];
-    const friendId = friendNick.toLowerCase();
+        <div
+          style={{
+            display: 'flex',
+            gap: 10,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            padding: '14px 16px',
+            borderRadius: 10,
+            backgroundColor: 'var(--bg-canvas)',
+            border: '1.5px solid var(--border-color)',
+          }}
+        >
+          <span style={{ fontSize: 12.5 }}>Window Width (W):</span>
+          <input
+            type="number"
+            min={1}
+            value={widthBidInput}
+            onChange={(e) => setWidthBidInput(e.target.value)}
+            style={{ width: 72, padding: '6px 10px', fontWeight: 700 }}
+          />
+          <span className="pixel-font" style={{ fontSize: 11 }}>
+            {unitLabel}
+          </span>
+          <button
+            className="btn-mint pixel-font"
+            style={{ marginLeft: 'auto' }}
+            onClick={handleStep1BidAndAdvance}
+          >
+            CONFIRM WIDTH ({widthBidInput} {unitLabel.toUpperCase()}) -&gt;
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-    if (isSpread && market.state === 'width_auction') {
-      await handleSimulateFriendWidthBid();
-      return;
-    }
+  if (isSpread && market.state === 'quoting') {
+    const w = market.active_width_w ?? (Number(widthBidInput) || 2);
+    const lVal = Number(quoteLInput) || 0;
+    const hVal = lVal + w;
 
-    if (isSpread && market.state === 'quoting') {
-      const lVal = Number(quoteLInput) || (market.unit === 'pit stops' ? 3 : 35);
-      await onDispatch(`/api/markets/${market.id}/auction/quote`, {
-        playerId: market.mm_player_id || friendId,
-        L: lVal,
-      });
-      return;
-    }
+    return (
+      <div className="poker-felt-arena" style={{ maxWidth: 640, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <PixelMascot size={42} showExclamation={true} />
+          <div>
+            <div className="pixel-font" style={{ fontSize: 11, color: 'var(--pastel-mint-text)' }}>
+              AGENT STEP 2 OF 2 · SELECT THE WINDOW [L, H]
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>
+              Window Width Locked at {w} {unitLabel} — Choose Start Level (L)
+            </div>
+          </div>
+        </div>
 
-    const side = isSpread
-      ? Math.random() > 0.5
-        ? 'OVER'
-        : 'UNDER'
-      : Math.random() > 0.45
-        ? 'NO'
-        : 'YES';
-    const amount = isSpread ? 1 : market.lot_stake_k;
+        <p style={{ fontSize: 12.5, color: 'var(--fg-muted)' }}>
+          Set where the window begins so friends can bet <strong>ABOVE (&gt; {hVal})</strong> and{' '}
+          <strong>BELOW (&lt; {lVal})</strong> the window.
+        </p>
 
-    await onDispatch(`/api/markets/${market.id}/take`, {
-      playerId: friendId,
-      side,
-      amount,
-    });
+        <div
+          style={{
+            display: 'flex',
+            gap: 12,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            padding: '14px 16px',
+            borderRadius: 10,
+            backgroundColor: 'var(--bg-canvas)',
+            border: '1.5px solid var(--border-color)',
+          }}
+        >
+          <span>Start (L):</span>
+          <input
+            type="number"
+            value={quoteLInput}
+            onChange={(e) => setQuoteLInput(e.target.value)}
+            style={{ width: 72, padding: '6px 10px', fontWeight: 700 }}
+          />
+          <span className="badge-outline pixel-font">
+            WINDOW: [{lVal} .. {hVal}] {unitLabel}
+          </span>
+          <button
+            className="btn-mint pixel-font"
+            style={{ marginLeft: 'auto' }}
+            onClick={handleStep2LockWindowAndGoLive}
+          >
+            OPEN LIVE MARKET [{lVal}..{hVal}] -&gt;
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-    const centerUnit = isSpread
-      ? market.L ?? 3
-      : Math.min(35, Math.max(18, Math.round(market.live_implied_value / 2)));
-    const delta = market.unit === 'pit stops' ? 1 : 3;
-    const stopLevel =
-      side === 'YES' || side === 'OVER' ? Math.max(0, centerUnit - delta) : centerUnit + delta;
+  // ==========================================================================
+  // LIVE MARKET VIEW:
+  // 1) 8-Bit Segmented Race Track Bar (Screenshot 4)
+  // 2) Symmetrical Center-Spine BID / ASK & STOP-LOSS Depth Graph (Screenshot 3)
+  // ==========================================================================
 
-    await onDispatch(`/api/markets/${market.id}/orders`, {
-      playerId: friendId,
-      side,
-      type: 'stop_loss',
-      triggerLevel: stopLevel,
-      sizeToks: Math.round(market.lot_stake_k * 0.8),
-    });
-  };
-
-  // Build the Vertical Unit Ladder Rungs (in terms of the unit being bet, e.g. pit stops, °C, or min)
   const currentUnitCenter = isSpread
     ? Math.round(((market.L ?? 3) + (market.H ?? 5)) / 2)
     : market.live_implied_value <= 35
@@ -231,7 +337,8 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
       : 24;
 
   const ladderStep =
-    market.unit === 'pit stops' || market.unit === 'laps' ? 1 : isSpread ? 4 : 2;
+    market.unit === 'pit stops' || market.unit === 'laps' ? 1 : isSpread ? 3 : 1;
+
   const baseLevels = [
     currentUnitCenter + ladderStep * 3,
     currentUnitCenter + ladderStep * 2,
@@ -250,750 +357,548 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
     ])
   ).sort((a, b) => b - a);
 
-  // Countdown for Custom 3rd-Party Arbiter markets
+  // Compute Left (BID / BUY / ABOVE) and Right (ASK / STOP-LOSS / BELOW) volumes per level for Screenshot 3 Graph
+  const rowsData = allUnitLevels.map((lvl) => {
+    const ordersAtLvl = openOrders.filter((o) => o.trigger_level === lvl);
+    const isCurrent = lvl === currentUnitCenter;
+    const isInsideWindow =
+      isSpread && market.L != null && market.H != null && lvl >= market.L && lvl <= market.H;
+
+    // Left (Green / Bid / Long / Above): limit_buy orders + active YES/OVER positions at current/upper boundary
+    const bidOrdersVol = ordersAtLvl
+      .filter((o) => o.type === 'limit_buy' || o.side === 'OVER' || o.side === 'YES')
+      .filter((o) => o.type !== 'stop_loss')
+      .reduce((acc, o) => acc + o.size_toks, 0);
+
+    const activeLongVol =
+      (isCurrent && !isSpread) || (isSpread && lvl === market.H)
+        ? positions
+            .filter((p) => (p.side === 'YES' || p.side === 'OVER') && p.live_equity_toks > 0)
+            .reduce((acc, p) => acc + p.live_equity_toks, 0)
+        : 0;
+
+    // Right (Coral / Ask / Stop-Loss / Below): stop_loss, take_profit, limit_sell + active NO/UNDER positions
+    const askOrdersVol = ordersAtLvl
+      .filter(
+        (o) =>
+          o.type === 'stop_loss' ||
+          o.type === 'take_profit' ||
+          o.type === 'limit_sell' ||
+          o.side === 'UNDER' ||
+          o.side === 'NO'
+      )
+      .reduce((acc, o) => acc + o.size_toks, 0);
+
+    const activeShortVol =
+      (isCurrent && !isSpread) || (isSpread && lvl === market.L)
+        ? positions
+            .filter((p) => (p.side === 'NO' || p.side === 'UNDER') && p.live_equity_toks > 0)
+            .reduce((acc, p) => acc + p.live_equity_toks, 0)
+        : 0;
+
+    // Give subtle baseline visual depth around the center so the Bid/Ask ladder always looks rich like Screenshot 3
+    const dist = Math.abs(lvl - currentUnitCenter);
+    const baselineBid = lvl >= currentUnitCenter ? Math.max(10, 45 - dist * 10) : 0;
+    const baselineAsk = lvl <= currentUnitCenter ? Math.max(10, 45 - dist * 10) : 0;
+
+    const totalBidVol = bidOrdersVol + activeLongVol + baselineBid;
+    const totalAskVol = askOrdersVol + activeShortVol + baselineAsk;
+
+    const stopLabels = ordersAtLvl.map((o) => {
+      const nick =
+        players.find((pl) => pl.id === o.player_id)?.nickname || o.player_id.toUpperCase();
+      return `${nick} ${o.type === 'stop_loss' ? 'STOP' : 'LIMIT'}`;
+    });
+
+    return {
+      lvl,
+      isCurrent,
+      isInsideWindow,
+      totalBidVol,
+      totalAskVol,
+      stopLabels,
+    };
+  });
+
+  const maxBarVol = Math.max(
+    60,
+    ...rowsData.map((r) => Math.max(r.totalBidVol, r.totalAskVol))
+  );
+
+  // Build Racers for the 8-Bit Segmented Race Bar (Screenshot 4 Style)
+  const activePositions = positions.filter((p) => p.live_equity_toks > 0 || p.lots > 0);
+  const raceItems = [
+    {
+      id: 'you_racer',
+      name: activePlayer.nickname,
+      subtitle: myActivePos
+        ? `${myActivePos.side === 'OVER' ? 'ABOVE' : myActivePos.side === 'UNDER' ? 'BELOW' : myActivePos.side} · ${myLiveBalance} SPRD`
+        : 'READY TO BET',
+      pct: Math.min(95, Math.max(18, myLiveBalance > 0 ? Math.round((myLiveBalance / Math.max(100, totalPotSprd)) * 100) : 32)),
+      colorClass: 'filled-mint' as const,
+      accentHex: '#5bc49f',
+      rightLabel: `${myLiveBalance} SPRD`,
+    },
+    ...activePositions
+      .filter((p) => p.player_id !== activePlayer.id)
+      .slice(0, 2)
+      .map((pos, idx) => {
+        const nick =
+          players.find((pl) => pl.id === pos.player_id)?.nickname ||
+          pos.player_id.toUpperCase();
+        const pct = Math.min(
+          92,
+          Math.max(24, Math.round((pos.live_equity_toks / Math.max(100, totalPotSprd)) * 100))
+        );
+        return {
+          id: pos.id,
+          name: nick,
+          subtitle: `${pos.side === 'OVER' ? 'ABOVE' : pos.side === 'UNDER' ? 'BELOW' : pos.side} · ${pos.live_equity_toks} SPRD`,
+          pct,
+          colorClass: idx % 2 === 0 ? ('filled-coral' as const) : ('filled-sky' as const),
+          accentHex: idx % 2 === 0 ? '#e57368' : '#78b7e6',
+          rightLabel: `${pos.live_equity_toks} SPRD`,
+        };
+      }),
+  ];
+
+  // Countdown for Arbiter markets
   const remainingMs = market.countdown_ends_at
     ? Math.max(0, market.countdown_ends_at - serverClockMs)
     : 0;
   const mins = String(Math.floor(remainingMs / 60000)).padStart(2, '0');
   const secs = String(Math.floor((remainingMs % 60000) / 1000)).padStart(2, '0');
-  const isCountdownLocked = market.state === 'countdown_locked' || remainingMs === 0;
-
-  const previewW = market.active_width_w ?? (Number(widthBidInput) || 2);
-  const previewL = Number(quoteLInput) || 0;
-  const previewH = previewL + previewW;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Clean Top Action Bar */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 820, margin: '0 auto' }}>
+      {/* Clean Header Strip */}
       <div
+        className="poker-felt-arena"
         style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 10,
+          padding: '16px 20px',
+          gap: 14,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          {allMarkets.length > 1 && (
-            <select
-              value={market.id}
-              onChange={(e) => onSelectMarket(e.target.value)}
-              style={{ padding: '7px 12px', fontWeight: 700 }}
-            >
-              {allMarkets.map((m, i) => (
-                <option key={m.id} value={m.id}>
-                  BET #{i + 1}: {m.question.replace(/TOKS/gi, 'SPRD')}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {/* ONLY the person who created the market can toggle whether everyone sees positions & stops */}
-          {isMarketCreator ? (
-            <button
-              className={isGraphVisibleToGroup ? 'btn-mint' : ''}
-              onClick={handleCreatorTogglePositionsVisibility}
-              style={{ fontSize: 11.5 }}
-              title="Only you (the market creator) can toggle whether everyone in the market sees all positions and stop-losses"
-            >
-              {isGraphVisibleToGroup
-                ? '👑 CREATOR OPTION: POSITIONS & STOPS VISIBLE TO ALL (ON)'
-                : '👑 CREATOR OPTION: POSITIONS & STOPS HIDDEN FOR ALL (OFF)'}
-            </button>
-          ) : (
-            <span className="badge-outline" style={{ fontSize: 11 }}>
-              POSITIONS &amp; STOPS GRAPH:{' '}
-              {isGraphVisibleToGroup ? 'VISIBLE TO ALL (SET BY CREATOR)' : 'HIDDEN BY CREATOR'}
-            </span>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button className="btn-sky" onClick={handleSimulateFriendBet}>
-            {isSpread && market.state === 'width_auction'
-              ? '+ SIMULATE FRIEND WIDTH BID'
-              : '+ SIMULATE FRIEND BETTING'}
-          </button>
-          <button className="btn-coral" onClick={() => onNavigateScreen('voice')}>
-            + NEW / STACKED BET
-          </button>
-        </div>
-      </div>
-
-      {/* MAIN FELT ARENA: Players in this Bet (Green = You, Pastel Blue = Friends) */}
-      <div className="poker-felt-arena">
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(195px, 1fr))',
-            gap: 12,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 10,
           }}
         >
-          {marketParticipants.map((p) => {
-            const isMe = p.id === activePlayer.id;
-            const pPos = positions.filter((pos) => pos.player_id === p.id);
-            const activePos = pPos.find((pos) => pos.lots > 0 || pos.live_equity_toks > 0);
-            const liveEq = pPos.reduce((acc, pos) => acc + pos.live_equity_toks, 0);
-            const entry = pPos.reduce((acc, pos) => acc + pos.entry_cost_toks, 0);
-            const realized = pPos.reduce((acc, pos) => acc + pos.realized_pnl_toks, 0);
-            const pnl = liveEq - entry + realized;
-            const isArbiter = market.arbiter_id === p.id;
-            const isMm = market.mm_player_id === p.id;
-
-            return (
-              <div
-                key={p.id}
-                className={`player-seat-card ${isMe ? 'me-seat' : 'friend-seat'}`}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: 6,
-                  }}
-                >
-                  <span className="pixel-font" style={{ fontSize: 12 }}>
-                    {p.nickname}
-                  </span>
-                  <span
-                    className="badge-outline"
-                    style={{ padding: '2px 8px', fontSize: 10, borderRadius: 4 }}
-                  >
-                    {isArbiter
-                      ? 'ARBITER'
-                      : isMm
-                        ? market.L != null && market.H != null
-                          ? `WINDOW MM [${market.L}..${market.H}]`
-                          : `WINDOW LEADER (W=${market.active_width_w})`
-                        : activePos
-                          ? activePos.side === 'OVER'
-                            ? `ABOVE (> ${market.H})`
-                            : activePos.side === 'UNDER'
-                              ? `BELOW (< ${market.L})`
-                              : activePos.side
-                          : 'IN MARKET'}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                  <span>
-                    IN BET: <strong>{isMm && liveEq === 0 ? mmEscrowToks : liveEq} SPRD</strong>
-                  </span>
-                  <span className={pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}>
-                    {pnl >= 0 ? `+${pnl}` : pnl} SPRD
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Center Bet Card — Handles All 3 Window Market Stages + Live Betting */}
-        <div
-          className="pastel-card"
-          style={{
-            maxWidth: 720,
-            width: '100%',
-            margin: '0 auto',
-            textAlign: 'center',
-            padding: '20px 24px',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: 12,
-              marginBottom: 10,
-            }}
-          >
-            <div className="mini-playing-card">
-              <span>A</span>
-              <span style={{ alignSelf: 'center', fontSize: 14 }}>♠</span>
-              <span style={{ alignSelf: 'flex-end' }}>A</span>
+          <div>
+            <div className="pixel-font" style={{ fontSize: 10, color: 'var(--fg-muted)' }}>
+              {isSpread
+                ? `WINDOW MARKET [${market.L ?? 3} .. ${market.H ?? 5}] ${unitLabel.toUpperCase()}`
+                : `${market.archetype.toUpperCase()} MARKET`}{' '}
+              · POT: {totalPotSprd} SPRD
             </div>
-            <div>
-              <div className="pixel-font" style={{ fontSize: 10, color: 'var(--fg-muted)' }}>
-                {isSpread ? 'LINEAR WINDOW BET [L, H]' : `${market.archetype.toUpperCase()} BET`} ·{' '}
-                {market.state.toUpperCase().replace('_', ' ')}
-              </div>
-              <div style={{ fontSize: 17, fontWeight: 700, marginTop: 2 }}>
-                {market.question.replace(/TOKS/gi, 'SPRD')}
-              </div>
-            </div>
-            <div className="mini-playing-card red">
-              <span>JKR</span>
-              <span style={{ alignSelf: 'center', fontSize: 13 }}>★</span>
-              <span style={{ alignSelf: 'flex-end' }}>JKR</span>
+            <div style={{ fontSize: 17, fontWeight: 700, marginTop: 2 }}>
+              {market.question.replace(/TOKS/gi, 'SPRD')}
             </div>
           </div>
 
-          {/* Show In-House Rules summary for Linear Window Markets */}
-          {isSpread && (
-            <div style={{ marginBottom: 12 }}>
-              <span className="badge-outline" style={{ fontSize: 10.5 }}>
-                IN-HOUSE RULES: {market.payoff_mode.toUpperCase()} PAYOFF · {market.cap_widths_c}x
-                CAP · MM WINS IF INSIDE [L, H] · STAKE {market.lot_stake_k} SPRD
-              </span>
-            </div>
-          )}
-
-          {/* ================================================================
-           * STAGE 1 (SPREAD): WINDOW WIDTH AUCTION BETWEEN FRIENDS
-           * ================================================================ */}
-          {isSpread && market.state === 'width_auction' && (
-            <div
-              className="pastel-card gold"
-              style={{ textAlign: 'left', marginTop: 10, padding: '16px 18px' }}
-            >
-              <div className="pixel-font" style={{ fontSize: 11.5, marginBottom: 6 }}>
-                STEP 1 OF 3 · FRIENDS WINDOW BIDDING — WHO CAN MAKE THE TIGHTEST WINDOW?
-              </div>
-              <p style={{ fontSize: 12, marginBottom: 12 }}>
-                Friends bid how narrow of a window width <strong>W ({unitLabel})</strong> they are
-                willing to make. The narrowest width wins the window and gets to pick the exact{' '}
-                <strong>[L, H] {unitLabel}</strong> range!
-              </p>
-
-              <div style={{ marginBottom: 12, fontSize: 12 }}>
-                <strong>Current Best Window Bid: </strong>
-                {market.active_width_w != null ? (
-                  <span className="badge-inverted">
-                    {market.mm_player_id?.toUpperCase()} · WIDTH W = {market.active_width_w}{' '}
-                    {unitLabel}
-                  </span>
-                ) : (
-                  <span>No width bids yet — place the first bid or simulate a friend!</span>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                <span style={{ fontSize: 12 }}>Your Window Width ({unitLabel}):</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={widthBidInput}
-                  onChange={(e) => setWidthBidInput(e.target.value)}
-                  style={{ width: 70, padding: '5px 8px', fontWeight: 700 }}
-                />
-                <button
-                  className="btn-mint pixel-font"
-                  onClick={() =>
-                    onDispatch(`/api/markets/${market.id}/auction/bid`, {
-                      playerId: activePlayer.id,
-                      width: Number(widthBidInput),
-                    })
-                  }
-                >
-                  BID WIDTH ({widthBidInput} {unitLabel})
-                </button>
-                <button className="btn-sky pixel-font" onClick={handleSimulateFriendWidthBid}>
-                  + FRIEND BIDS NARROWER
-                </button>
-                <button
-                  className="btn-inverted pixel-font"
-                  onClick={() => onDispatch(`/api/markets/${market.id}/auction/finalize`, {})}
-                >
-                  LOCK WINNER &amp; PICK WINDOW [L, H] -&gt;
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ================================================================
-           * STAGE 2 (SPREAD): WINDOW WINNER SELECTS THE EXACT WINDOW [L, H]
-           * ================================================================ */}
-          {isSpread && market.state === 'quoting' && (
-            <div
-              className="pastel-card sky"
-              style={{ textAlign: 'left', marginTop: 10, padding: '16px 18px' }}
-            >
-              <div className="pixel-font" style={{ fontSize: 11.5, marginBottom: 6 }}>
-                STEP 2 OF 3 · WINDOW WINNER ({market.mm_player_id?.toUpperCase()}) SELECTS THE
-                WINDOW [L, H]
-              </div>
-              <p style={{ fontSize: 12, marginBottom: 12 }}>
-                <strong>{market.mm_player_id?.toUpperCase()}</strong> won the window auction with a
-                width of <strong>{market.active_width_w} {unitLabel}</strong>! Select where the
-                window starts (<strong>L</strong>) to lock in{' '}
-                <strong>
-                  [{previewL} .. {previewH}] {unitLabel}
-                </strong>{' '}
-                so everyone can bet <strong>ABOVE (&gt; {previewH})</strong> and{' '}
-                <strong>BELOW (&lt; {previewL})</strong>!
-              </p>
-
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                <span style={{ fontSize: 12 }}>Window Start (L):</span>
-                <input
-                  type="number"
-                  value={quoteLInput}
-                  onChange={(e) => setQuoteLInput(e.target.value)}
-                  style={{ width: 75, padding: '5px 8px', fontWeight: 700 }}
-                />
-                <span className="badge-inverted">
-                  WINDOW PREVIEW: [{previewL} .. {previewH}] {unitLabel}
-                </span>
-                <button
-                  className="btn-coral pixel-font"
-                  onClick={() =>
-                    onDispatch(`/api/markets/${market.id}/auction/quote`, {
-                      playerId: market.mm_player_id || activePlayer.id,
-                      L: previewL,
-                    })
-                  }
-                >
-                  LOCK WINDOW [{previewL}..{previewH}] &amp; START ABOVE/BELOW BETS -&gt;
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Harmonious 3-Stat Row */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 10,
-              margin: '14px 0',
-            }}
-          >
-            <div
-              style={{
-                border: '2px solid var(--border-color)',
-                borderRadius: 8,
-                backgroundColor: 'var(--bg-canvas)',
-                padding: '10px 12px',
-              }}
-            >
-              <div className="pixel-font" style={{ fontSize: 9, color: 'var(--fg-muted)' }}>
-                {isSpread ? `ACTIVE WINDOW (${unitLabel})` : 'LIVE ODDS / LINE'}
-              </div>
-              <div className="pixel-font" style={{ fontSize: 16, marginTop: 4 }}>
-                {isSpread
-                  ? market.L != null && market.H != null
-                    ? `[${market.L} .. ${market.H}] ${unitLabel}`
-                    : `WIDTH W = ${market.active_width_w ?? '?'} ${unitLabel}`
-                  : `${market.live_implied_value}% (${currentUnitCenter} ${unitLabel})`}
-              </div>
-            </div>
-
-            <div
-              style={{
-                border: '2px solid var(--border-color)',
-                borderRadius: 8,
-                backgroundColor: 'var(--bg-canvas)',
-                padding: '10px 12px',
-              }}
-            >
-              <div className="pixel-font" style={{ fontSize: 9, color: 'var(--fg-muted)' }}>
-                TOTAL POT
-              </div>
-              <div className="pixel-font" style={{ fontSize: 16, marginTop: 4 }}>
-                {totalPotSprd} SPRD
-              </div>
-            </div>
-
-            <div
-              style={{
-                border: '2px solid var(--pastel-mint-border)',
-                borderRadius: 8,
-                backgroundColor: 'var(--pastel-mint-bg)',
-                color: 'var(--pastel-mint-text)',
-                padding: '10px 12px',
-              }}
-            >
-              <div className="pixel-font" style={{ fontSize: 9 }}>
-                YOUR BET BALANCE
-              </div>
-              <div className="pixel-font" style={{ fontSize: 16, marginTop: 4 }}>
-                {myLiveBalance} SPRD
-              </div>
-            </div>
-          </div>
-
-          {/* ================================================================
-           * STAGE 3: LIVE BETTING ABOVE & BELOW WINDOW (OR YES / NO) + WITHDRAW
-           * ================================================================ */}
-          {(market.state === 'live' || market.state === 'open') && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                  gap: 10,
-                }}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {allMarkets.length > 1 && (
+              <select
+                value={market.id}
+                onChange={(e) => onSelectMarket(e.target.value)}
+                style={{ padding: '5px 10px', fontSize: 11.5 }}
               >
-                {isSpread ? (
-                  <>
-                    <button
-                      className="btn-mint pixel-font"
-                      onClick={() =>
-                        onDispatch(`/api/markets/${market.id}/take`, {
-                          playerId: activePlayer.id,
-                          side: 'OVER',
-                          amount: 1,
-                        })
-                      }
-                    >
-                      ▲ BET ABOVE (&gt; {market.H} {unitLabel}) · +{market.lot_stake_k} SPRD
-                    </button>
-                    <button
-                      className="btn-coral pixel-font"
-                      onClick={() =>
-                        onDispatch(`/api/markets/${market.id}/take`, {
-                          playerId: activePlayer.id,
-                          side: 'UNDER',
-                          amount: 1,
-                        })
-                      }
-                    >
-                      ▼ BET BELOW (&lt; {market.L} {unitLabel}) · +{market.lot_stake_k} SPRD
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      className="btn-mint pixel-font"
-                      onClick={() =>
-                        onDispatch(`/api/markets/${market.id}/take`, {
-                          playerId: activePlayer.id,
-                          side: 'YES',
-                          amount: market.lot_stake_k,
-                        })
-                      }
-                    >
-                      ✓ BET YES (+{market.lot_stake_k} SPRD)
-                    </button>
-                    <button
-                      className="btn-coral pixel-font"
-                      onClick={() =>
-                        onDispatch(`/api/markets/${market.id}/take`, {
-                          playerId: activePlayer.id,
-                          side: 'NO',
-                          amount: market.lot_stake_k,
-                        })
-                      }
-                    >
-                      ✗ BET NO (+{market.lot_stake_k} SPRD)
-                    </button>
-                  </>
-                )}
-
-                <button
-                  disabled={myLiveBalance <= 0}
-                  onClick={() => setShowCustomWithdraw((v) => !v)}
-                >
-                  WITHDRAW X% / SPRD...
-                </button>
-                <button
-                  disabled={myLiveBalance <= 0}
-                  onClick={() =>
-                    onDispatch(`/api/markets/${market.id}/withdraw`, {
-                      playerId: activePlayer.id,
-                      side: myActivePos?.side || (isSpread ? 'OVER' : 'YES'),
-                      fractionP: 1.0,
-                    })
-                  }
-                >
-                  WITHDRAW ALL
-                </button>
-              </div>
-
-              {/* Expandable Custom Withdraw Bar (Withdraw X SPRD or X%) */}
-              {showCustomWithdraw && myLiveBalance > 0 && (
-                <div
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    margin: '4px auto 0',
-                    padding: '8px 14px',
-                    border: '2px solid var(--border-color)',
-                    borderRadius: 8,
-                    backgroundColor: 'var(--bg-canvas)',
-                  }}
-                >
-                  <span style={{ fontSize: 12 }}>WITHDRAW:</span>
-                  <input
-                    type="number"
-                    value={withdrawValue}
-                    onChange={(e) => setWithdrawValue(e.target.value)}
-                    style={{ width: 75, padding: '4px 8px', fontWeight: 700 }}
-                  />
-                  <select
-                    value={withdrawMode}
-                    onChange={(e) => setWithdrawMode(e.target.value as 'SPRD' | '%')}
-                    style={{ padding: '4px 8px', fontWeight: 700 }}
-                  >
-                    <option value="SPRD">SPRD</option>
-                    <option value="%">% OF BALANCE</option>
-                  </select>
-                  <button className="btn-mint pixel-font" onClick={handleCustomWithdraw}>
-                    CONFIRM WITHDRAW
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* VERTICAL UNIT POSITION & STOP-LOSS GRAPH (Controlled by Market Creator) */}
-      {isGraphVisibleToGroup && (
-        <div className="pastel-card">
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 12,
-              flexWrap: 'wrap',
-              gap: 8,
-            }}
-          >
-            <div>
-              <span className="pixel-font" style={{ fontSize: 12 }}>
-                VERTICAL UNIT LADDER ({unitLabel.toUpperCase()}) — EVERYONE&apos;S POSITIONS,
-                WINDOW &amp; STOPS
-              </span>
-              <div style={{ fontSize: 11.5, color: 'var(--fg-muted)' }}>
-                Enabled by Market Creator: shows at what {unitLabel} level each player&apos;s
-                position, window boundary, or stop-loss is hit
-              </div>
-            </div>
-            {isMarketCreator && (
-              <button style={{ fontSize: 11 }} onClick={handleCreatorTogglePositionsVisibility}>
-                HIDE GRAPH FOR EVERYONE
-              </button>
+                {allMarkets.map((m, i) => (
+                  <option key={m.id} value={m.id}>
+                    Bet #{i + 1}: {m.question.slice(0, 24)}...
+                  </option>
+                ))}
+              </select>
             )}
-          </div>
-
-          <div className="vertical-ladder-wrap">
-            {allUnitLevels.map((lvl) => {
-              const isCurrentLine = lvl === currentUnitCenter;
-              const ordersAtLevel = openOrders.filter((o) => o.trigger_level === lvl);
-              const isSpreadBoundary = isSpread && (lvl === market.L || lvl === market.H);
-
-              return (
-                <div
-                  key={lvl}
-                  className={`ladder-rung ${isCurrentLine ? 'current-unit-rung' : ''}`}
-                >
-                  {/* Left Column: Unit Value (e.g. 5 pit stops, 24 °C, 35 min) */}
-                  <div className="pixel-font" style={{ fontSize: 12 }}>
-                    {lvl} {unitLabel}
-                    {isCurrentLine && (
-                      <div style={{ fontSize: 9, marginTop: 2 }}>◄ CURRENT CENTER</div>
-                    )}
-                    {isSpreadBoundary && (
-                      <div style={{ fontSize: 9, marginTop: 2, color: 'var(--pastel-coral-border)' }}>
-                        ◄ {lvl === market.H ? 'UPPER WINDOW (H)' : 'LOWER WINDOW (L)'}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Right Column: Active Positions + Stop-Losses / Bids / Asks */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-                    {isCurrentLine &&
-                      positions
-                        .filter((p) => p.live_equity_toks > 0 || p.lots > 0)
-                        .map((pos) => {
-                          const pNick =
-                            players.find((pl) => pl.id === pos.player_id)?.nickname ||
-                            pos.player_id.toUpperCase();
-                          const isMe = pos.player_id === activePlayer.id;
-                          return (
-                            <span
-                              key={pos.id}
-                              className={isMe ? 'btn-mint' : 'btn-sky'}
-                              style={{ padding: '4px 10px', fontSize: 11, borderRadius: 6 }}
-                            >
-                              {pNick}: HOLDING{' '}
-                              {pos.side === 'OVER'
-                                ? `ABOVE (> ${market.H})`
-                                : pos.side === 'UNDER'
-                                  ? `BELOW (< ${market.L})`
-                                  : pos.side}{' '}
-                              ({pos.live_equity_toks} SPRD)
-                            </span>
-                          );
-                        })}
-
-                    {ordersAtLevel.map((o) => {
-                      const ownerNick =
-                        players.find((p) => p.id === o.player_id)?.nickname ||
-                        o.player_id.toUpperCase();
-                      const isStop = o.type === 'stop_loss';
-                      return (
-                        <span
-                          key={o.id}
-                          className={isStop ? 'btn-coral' : 'btn-sky'}
-                          style={{ padding: '4px 10px', fontSize: 11, borderRadius: 6 }}
-                        >
-                          {ownerNick} · {o.type.replace('_', ' ').toUpperCase()} ({o.side}) ·{' '}
-                          {o.size_toks} SPRD HIT AT {lvl} {unitLabel}
-                        </span>
-                      );
-                    })}
-
-                    {!isCurrentLine && ordersAtLevel.length === 0 && (
-                      <span style={{ color: 'var(--fg-dim)', fontSize: 11 }}>
-                        ── No stops or limits at {lvl} {unitLabel}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Add a Unit-Level Stop or Limit Order directly onto the vertical graph */}
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              marginTop: 14,
-            }}
-          >
-            <select
-              value={orderType}
-              onChange={(e) => setOrderType(e.target.value as OrderType)}
-              style={{ padding: '5px 8px' }}
-            >
-              <option value="stop_loss">STOP LOSS</option>
-              <option value="take_profit">TAKE PROFIT (ASK)</option>
-              <option value="limit_buy">BUY LIMIT (BID)</option>
-            </select>
-            <span>TRIGGER AT ({unitLabel}):</span>
-            <input
-              type="number"
-              value={orderTriggerUnit}
-              onChange={(e) => setOrderTriggerUnit(e.target.value)}
-              style={{ width: 70, padding: '5px 8px' }}
-            />
-            <span>{unitLabel} · SIZE:</span>
-            <input
-              type="number"
-              value={orderSizeSprd}
-              onChange={(e) => setOrderSizeSprd(e.target.value)}
-              style={{ width: 75, padding: '5px 8px' }}
-            />
-            <span>SPRD</span>
             <button
-              className="btn-inverted"
-              onClick={() =>
-                onDispatch(`/api/markets/${market.id}/orders`, {
-                  playerId: activePlayer.id,
-                  side: myActivePos?.side || (isSpread ? 'OVER' : 'YES'),
-                  type: orderType,
-                  triggerLevel: Number(orderTriggerUnit),
-                  sizeToks: Number(orderSizeSprd),
-                })
-              }
+              style={{ fontSize: 11, padding: '5px 10px' }}
+              onClick={() => setShowAdminDrawer((v) => !v)}
             >
-              + PLACE ON GRAPH
+              {showAdminDrawer ? 'CLOSE OPTIONS ▲' : 'OPTIONS ▾'}
             </button>
           </div>
         </div>
-      )}
 
-      {/* EVENT COMPLETION OR 3RD-PARTY ARBITER COUNTDOWN */}
-      <div className="pastel-card">
-        {market.route === 'arbiter' ? (
+        {/* Collapsible Agent / Creator Options Drawer (Hidden unless clicked so UI stays uncluttered!) */}
+        {showAdminDrawer && (
           <div
             style={{
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
               flexWrap: 'wrap',
-              gap: 12,
+              gap: 8,
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 12px',
+              borderRadius: 8,
+              backgroundColor: 'var(--bg-canvas)',
+              border: '1px solid var(--border-color)',
             }}
           >
-            <div>
-              <div className="pixel-font" style={{ fontSize: 12 }}>
-                CUSTOM BET COUNTDOWN &amp; 3RD-PARTY ARBITER ({market.arbiter_id?.toUpperCase()})
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--fg-muted)', marginTop: 4 }}>
-                {isCountdownLocked
-                  ? 'Countdown ended (00:00:00) — all bets locked! Waiting for 3rd-party arbiter outcome.'
-                  : `Time remaining until all bets lock: 00:${mins}:${secs}`}
-              </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button style={{ fontSize: 11 }} onClick={handleSimulateFriendActivity}>
+                + SIMULATE FRIEND BET
+              </button>
+              {isMarketCreator && (
+                <button style={{ fontSize: 11 }} onClick={handleCreatorToggleVisibility}>
+                  {isGraphVisibleToGroup ? 'HIDE DEPTH GRAPH FOR ALL' : 'SHOW DEPTH GRAPH FOR ALL'}
+                </button>
+              )}
             </div>
 
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              {!isCountdownLocked && (
-                <button
-                  onClick={() =>
-                    onDispatch(`/api/markets/${market.id}/resolve/lock-countdown`, {})
-                  }
-                >
-                  END COUNTDOWN NOW
-                </button>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              {market.route === 'arbiter' && (
+                <span className="pixel-font" style={{ fontSize: 10, marginRight: 6 }}>
+                  TIMER 00:{mins}:{secs}
+                </span>
               )}
               <input
                 type="number"
                 value={outcomeInput}
                 onChange={(e) => setOutcomeInput(e.target.value)}
-                style={{ width: 70, padding: '5px 8px' }}
-              />
-              <button
-                className="btn-coral pixel-font"
-                onClick={() =>
-                  onDispatch(`/api/markets/${market.id}/resolve/propose`, {
-                    proposerId: market.arbiter_id || 'boss',
-                    outcomeX: Number(outcomeInput),
-                    sourceUrl: `arbiter://${market.arbiter_id || 'boss'}`,
-                    settleImmediately: true,
-                  })
-                }
-              >
-                ARBITER SUBMIT ({outcomeInput} {unitLabel})
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 12,
-            }}
-          >
-            <div>
-              <div className="pixel-font" style={{ fontSize: 12 }}>
-                COMPLETE EVENT &amp; SETTLE MARKET
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--fg-muted)' }}>
-                Market stays open for continuous betting &amp; withdrawals until the event completes.
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                type="number"
-                value={outcomeInput}
-                onChange={(e) => setOutcomeInput(e.target.value)}
-                style={{ width: 70, padding: '5px 8px' }}
+                style={{ width: 60, padding: '4px 6px', fontSize: 11 }}
               />
               <button
                 className="btn-inverted pixel-font"
+                style={{ fontSize: 10, padding: '5px 10px' }}
                 onClick={() =>
                   onDispatch(`/api/markets/${market.id}/resolve/settle`, {
                     outcomeX: Number(outcomeInput),
                   })
                 }
               >
-                COMPLETE EVENT ({outcomeInput} {unitLabel})
+                SETTLE ({outcomeInput} {unitLabel})
               </button>
             </div>
+          </div>
+        )}
+
+        {/* ================================================================
+         * 1. 8-BIT SEGMENTED RACE TRACK BAR (Screenshot 4 Design)
+         * ================================================================ */}
+        <div className="race-track-wrap">
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontSize: 10,
+              color: 'var(--fg-muted)',
+            }}
+          >
+            <span className="pixel-font">LIVE RACE STANDINGS &amp; TARGET LINE</span>
+            <span className="pixel-font">
+              {isSpread
+                ? `TARGET WINDOW: [${market.L ?? 3}..${market.H ?? 5}] ${unitLabel.toUpperCase()}`
+                : `CURRENT LINE: ${currentUnitCenter} ${unitLabel.toUpperCase()}`}
+            </span>
+          </div>
+
+          {raceItems.map((item, idx) => {
+            const filledCount = Math.max(1, Math.min(16, Math.round((item.pct / 100) * 16)));
+            const avatarLeftPct = Math.min(94, Math.max(6, (filledCount / 16) * 100));
+
+            return (
+              <div key={item.id} className="race-row">
+                <div>
+                  <div className="pixel-font" style={{ fontSize: 12, fontWeight: 700 }}>
+                    {item.name}
+                  </div>
+                  <div style={{ fontSize: 9.5, color: 'var(--fg-muted)' }}>{item.subtitle}</div>
+                </div>
+
+                <div className="race-bar-lane">
+                  {/* Dashed Target / Finish Flag Line */}
+                  <div className="race-target-line" style={{ left: '75%' }}>
+                    {idx === 0 && (
+                      <span className="race-target-flag">
+                        ⚑ {isSpread ? `[${market.L}..${market.H}]` : `${currentUnitCenter}${unitLabel}`}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 8-Bit Pixel Racer Sprite sitting on top of the active block */}
+                  <div className="race-avatar-pin" style={{ left: `${avatarLeftPct}%` }}>
+                    <PixelRacerAvatar accent={item.accentHex} size={22} />
+                  </div>
+
+                  {/* 16 Segmented Blocks */}
+                  {Array.from({ length: 16 }).map((_, segIdx) => (
+                    <div
+                      key={segIdx}
+                      className={`race-seg ${segIdx < filledCount ? item.colorClass : ''}`}
+                    />
+                  ))}
+                </div>
+
+                <div
+                  className="pixel-font"
+                  style={{
+                    fontSize: 13,
+                    textAlign: 'right',
+                    color: item.accentHex,
+                  }}
+                >
+                  {item.rightLabel}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ================================================================
+         * 2. SYMMETRICAL CENTER-SPINE BID / ASK & STOP-LOSS GRAPH (Screenshot 3 Design)
+         * ================================================================ */}
+        {isGraphVisibleToGroup && (
+          <div className="depth-graph-wrap">
+            <div className="depth-header-grid">
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingRight: 8 }}>
+                <span style={{ color: 'var(--fg-muted)', fontSize: 10 }}>VOLUME (SPRD)</span>
+                <span style={{ color: '#6bc4a2' }}>
+                  {isSpread ? '▲ ABOVE / BID' : '✓ YES / BID'}
+                </span>
+              </div>
+              <div style={{ textAlign: 'center', color: 'var(--fg-muted)', fontSize: 10 }}>
+                LEVEL ({unitLabel.toUpperCase()})
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 8 }}>
+                <span style={{ color: '#e58585' }}>
+                  {isSpread ? '▼ BELOW / STOPS' : '✗ NO / STOPS'}
+                </span>
+                <span style={{ color: 'var(--fg-muted)', fontSize: 10 }}>VOLUME (SPRD)</span>
+              </div>
+            </div>
+
+            {rowsData.map((row) => {
+              const bidWidthPct = Math.min(100, Math.max(18, Math.round((row.totalBidVol / maxBarVol) * 100)));
+              const askWidthPct = Math.min(100, Math.max(18, Math.round((row.totalAskVol / maxBarVol) * 100)));
+
+              return (
+                <div
+                  key={row.lvl}
+                  className="depth-row-grid"
+                  onClick={() =>
+                    setSelectedGraphLevel((prev) => (prev === row.lvl ? null : row.lvl))
+                  }
+                  title={`Click ${row.lvl} ${unitLabel} to place a stop-loss or limit order at this level`}
+                >
+                  {/* LEFT BAR: Green BID / BUY / ABOVE Volume */}
+                  <div className="depth-side-bid">
+                    <div className="depth-bar-bid" style={{ width: `${bidWidthPct}%` }}>
+                      <span>{row.totalBidVol} SPRD</span>
+                      <span style={{ opacity: 0.75, fontSize: 9.5 }}>●</span>
+                    </div>
+                  </div>
+
+                  {/* CENTER SPINE: Unit Level Pill */}
+                  <div
+                    className={`depth-center-pill ${
+                      row.isCurrent ? 'is-current' : row.isInsideWindow ? 'is-window' : ''
+                    }`}
+                  >
+                    <span>
+                      {row.lvl} {unitLabel}
+                    </span>
+                  </div>
+
+                  {/* RIGHT BAR: Coral ASK / STOP-LOSS / BELOW Volume */}
+                  <div className="depth-side-ask">
+                    <div className="depth-bar-ask" style={{ width: `${askWidthPct}%` }}>
+                      <span style={{ opacity: 0.85, fontSize: 9.5 }}>
+                        {row.stopLabels.length > 0 ? row.stopLabels[0] : '●'}
+                      </span>
+                      <span>{row.totalAskVol} SPRD</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Contextual 1-Line Order Popup ONLY when user clicks a level on the graph */}
+            {selectedGraphLevel !== null && (
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexWrap: 'wrap',
+                  marginTop: 8,
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  backgroundColor: 'var(--bg-panel)',
+                  border: '1.5px solid var(--border-color)',
+                }}
+              >
+                <span className="pixel-font" style={{ fontSize: 10.5 }}>
+                  AT {selectedGraphLevel} {unitLabel.toUpperCase()}:
+                </span>
+                <select
+                  value={orderType}
+                  onChange={(e) => setOrderType(e.target.value as OrderType)}
+                  style={{ padding: '4px 8px', fontSize: 11.5 }}
+                >
+                  <option value="stop_loss">STOP LOSS</option>
+                  <option value="take_profit">TAKE PROFIT (SELL)</option>
+                  <option value="limit_buy">BUY LIMIT (BID)</option>
+                </select>
+                <input
+                  type="number"
+                  value={orderSizeSprd}
+                  onChange={(e) => setOrderSizeSprd(e.target.value)}
+                  style={{ width: 68, padding: '4px 8px', fontSize: 11.5 }}
+                />
+                <span style={{ fontSize: 11.5 }}>SPRD</span>
+                <button
+                  className="btn-inverted pixel-font"
+                  style={{ fontSize: 10, padding: '5px 10px' }}
+                  onClick={async () => {
+                    await onDispatch(`/api/markets/${market.id}/orders`, {
+                      playerId: activePlayer.id,
+                      side: myActivePos?.side || (isSpread ? 'OVER' : 'YES'),
+                      type: orderType,
+                      triggerLevel: selectedGraphLevel,
+                      sizeToks: Number(orderSizeSprd),
+                    });
+                    setSelectedGraphLevel(null);
+                  }}
+                >
+                  CONFIRM ORDER
+                </button>
+                <button
+                  style={{ fontSize: 10, padding: '4px 8px' }}
+                  onClick={() => setSelectedGraphLevel(null)}
+                >
+                  ×
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ================================================================
+         * 3. CLEAN MINIMAL ACTION BAR (Only Primary Actions + Conditional Withdraw)
+         * ================================================================ */}
+        {(market.state === 'live' || market.state === 'open') && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {isSpread ? (
+                <>
+                  <button
+                    className="btn-mint pixel-font"
+                    style={{ flex: 1, minWidth: 180, padding: '10px 16px' }}
+                    onClick={() =>
+                      onDispatch(`/api/markets/${market.id}/take`, {
+                        playerId: activePlayer.id,
+                        side: 'OVER',
+                        amount: 1,
+                      })
+                    }
+                  >
+                    ▲ BET ABOVE (&gt; {market.H ?? 5} {unitLabel}) · +{market.lot_stake_k} SPRD
+                  </button>
+                  <button
+                    className="btn-coral pixel-font"
+                    style={{ flex: 1, minWidth: 180, padding: '10px 16px' }}
+                    onClick={() =>
+                      onDispatch(`/api/markets/${market.id}/take`, {
+                        playerId: activePlayer.id,
+                        side: 'UNDER',
+                        amount: 1,
+                      })
+                    }
+                  >
+                    ▼ BET BELOW (&lt; {market.L ?? 3} {unitLabel}) · +{market.lot_stake_k} SPRD
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className="btn-mint pixel-font"
+                    style={{ flex: 1, minWidth: 160, padding: '10px 16px' }}
+                    onClick={() =>
+                      onDispatch(`/api/markets/${market.id}/take`, {
+                        playerId: activePlayer.id,
+                        side: 'YES',
+                        amount: market.lot_stake_k,
+                      })
+                    }
+                  >
+                    ✓ BET YES (+{market.lot_stake_k} SPRD)
+                  </button>
+                  <button
+                    className="btn-coral pixel-font"
+                    style={{ flex: 1, minWidth: 160, padding: '10px 16px' }}
+                    onClick={() =>
+                      onDispatch(`/api/markets/${market.id}/take`, {
+                        playerId: activePlayer.id,
+                        side: 'NO',
+                        amount: market.lot_stake_k,
+                      })
+                    }
+                  >
+                    ✗ BET NO (+{market.lot_stake_k} SPRD)
+                  </button>
+                </>
+              )}
+
+              {/* Withdraw buttons only appear once you have an active balance in the bet */}
+              {myLiveBalance > 0 && (
+                <>
+                  <button onClick={() => setShowCustomWithdraw((v) => !v)}>
+                    WITHDRAW X% / SPRD
+                  </button>
+                  <button
+                    onClick={() =>
+                      onDispatch(`/api/markets/${market.id}/withdraw`, {
+                        playerId: activePlayer.id,
+                        side: myActivePos?.side || (isSpread ? 'OVER' : 'YES'),
+                        fractionP: 1.0,
+                      })
+                    }
+                  >
+                    WITHDRAW ALL ({myLiveBalance} SPRD)
+                  </button>
+                </>
+              )}
+            </div>
+
+            {showCustomWithdraw && myLiveBalance > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  padding: '8px 14px',
+                  borderRadius: 8,
+                  backgroundColor: 'var(--bg-canvas)',
+                  border: '1.5px solid var(--border-color)',
+                }}
+              >
+                <span style={{ fontSize: 12 }}>WITHDRAW:</span>
+                <input
+                  type="number"
+                  value={withdrawValue}
+                  onChange={(e) => setWithdrawValue(e.target.value)}
+                  style={{ width: 70, padding: '4px 8px', fontWeight: 700 }}
+                />
+                <select
+                  value={withdrawMode}
+                  onChange={(e) => setWithdrawMode(e.target.value as 'SPRD' | '%')}
+                  style={{ padding: '4px 8px', fontWeight: 700 }}
+                >
+                  <option value="SPRD">SPRD</option>
+                  <option value="%">%</option>
+                </select>
+                <button className="btn-mint pixel-font" onClick={handleCustomWithdraw}>
+                  CONFIRM
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

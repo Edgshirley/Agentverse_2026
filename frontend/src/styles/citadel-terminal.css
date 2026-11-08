@@ -581,33 +581,32 @@ button:disabled {
 }
 
 /* ============================================================================
- * Live Bets Arena & Vertical Unit Ladder Graph
+ * Calm Unified Arena, 8-Bit Segmented Race Bar & Center-Spine Bid/Ask Graph
  * ============================================================================ */
 
 .poker-felt-arena {
-  border-radius: 16px;
-  border: 2px solid var(--felt-border);
-  background: radial-gradient(circle at center, var(--felt-bg) 0%, var(--felt-inner) 100%);
-  box-shadow: 5px 5px 0px var(--pixel-shadow);
-  padding: 22px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border-color);
+  background-color: var(--bg-panel);
+  box-shadow: 4px 4px 0px var(--pixel-shadow);
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
 .mini-playing-card {
   display: inline-flex;
   flex-direction: column;
   justify-content: space-between;
-  width: 44px;
-  height: 60px;
-  padding: 4px 6px;
+  width: 38px;
+  height: 52px;
+  padding: 4px 5px;
   border-radius: 6px;
-  border: 2px solid var(--border-color);
-  background-color: var(--bg-panel);
-  box-shadow: 2px 2px 0px var(--pixel-shadow);
+  border: 1.5px solid var(--border-color);
+  background-color: var(--bg-canvas);
   font-family: 'Silkscreen', monospace;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1;
 }
 
@@ -615,53 +614,198 @@ button:disabled {
   color: var(--pastel-coral-border);
 }
 
-.player-seat-card {
-  border: 2px solid var(--border-color);
-  border-radius: 10px;
-  background-color: var(--bg-panel);
-  padding: 12px 14px;
-  box-shadow: 3px 3px 0px var(--pixel-shadow);
-}
-
-.player-seat-card.me-seat {
-  background-color: var(--pastel-mint-bg);
-  border-color: var(--pastel-mint-border);
-  color: var(--pastel-mint-text);
-}
-
-.player-seat-card.friend-seat {
-  background-color: var(--pastel-sky-bg);
-  border-color: var(--pastel-sky-border);
-  color: var(--pastel-sky-text);
-}
-
-/* Vertical Unit Ladder Graph */
-.vertical-ladder-wrap {
+/* 8-Bit Segmented Live Race Track Bar (Screenshot 4 Style) */
+.race-track-wrap {
+  position: relative;
+  border-radius: 12px;
+  border: 1.5px solid var(--border-color);
+  background-color: var(--bg-canvas);
+  padding: 22px 20px 14px;
   display: flex;
   flex-direction: column;
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
-  background-color: var(--bg-canvas);
-  overflow: hidden;
+  gap: 16px;
 }
 
-.ladder-rung {
+.race-row {
   display: grid;
-  grid-template-columns: 110px 1fr;
+  grid-template-columns: 105px 1fr 76px;
   align-items: center;
-  padding: 10px 14px;
-  border-bottom: 1px dashed var(--border-color);
   gap: 14px;
 }
 
-.ladder-rung:last-child {
-  border-bottom: none;
+@media (max-width: 640px) {
+  .race-row {
+    grid-template-columns: 78px 1fr 60px;
+    gap: 8px;
+  }
 }
 
-.ladder-rung.current-unit-rung {
+.race-bar-lane {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 3px;
+  padding-top: 20px;
+  padding-bottom: 4px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.race-seg {
+  height: 15px;
+  border-radius: 2px;
+  background-color: rgba(255, 255, 255, 0.06);
+  transition: background-color 0.2s ease;
+}
+
+.race-seg.filled-mint {
+  background-color: #5bc49f;
+}
+
+.race-seg.filled-coral {
+  background-color: #e57368;
+}
+
+.race-seg.filled-sky {
+  background-color: #78b7e6;
+}
+
+.race-avatar-pin {
+  position: absolute;
+  top: -4px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 3;
+  transition: left 0.25s ease;
+}
+
+.race-target-line {
+  position: absolute;
+  top: -6px;
+  bottom: 0;
+  border-left: 2px dashed var(--fg-primary);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.race-target-flag {
+  position: absolute;
+  top: -15px;
+  left: 4px;
+  font-family: 'Silkscreen', monospace;
+  font-size: 9px;
+  white-space: nowrap;
+  color: var(--pastel-coral-border);
+}
+
+/* Center-Spine BID (Left / Green) vs ASK & STOP-LOSS (Right / Coral) Graph (Screenshot 3 Style) */
+.depth-graph-wrap {
+  border-radius: 12px;
+  border: 1.5px solid var(--border-color);
+  background-color: var(--bg-canvas);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.depth-header-grid {
+  display: grid;
+  grid-template-columns: 1fr 124px 1fr;
+  align-items: center;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border-color);
+  font-family: 'Silkscreen', monospace;
+  font-size: 11px;
+}
+
+.depth-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 124px 1fr;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 2px 4px;
+  transition: background-color 0.12s ease;
+}
+
+.depth-row-grid:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.depth-side-bid {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  height: 30px;
+}
+
+.depth-side-ask {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  height: 30px;
+}
+
+.depth-bar-bid {
+  height: 28px;
+  border-radius: 7px 3px 3px 7px;
+  background: linear-gradient(90deg, rgba(61, 138, 104, 0.88) 0%, rgba(42, 85, 67, 0.35) 100%);
+  border-left: 3px solid #6bc4a2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  color: #e2faef;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: width 0.25s ease;
+}
+
+.depth-bar-ask {
+  height: 28px;
+  border-radius: 3px 7px 7px 3px;
+  background: linear-gradient(270deg, rgba(168, 72, 66, 0.88) 0%, rgba(92, 42, 40, 0.35) 100%);
+  border-right: 3px solid #e58585;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  color: #fde4e2;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: width 0.25s ease;
+}
+
+.depth-center-pill {
+  height: 30px;
+  border-radius: 8px;
+  background-color: var(--bg-panel);
+  border: 1.5px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: 'Silkscreen', monospace;
+  font-size: 11px;
+  color: var(--fg-primary);
+}
+
+.depth-center-pill.is-window {
+  background-color: rgba(107, 196, 162, 0.16);
+  border-color: #6bc4a2;
+  color: #d0f5e6;
+}
+
+.depth-center-pill.is-current {
   background-color: var(--pastel-gold-bg);
-  border-top: 2px solid var(--pastel-gold-border);
-  border-bottom: 2px solid var(--pastel-gold-border);
+  border-color: var(--pastel-gold-border);
   color: var(--pastel-gold-text);
 }
 

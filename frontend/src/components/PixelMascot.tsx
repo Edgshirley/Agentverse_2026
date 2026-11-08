@@ -159,3 +159,37 @@ export const PixelPokerChip: React.FC<{
     </div>
   );
 };
+
+/**
+ * 8-Bit Pixel Racer / Knight Sprite for the Segmented Live Progress Race Bar (Screenshot 4)
+ */
+export const PixelRacerAvatar: React.FC<{ accent?: string; size?: number }> = ({
+  accent = '#e57368',
+  size = 24,
+}) => {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 12 12"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ imageRendering: 'pixelated', display: 'block' }}
+    >
+      {/* Plume / Crest */}
+      <rect x="5" y="0" width="2" height="2" fill={accent} />
+      {/* Helmet Dome */}
+      <rect x="3" y="2" width="6" height="5" fill="#7D8294" />
+      <rect x="2" y="3" width="8" height="3" fill="#9DA2B4" />
+      {/* Helmet Visor Slits */}
+      <rect x="3" y="4" width="6" height="2" fill="#181A20" />
+      <rect x="4" y="4" width="1" height="1" fill="#F2EFE9" />
+      <rect x="7" y="4" width="1" height="1" fill="#F2EFE9" />
+      {/* Shoulders / Armor */}
+      <rect x="2" y="7" width="8" height="4" fill={accent} />
+      <rect x="5" y="7" width="2" height="4" fill="#F2EFE9" />
+      <rect x="1" y="8" width="1" height="3" fill="#181A20" />
+      <rect x="10" y="8" width="1" height="3" fill="#181A20" />
+    </svg>
+  );
+};

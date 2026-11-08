@@ -56,6 +56,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
   const [inHouseLotStake, setInHouseLotStake] = useState<string>('25');
   const [inHouseUnit, setInHouseUnit] = useState<string>('pit stops');
   const [creatorShowPositionsToAll, setCreatorShowPositionsToAll] = useState<boolean>(true);
+  const [showCustomizeRules, setShowCustomizeRules] = useState<boolean>(false);
 
   // Custom Arbiter & Stacked Options
   const [arbiterName, setArbiterName] = useState<string>('BOSS');
@@ -538,233 +539,8 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
         </div>
       )}
 
-      {/* STEP 1 CARD: Agent 1 (Intake) -> Agent 2 (Classifier) + In-House Rules & Creator Visibility */}
+      {/* STEP 1 CARD: Agent 1 (Intake) -> Agent 2 (Classifier) — Clean Contextual Agent Popup */}
       {intentMode === 'propose' && draft && classification && (
-        <div className="pastel-card coral" style={{ width: '100%' }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 12,
-              flexWrap: 'wrap',
-              gap: 8,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <PixelMascot size={36} />
-              <span className="pixel-font" style={{ fontSize: 12 }}>
-                {classification.archetype === 'spread'
-                  ? 'AHA! LINEAR WINDOW MARKET [L, H] IDENTIFIED'
-                  : 'AGENT 1 & 2 CLASSIFIED YOUR BET'}
-              </span>
-            </div>
-            <span className="badge-outline">
-              {classification.archetype === 'spread'
-                ? 'LINEAR WINDOW [L, H]'
-                : classification.archetype.toUpperCase()}{' '}
-              ·{' '}
-              {classification.route === 'arbiter' ? 'CUSTOM (3RD-PARTY ARBITER)' : 'AUTO-VERIFIABLE'}
-            </span>
-          </div>
-
-          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>
-            &ldquo;{draft.question.replace(/TOKS/gi, 'SPRD')}&rdquo;
-          </div>
-
-          {/* If Linear / Window Spread Market: Ask In-House Rules (What happens when MM wins, Cap, Unit) */}
-          {classification.archetype === 'spread' && (
-            <div
-              className="pastel-card"
-              style={{ marginBottom: 14, padding: '14px 16px', color: 'var(--fg-primary)' }}
-            >
-              <div className="pixel-font" style={{ fontSize: 11, marginBottom: 6, color: 'var(--pastel-gold-text)' }}>
-                IN-HOUSE WINDOW RULES (HOW THIS LINEAR WINDOW MARKET WORKS)
-              </div>
-              <p style={{ fontSize: 12, color: 'var(--fg-muted)', marginBottom: 12 }}>
-                1) Friends bid for how narrow of a window width <strong>W ({inHouseUnit})</strong>{' '}
-                they can quote. 2) The window winner (Market Maker) picks the exact window{' '}
-                <strong>[L, H]</strong>. 3) Everyone else bets <strong>ABOVE (&gt; H)</strong> or{' '}
-                <strong>BELOW (&lt; L)</strong>!
-              </p>
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-                  gap: 12,
-                }}
-              >
-                <div>
-                  <label style={{ fontSize: 11.5, display: 'block', marginBottom: 4 }}>
-                    <strong>What happens when Market Maker wins (inside [L, H])?</strong>
-                  </label>
-                  <select
-                    value={inHousePayoffMode}
-                    onChange={(e) => setInHousePayoffMode(e.target.value as PayoffMode)}
-                    style={{ width: '100%', padding: '6px 8px', fontWeight: 700 }}
-                  >
-                    <option value="linear">
-                      Linear Window: MM wins stakes inside [L, H]; pays per {inHouseUnit} outside
-                    </option>
-                    <option value="pot">
-                      Pot Sweep: MM wins the entire pot if outcome lands inside [L, H]
-                    </option>
-                    <option value="binary">
-                      Fixed 1:1: MM wins 1x stake inside [L, H]; pays 1x outside
-                    </option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: 11.5, display: 'block', marginBottom: 4 }}>
-                    <strong>Max Payout Cap Outside Window (C widths):</strong>
-                  </label>
-                  <select
-                    value={inHouseCapC}
-                    onChange={(e) => setInHouseCapC(e.target.value)}
-                    style={{ width: '100%', padding: '6px 8px', fontWeight: 700 }}
-                  >
-                    <option value="2">2x Window Widths Cap</option>
-                    <option value="3">3x Window Widths Cap (Standard)</option>
-                    <option value="5">5x Window Widths Cap (High Volatility)</option>
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 11.5, display: 'block', marginBottom: 4 }}>
-                      <strong>Stake / Lot (SPRD):</strong>
-                    </label>
-                    <input
-                      type="number"
-                      value={inHouseLotStake}
-                      onChange={(e) => setInHouseLotStake(e.target.value)}
-                      style={{ width: '100%', padding: '5px 8px', fontWeight: 700 }}
-                    />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 11.5, display: 'block', marginBottom: 4 }}>
-                      <strong>Window Unit:</strong>
-                    </label>
-                    <input
-                      type="text"
-                      value={inHouseUnit}
-                      onChange={(e) => setInHouseUnit(e.target.value)}
-                      style={{ width: '100%', padding: '5px 8px', fontWeight: 700 }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* If Custom Unverifiable: 3rd-Party Arbiter (e.g. Boss) + Countdown */}
-          {classification.route === 'arbiter' && (
-            <div
-              className="pastel-card"
-              style={{ marginBottom: 14, padding: '12px 14px', color: 'var(--fg-primary)' }}
-            >
-              <div className="pixel-font" style={{ fontSize: 11, marginBottom: 8 }}>
-                CUSTOM BET: ASSIGN 3RD-PARTY ARBITER &amp; COUNTDOWN
-              </div>
-              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-                <label style={{ fontSize: 12 }}>
-                  3rd-Party Arbiter (e.g. Boss):{' '}
-                  <input
-                    type="text"
-                    value={arbiterName}
-                    onChange={(e) => setArbiterName(e.target.value)}
-                    style={{ width: 120, padding: '4px 8px', fontWeight: 700 }}
-                  />
-                </label>
-                <label style={{ fontSize: 12 }}>
-                  Countdown to Close All Bets (mins):{' '}
-                  <input
-                    type="number"
-                    value={countdownMins}
-                    onChange={(e) => setCountdownMins(e.target.value)}
-                    style={{ width: 75, padding: '4px 8px', fontWeight: 700 }}
-                  />
-                </label>
-              </div>
-            </div>
-          )}
-
-          {/* If Stacked Market: Choose Parent Market */}
-          {classification.archetype === 'stacked' && allMarkets.length > 0 && (
-            <div className="pastel-card" style={{ marginBottom: 14, padding: '12px 14px' }}>
-              <div className="pixel-font" style={{ fontSize: 11, marginBottom: 6 }}>
-                STACKED ON PARENT MARKET:
-              </div>
-              <select
-                value={parentMarketId}
-                onChange={(e) => setParentMarketId(e.target.value)}
-                style={{ padding: '6px 10px', width: '100%' }}
-              >
-                {allMarkets.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.question}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* MARKET CREATOR ONLY SETTING: Whether everyone in the market can see everyone's positions & stop losses */}
-          <div
-            className="pastel-card sky"
-            style={{
-              marginBottom: 14,
-              padding: '10px 14px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 10,
-            }}
-          >
-            <div>
-              <div className="pixel-font" style={{ fontSize: 10.5 }}>
-                MARKET CREATOR RULE ({activePlayer.nickname} ONLY)
-              </div>
-              <div style={{ fontSize: 12 }}>
-                Should everyone who joins this market be able to see all players&apos; positions &amp;
-                stop-losses on the vertical unit graph?
-              </div>
-            </div>
-            <button
-              type="button"
-              className={creatorShowPositionsToAll ? 'btn-mint pixel-font' : 'btn-coral pixel-font'}
-              style={{ fontSize: 10.5 }}
-              onClick={() => setCreatorShowPositionsToAll((v) => !v)}
-            >
-              {creatorShowPositionsToAll
-                ? '✓ EVERYONE CAN SEE POSITIONS & STOPS'
-                : '✗ HIDDEN FOR EVERYONE'}
-            </button>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-            <button
-              onClick={() => {
-                setDraft(null);
-                setClassification(null);
-              }}
-            >
-              CANCEL
-            </button>
-            <button className="btn-inverted pixel-font" onClick={handleConfirmLaunchMarket}>
-              {classification.archetype === 'spread'
-                ? 'START WINDOW BIDDING WITH FRIENDS ->'
-                : 'CREATE BET & SET MY RISK LIMITS ->'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 2 CARD: Mandatory Strategy & Risk-Tolerance Confirmation (Measured in Bet Units) */}
-      {intentMode === 'strategy' && showRiskGateCard && activeMarket && (
         <div className="pastel-card" style={{ width: '100%' }}>
           <div
             style={{
@@ -776,46 +552,253 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
               gap: 8,
             }}
           >
-            <span className="pixel-font" style={{ fontSize: 12 }}>
-              CONFIRM STRATEGY &amp; RISK TOLERANCE
-            </span>
-            <span className="badge-outline">HARD CONDITION</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <PixelMascot size={32} />
+              <span className="pixel-font" style={{ fontSize: 11, color: 'var(--pastel-mint-text)' }}>
+                {classification.archetype === 'spread'
+                  ? 'AGENT READY · LINEAR WINDOW [L, H]'
+                  : 'AGENT READY · BET CLASSIFIED'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCustomizeRules((v) => !v)}
+              style={{ padding: '4px 10px', fontSize: 11 }}
+            >
+              {showCustomizeRules ? 'HIDE RULES ▲' : 'CUSTOMIZE RULES ▾'}
+            </button>
           </div>
 
-          <div style={{ fontSize: 13, marginBottom: 14 }}>
-            Bet: <strong>{activeMarket.question}</strong> (Unit: <strong>{betUnitLabel}</strong>)
+          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>
+            &ldquo;{draft.question.replace(/TOKS/gi, 'SPRD')}&rdquo;
+          </div>
+
+          {/* Compact Agent Summary Pill Row */}
+          <div
+            style={{
+              fontSize: 12,
+              color: 'var(--fg-muted)',
+              marginBottom: 14,
+              display: 'flex',
+              gap: 8,
+              flexWrap: 'wrap',
+              alignItems: 'center',
+            }}
+          >
+            <span className="badge-outline">
+              {classification.archetype === 'spread'
+                ? `Window Unit: ${inHouseUnit}`
+                : classification.archetype.toUpperCase()}
+            </span>
+            <span className="badge-outline">{inHouseLotStake} SPRD / lot</span>
+            {classification.archetype === 'spread' && (
+              <span className="badge-outline">
+                {inHousePayoffMode.toUpperCase()} · {inHouseCapC}x Cap
+              </span>
+            )}
+            <span className="badge-outline">
+              {creatorShowPositionsToAll ? 'Positions & Stops: Visible' : 'Positions & Stops: Hidden'}
+            </span>
+          </div>
+
+          {/* Expandable Rules Drawer — only opens when the user wants to tweak defaults */}
+          {showCustomizeRules && (
+            <div
+              style={{
+                borderTop: '1px solid var(--border-soft)',
+                paddingTop: 12,
+                marginBottom: 14,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+              }}
+            >
+              {classification.archetype === 'spread' && (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+                    gap: 10,
+                  }}
+                >
+                  <div>
+                    <label style={{ fontSize: 11, color: 'var(--fg-muted)', display: 'block', marginBottom: 4 }}>
+                      When Market Maker wins inside [L, H]:
+                    </label>
+                    <select
+                      value={inHousePayoffMode}
+                      onChange={(e) => setInHousePayoffMode(e.target.value as PayoffMode)}
+                      style={{ width: '100%', padding: '6px 8px' }}
+                    >
+                      <option value="linear">Linear per {inHouseUnit}</option>
+                      <option value="pot">Pot Sweep</option>
+                      <option value="binary">Fixed 1:1</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, color: 'var(--fg-muted)', display: 'block', marginBottom: 4 }}>
+                      Max Payout Cap:
+                    </label>
+                    <select
+                      value={inHouseCapC}
+                      onChange={(e) => setInHouseCapC(e.target.value)}
+                      style={{ width: '100%', padding: '6px 8px' }}
+                    >
+                      <option value="2">2x Window Widths</option>
+                      <option value="3">3x Window Widths</option>
+                      <option value="5">5x Window Widths</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: 11, color: 'var(--fg-muted)', display: 'block', marginBottom: 4 }}>
+                        Stake (SPRD):
+                      </label>
+                      <input
+                        type="number"
+                        value={inHouseLotStake}
+                        onChange={(e) => setInHouseLotStake(e.target.value)}
+                        style={{ width: '100%', padding: '5px 8px' }}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: 11, color: 'var(--fg-muted)', display: 'block', marginBottom: 4 }}>
+                        Unit:
+                      </label>
+                      <input
+                        type="text"
+                        value={inHouseUnit}
+                        onChange={(e) => setInHouseUnit(e.target.value)}
+                        style={{ width: '100%', padding: '5px 8px' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {classification.route === 'arbiter' && (
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <label style={{ fontSize: 12 }}>
+                    Arbiter:{' '}
+                    <input
+                      type="text"
+                      value={arbiterName}
+                      onChange={(e) => setArbiterName(e.target.value)}
+                      style={{ width: 110, padding: '4px 8px' }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 12 }}>
+                    Countdown (mins):{' '}
+                    <input
+                      type="number"
+                      value={countdownMins}
+                      onChange={(e) => setCountdownMins(e.target.value)}
+                      style={{ width: 70, padding: '4px 8px' }}
+                    />
+                  </label>
+                </div>
+              )}
+
+              {classification.archetype === 'stacked' && allMarkets.length > 0 && (
+                <div>
+                  <label style={{ fontSize: 11, color: 'var(--fg-muted)', display: 'block', marginBottom: 4 }}>
+                    Parent Market:
+                  </label>
+                  <select
+                    value={parentMarketId}
+                    onChange={(e) => setParentMarketId(e.target.value)}
+                    style={{ padding: '6px 10px', width: '100%' }}
+                  >
+                    {allMarkets.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.question}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 10,
+                }}
+              >
+                <span style={{ fontSize: 12, color: 'var(--fg-muted)' }}>
+                  Creator Option ({activePlayer.nickname} only): Show all players&apos; positions &amp; stops on graph
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCreatorShowPositionsToAll((v) => !v)}
+                  style={{ fontSize: 11, padding: '4px 10px' }}
+                >
+                  {creatorShowPositionsToAll ? 'VISIBLE TO ALL (ON)' : 'HIDDEN (OFF)'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+            <button
+              onClick={() => {
+                setDraft(null);
+                setClassification(null);
+              }}
+            >
+              CANCEL
+            </button>
+            <button className="btn-mint pixel-font" onClick={handleConfirmLaunchMarket}>
+              {classification.archetype === 'spread'
+                ? 'START WINDOW BIDDING ->'
+                : 'CREATE BET ->'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 2 CARD: Clean Single-Surface Strategy & Risk Confirmation */}
+      {intentMode === 'strategy' && showRiskGateCard && activeMarket && (
+        <div className="pastel-card" style={{ width: '100%' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 12,
+              flexWrap: 'wrap',
+              gap: 8,
+            }}
+          >
+            <span className="pixel-font" style={{ fontSize: 11, color: 'var(--pastel-mint-text)' }}>
+              AGENT RISK GATE · CONFIRM EXIT &amp; STOP LEVELS ({betUnitLabel.toUpperCase()})
+            </span>
           </div>
 
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
               gap: 12,
-              marginBottom: 16,
+              marginBottom: 14,
             }}
           >
-            {/* 1. Strategy & Stake */}
-            <div className="pastel-card mint" style={{ padding: 12 }}>
-              <div className="pixel-font" style={{ fontSize: 10, marginBottom: 6 }}>
-                1. YOUR STRATEGY
-              </div>
-              <input
-                type="text"
-                value={summaryField}
-                onChange={(e) => setSummaryField(e.target.value)}
-                placeholder="e.g. OVER 50 SPRD"
-                style={{ width: '100%', padding: '5px 8px', marginBottom: 8, fontWeight: 700 }}
-              />
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12 }}>
+            <div>
+              <label style={{ fontSize: 11, color: 'var(--fg-muted)', display: 'block', marginBottom: 4 }}>
+                1. Position &amp; Stake (SPRD)
+              </label>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <select
                   value={sideField}
                   onChange={(e) => setSideField(e.target.value)}
-                  style={{ padding: '4px 6px', fontWeight: 700 }}
+                  style={{ padding: '6px 8px', fontWeight: 700 }}
                 >
                   {activeMarket.archetype === 'spread' ? (
                     <>
-                      <option value="OVER">ABOVE (OVER)</option>
-                      <option value="UNDER">BELOW (UNDER)</option>
+                      <option value="OVER">ABOVE</option>
+                      <option value="UNDER">BELOW</option>
                     </>
                   ) : (
                     <>
@@ -828,62 +811,41 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
                   type="number"
                   value={stakeField}
                   onChange={(e) => setStakeField(e.target.value)}
-                  style={{ width: 75, padding: '4px 6px', fontWeight: 700 }}
+                  style={{ width: 85, padding: '6px 8px', fontWeight: 700 }}
                 />
-                <span>SPRD</span>
               </div>
             </div>
 
-            {/* 2. When to Sell (in Bet Units) */}
-            <div className="pastel-card sky" style={{ padding: 12 }}>
-              <div className="pixel-font" style={{ fontSize: 10, marginBottom: 6 }}>
-                2. SELL / TAKE-PROFIT LEVEL ({betUnitLabel}) *
-              </div>
+            <div>
+              <label style={{ fontSize: 11, color: 'var(--fg-muted)', display: 'block', marginBottom: 4 }}>
+                2. Take-Profit ({betUnitLabel}) *
+              </label>
               <input
                 type="number"
                 value={tpField}
                 onChange={(e) => setTpField(e.target.value)}
-                placeholder={`Required (${betUnitLabel})`}
+                placeholder={`Level (${betUnitLabel})`}
                 style={{ width: '100%', padding: '6px 8px', fontWeight: 700 }}
               />
-              <div style={{ fontSize: 11, marginTop: 6 }}>
-                {tpField.trim() === ''
-                  ? `Required: at what ${betUnitLabel} level do you sell?`
-                  : `Auto-sells when ${betUnitLabel} hits ${tpField}`}
-              </div>
             </div>
 
-            {/* 3. Risk Tolerance / Stop-Loss Level (in Bet Units) */}
-            <div className="pastel-card coral" style={{ padding: 12 }}>
-              <div className="pixel-font" style={{ fontSize: 10, marginBottom: 6 }}>
-                3. STOP-LOSS / RISK LEVEL ({betUnitLabel}) *
-              </div>
+            <div>
+              <label style={{ fontSize: 11, color: 'var(--fg-muted)', display: 'block', marginBottom: 4 }}>
+                3. Stop-Loss ({betUnitLabel}) *
+              </label>
               <input
                 type="number"
                 value={floorField}
                 onChange={(e) => setFloorField(e.target.value)}
-                placeholder={`Required (${betUnitLabel})`}
+                placeholder={`Stop (${betUnitLabel})`}
                 style={{ width: '100%', padding: '6px 8px', fontWeight: 700 }}
               />
-              <div style={{ fontSize: 11, marginTop: 6 }}>
-                {floorField.trim() === ''
-                  ? `Required: at what ${betUnitLabel} level does stop hit?`
-                  : `Stop-loss hits if ${betUnitLabel} reaches ${floorField}`}
-              </div>
             </div>
           </div>
 
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 10,
-            }}
-          >
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
             <button onClick={() => setShowRiskGateCard(false)}>CANCEL</button>
-            <button className="btn-inverted pixel-font" onClick={handleConfirmStrategyAndRisk}>
+            <button className="btn-mint pixel-font" onClick={handleConfirmStrategyAndRisk}>
               ✓ CONFIRM &amp; OPEN LIVE BET -&gt;
             </button>
           </div>

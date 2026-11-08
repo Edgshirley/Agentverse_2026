@@ -39,3 +39,29 @@ describe('Rule-based bets: yes/no claims vs number windows', () => {
     expect(archetype).toBe('spread');
   });
 });
+
+import { closeHoursFromPrompt } from '../src/worker/agents';
+
+describe('Close time from the message', () => {
+  it.each([
+    ['i bet it will rain in 10 minutes', 10 / 60],
+    ['will it snow in 2 hours?', 2],
+    ['who wins in 3 days', 72],
+    ['pit stops next week', 168],
+    ['will it rain in half an hour', 0.5],
+  ])('%s -> %s h', (prompt, hours) => {
+    expect(closeHoursFromPrompt(prompt)).toBeCloseTo(hours);
+  });
+
+  it('tomorrow closes at 11pm tomorrow; no time -> null', () => {
+    const now = new Date(2026, 10, 8, 15, 0, 0);
+    expect(closeHoursFromPrompt('will it snow tomorrow', now)).toBeCloseTo(8 + 24);
+    expect(closeHoursFromPrompt('will there be a crash')).toBeNull();
+  });
+
+  it('the draft uses it, and keeps "it" in the question', async () => {
+    const { draft } = await runAgent1Intake('i bet it will rain in 10 minutes');
+    expect(draft.deadline_hours).toBeCloseTo(10 / 60);
+    expect(draft.question).toBe('Will it rain in 10 minutes?');
+  });
+});

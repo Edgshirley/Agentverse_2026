@@ -1,6 +1,6 @@
 import React from 'react';
 import { Icon } from '../Icon';
-import { AskBot, CLOSE_OPTIONS } from '../../hooks/useAskBot';
+import { AskBot, CLOSE_OPTIONS, formatCloseHours } from '../../hooks/useAskBot';
 import { PAYOUT_MODES } from '../market/payouts';
 import { PixelMascot } from '../PixelMascot';
 
@@ -130,6 +130,9 @@ export const DraftCard: React.FC<{ bot: AskBot }> = ({ bot }) => {
             aria-label="Betting closes in"
             style={{ padding: '2px 4px', fontSize: 11 }}
           >
+            {!CLOSE_OPTIONS.some((o) => String(o.hours) === closeInHours) && (
+              <option value={closeInHours}>{formatCloseHours(Number(closeInHours))}</option>
+            )}
             {CLOSE_OPTIONS.map((o) => (
               <option key={o.hours} value={String(o.hours)}>
                 {o.label}

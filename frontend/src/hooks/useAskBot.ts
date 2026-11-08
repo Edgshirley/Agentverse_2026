@@ -11,6 +11,20 @@ import { usePushToTalk } from './usePushToTalk';
 import { sfx } from '../utils/soundEffects';
 import { classifyBotRequest } from '../utils/betDetection';
 
+/** "10 min", "2 hours", "1 day 8 hours" */
+export function formatCloseHours(hours: number): string {
+  const mins = Math.round(hours * 60);
+  if (mins < 60) return `${mins} min`;
+  if (hours < 24) {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${h} hour${h === 1 ? '' : 's'}${m ? ` ${m} min` : ''}`;
+  }
+  const d = Math.floor(hours / 24);
+  const h = Math.round(hours - d * 24);
+  return `${d} day${d === 1 ? '' : 's'}${h ? ` ${h}h` : ''}`;
+}
+
 export const CLOSE_OPTIONS = [
   { hours: 0.25, label: '15 min' },
   { hours: 1, label: '1 hour' },
@@ -178,8 +192,8 @@ export function useAskBot({
         const c: ClassifyMarketProposal = res.classification;
         setDraft(d);
         setClassification(c);
-        const h = Number(d.deadline_hours) || 24;
-        setCloseInHours(String(CLOSE_OPTIONS.reduce((a, b) => (Math.abs(b.hours - h) < Math.abs(a.hours - h) ? b : a)).hours));
+        // Use the exact time from the message ("in 10 minutes"), not the nearest preset
+        setCloseInHours(String(Number(d.deadline_hours) > 0 ? Number(d.deadline_hours) : 24));
         sfx.playCatAlert();
         setInHousePayoffMode(c.archetype === 'spread' ? 'linear' : d.payoff_mode || 'pot');
         setInHouseLotStake(String(d.lot_stake_k || 25));

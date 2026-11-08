@@ -191,12 +191,49 @@ export function yesNoQuestionFromPrompt(prompt: string): string {
     const where = isF1 && !/\b(f1|race|grand prix)\b/i.test(thing) ? ' in the F1 race' : '';
     return `Will there be ${thing}${where}?`;
   }
+  // "i bet it will rain in 10 minutes" -> "Will it rain in 10 minutes?"
+  const subjectWill = text.match(/\b(it|he|she|they|we|you|[a-z][\w']*)\s+will\s+([^,]+)$/i);
+  if (subjectWill && !/^(i|bet|that)$/i.test(subjectWill[1])) {
+    return `Will ${subjectWill[1].toLowerCase() === 'it' ? 'it' : subjectWill[1]} ${subjectWill[2].trim()}?`;
+  }
   const willClause = text.match(/\b(will [^,]+)$/i);
   if (willClause) {
     const q = willClause[1].trim();
     return `${q.charAt(0).toUpperCase()}${q.slice(1)}?`;
   }
   return `${text}?`;
+}
+
+/**
+ * When the bet should close, from phrases like "in 10 minutes", "in 2 hours", "tonight",
+ * "tomorrow", "next week". Returns hours from now, or null if none is mentioned.
+ */
+export function closeHoursFromPrompt(prompt: string, now = new Date()): number | null {
+  const t = prompt.toLowerCase();
+  const num = (re: RegExp) => {
+    const m = t.match(re);
+    return m ? Number(m[1]) : null;
+  };
+  const mins = num(/(\d+(?:\.\d+)?)\s*(?:m|min|mins|minute|minutes)\b/);
+  if (mins != null && mins > 0) return mins / 60;
+  const hours = num(/(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours)\b/);
+  if (hours != null && hours > 0) return hours;
+  const days = num(/(\d+(?:\.\d+)?)\s*(?:d|day|days)\b/);
+  if (days != null && days > 0) return days * 24;
+  if (/\bhalf an hour\b/.test(t)) return 0.5;
+  if (/\b(an|one) hour\b/.test(t)) return 1;
+  const untilHour = (h: number) => {
+    const end = new Date(now);
+    end.setHours(h, 0, 0, 0);
+    if (end.getTime() <= now.getTime()) end.setDate(end.getDate() + 1);
+    return Math.max(0.25, (end.getTime() - now.getTime()) / 3_600_000);
+  };
+  if (/\b(tonight|this evening)\b/.test(t)) return untilHour(23);
+  if (/\btoday\b/.test(t)) return untilHour(23);
+  if (/\btomorrow\b/.test(t)) return untilHour(23) + 24;
+  if (/\b(this weekend)\b/.test(t)) return 72;
+  if (/\bnext week\b/.test(t)) return 7 * 24;
+  return null;
 }
 
 export async function runAgent1Intake(
@@ -357,7 +394,10 @@ Return JSON with:
       typeof aiDraft?.criteria === 'string' && aiDraft.criteria.trim()
         ? aiDraft.criteria.trim()
         : criteria,
-    deadline_hours: Number(aiDraft?.deadline_hours) > 0 ? Number(aiDraft?.deadline_hours) : 24,
+    deadline_hours:
+      Number(aiDraft?.deadline_hours) > 0
+        ? Number(aiDraft?.deadline_hours)
+        : (closeHoursFromPrompt(prompt) ?? 24),
     payoff_mode:
       aiDraft?.payoff_mode && ['pot', 'binary', 'linear', 'log'].includes(aiDraft.payoff_mode)
         ? aiDraft.payoff_mode

@@ -6,6 +6,12 @@ import { AppPanel } from '../../App';
 import { sfx } from '../../utils/soundEffects';
 import { looksLikeBetProposal } from '../../utils/betDetection';
 import { HintBubble } from '../HintBubble';
+import {
+  describeOutcome,
+  isAwaitingResult,
+  marketStatusLine,
+  useNow,
+} from '../../utils/marketTime';
 
 export interface MascotWidgetAlert {
   question: string;
@@ -78,17 +84,49 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
     });
   };
 
+  const now = useNow(15_000);
+  const nameOf = (id: string) =>
+    id === activePlayer.id ? 'You' : players.find((p) => p.id === id)?.nickname ?? id;
+
+  // Time's-up and result posts use wall-clock times, so they sort in with chat messages
   type TimelineItem =
     | { kind: 'msg'; at: number; msg: ChatMessage }
-    | { kind: 'market'; at: number; market: Market };
+    | { kind: 'market'; at: number; market: Market }
+    | { kind: 'timeup'; at: number; market: Market }
+    | { kind: 'result'; at: number; market: Market };
   const timeline: TimelineItem[] = [
     ...chatMessages.map((msg) => ({ kind: 'msg' as const, at: msg.created_at, msg })),
-    ...allMarkets.map((market) => ({
-      kind: 'market' as const,
-      at: marketSeenAt.current!.get(market.id)!,
-      market,
-    })),
+    // The "new bet" card is replaced by the time's-up / result post once those happen
+    ...allMarkets
+      .filter((m) => !isAwaitingResult(m, now) && m.state !== 'settled' && m.state !== 'void')
+      .map((market) => ({
+        kind: 'market' as const,
+        at: marketSeenAt.current!.get(market.id)!,
+        market,
+      })),
+    ...allMarkets
+      .filter((m) => isAwaitingResult(m, now))
+      .map((market) => ({ kind: 'timeup' as const, at: market.closes_at_wall_ms!, market })),
+    ...allMarkets
+      .filter((m) => m.state === 'settled' && m.settled_at_wall_ms != null)
+      .map((market) => ({ kind: 'result' as const, at: market.settled_at_wall_ms!, market })),
   ].sort((a, b) => a.at - b.at);
+
+  // Chime when a bet's time runs out or a result comes in (not for ones already done on load)
+  const announced = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    const keys = allMarkets.flatMap((m) => [
+      ...(isAwaitingResult(m, now) ? [`due:${m.id}`] : []),
+      ...(m.state === 'settled' ? [`done:${m.id}`] : []),
+    ]);
+    if (announced.current === null) {
+      announced.current = new Set(keys);
+      return;
+    }
+    const fresh = keys.filter((k) => !announced.current!.has(k));
+    fresh.forEach((k) => announced.current!.add(k));
+    if (fresh.length > 0) sfx.playCatAlert();
+  }, [allMarkets, now]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Keep the newest message in view
@@ -184,7 +222,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
         {timeline.map((item) => {
           if (item.kind === 'market') {
             const mk = item.market;
-            const joinable = JOINABLE_STATES.has(mk.state);
+            const joinable = JOINABLE_STATES.has(mk.state) && !isAwaitingResult(mk, now);
             return (
               <button
                 key={`mkt-${mk.id}`}
@@ -196,13 +234,71 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
                 <PixelMascot size={30} />
                 <span style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                   <span className="pixel-font chat-market-card__kicker">
-                    {joinable ? 'NEW BET OPEN' : mk.state.replace(/_/g, ' ').toUpperCase()}
+                    {joinable ? 'NEW BET OPEN' : marketStatusLine(mk, now).toUpperCase()}
                   </span>
                   <span className="chat-market-card__question">{mk.question}</span>
                 </span>
                 {joinable && !joined.has(mk.id) && (
                   <HintBubble text="CLICK TO JOIN" placement="inline" />
                 )}
+                <Icon name="arrow-right" size={16} />
+              </button>
+            );
+          }
+          if (item.kind === 'timeup') {
+            const mk = item.market;
+            const resolver = mk.arbiter_id ?? mk.proposer_id;
+            const mine = resolver === activePlayer.id;
+            return (
+              <button
+                key={`due-${mk.id}`}
+                type="button"
+                className="chat-market-card chat-market-card--due"
+                onClick={() => joinMarket(mk.id)}
+                title="Open this bet"
+              >
+                <PixelMascot size={30} showExclamation={mine} />
+                <span style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                  <span className="pixel-font chat-market-card__kicker">
+                    TIME'S UP · {mine ? 'WHAT HAPPENED?' : `WAITING FOR ${nameOf(resolver).toUpperCase()}`}
+                  </span>
+                  <span className="chat-market-card__question">{mk.question}</span>
+                </span>
+                {mine && <HintBubble text="ENTER RESULT" placement="inline" />}
+                <Icon name="arrow-right" size={16} />
+              </button>
+            );
+          }
+          if (item.kind === 'result') {
+            const mk = item.market;
+            const pnl = Object.entries(mk.settlement_pnl ?? {})
+              .filter(([, v]) => v !== 0)
+              .sort((a, b) => b[1] - a[1]);
+            return (
+              <button
+                key={`res-${mk.id}`}
+                type="button"
+                className="chat-market-card chat-market-card--result"
+                onClick={() => joinMarket(mk.id)}
+                title="See the results"
+              >
+                <PixelMascot size={30} />
+                <span style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                  <span className="pixel-font chat-market-card__kicker">
+                    FINAL RESULT
+                  </span>
+                  <span className="chat-market-card__question">{mk.question}</span>
+                  <span className="pixel-font chat-market-card__outcome">
+                    RESULT: {describeOutcome(mk)}
+                  </span>
+                  <span className="chat-market-card__pnl">
+                    {pnl.length === 0
+                      ? 'No money changed hands'
+                      : pnl
+                          .map(([id, v]) => `${nameOf(id)} ${v > 0 ? 'won' : 'lost'} ${Math.abs(v)} CHIP`)
+                          .join(' · ')}
+                  </span>
+                </span>
                 <Icon name="arrow-right" size={16} />
               </button>
             );

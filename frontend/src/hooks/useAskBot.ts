@@ -10,6 +10,14 @@ import {
 import { usePushToTalk } from './usePushToTalk';
 import { sfx } from '../utils/soundEffects';
 import { classifyBotRequest } from '../utils/betDetection';
+
+export const CLOSE_OPTIONS = [
+  { hours: 0.25, label: '15 min' },
+  { hours: 1, label: '1 hour' },
+  { hours: 6, label: '6 hours' },
+  { hours: 24, label: '1 day' },
+  { hours: 72, label: '3 days' },
+];
 import { AppPanel } from '../App';
 
 export interface AskBotOptions {
@@ -58,6 +66,8 @@ export function useAskBot({
   const [inHouseLotStake, setInHouseLotStake] = useState<string>('25');
   const [inHouseUnit, setInHouseUnit] = useState<string>('pit stops');
   const [creatorShowPositionsToAll, setCreatorShowPositionsToAll] = useState<boolean>(true);
+  // When betting closes (hours from launch); after that the creator enters the result
+  const [closeInHours, setCloseInHours] = useState<string>('24');
   const [showCustomizeRules, setShowCustomizeRules] = useState<boolean>(false);
 
   // Custom Arbiter & Stacked Options
@@ -158,6 +168,8 @@ export function useAskBot({
         const c: ClassifyMarketProposal = res.classification;
         setDraft(d);
         setClassification(c);
+        const h = Number(d.deadline_hours) || 24;
+        setCloseInHours(String(CLOSE_OPTIONS.reduce((a, b) => (Math.abs(b.hours - h) < Math.abs(a.hours - h) ? b : a)).hours));
         sfx.playCatAlert();
         setInHousePayoffMode(c.archetype === 'spread' ? 'linear' : d.payoff_mode || 'pot');
         setInHouseLotStake(String(d.lot_stake_k || 25));
@@ -271,6 +283,7 @@ export function useAskBot({
             : finalUnit === '°C'
               ? 24
               : 50,
+        closes_at_wall_ms: Date.now() + (Number(closeInHours) || 24) * 3_600_000,
         toggles: {
           max_lots: 3,
           forced_trading: false,
@@ -364,6 +377,8 @@ export function useAskBot({
 
   return {
     askBot,
+    closeInHours,
+    setCloseInHours,
     activeMarket,
     allMarkets,
     activePlayer,

@@ -6,6 +6,8 @@ import { AuctionStepCard } from './AuctionStepCard';
 import { DepthGraph } from './DepthGraph';
 import { MarketActions } from './MarketActions';
 import { RaceTrack } from './RaceTrack';
+import { ResultPanel } from './ResultPanel';
+import { isAwaitingResult, useNow } from '../../utils/marketTime';
 import { deriveMarketView } from './marketView';
 import { pickFriends } from '../../shared/friends';
 
@@ -37,6 +39,7 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
   standInFriends,
 }) => {
   const [showAdminDrawer, setShowAdminDrawer] = useState<boolean>(false);
+  useNow(15_000); // re-render so betting buttons disappear at the close time
   const [outcomeInput, setOutcomeInput] = useState<string>('5');
 
   const view = useMemo(
@@ -232,6 +235,19 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
           </div>
         )}
 
+        <ResultPanel
+          market={market}
+          players={players}
+          activePlayer={activePlayer}
+          canResolve={
+            isMarketCreator ||
+            market.arbiter_id === activePlayer.id ||
+            (import.meta.env.DEV && standInFriends)
+          }
+          unitLabel={unitLabel}
+          onDispatch={onDispatch}
+        />
+
         <RaceTrack view={view} players={players} activePlayer={activePlayer} />
 
         {isGraphVisibleToGroup && (
@@ -243,7 +259,7 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({
           />
         )}
 
-        {(market.state === 'live' || market.state === 'open') && (
+        {(market.state === 'live' || market.state === 'open') && !isAwaitingResult(market) && (
           <MarketActions
             view={view}
             activePlayer={activePlayer}

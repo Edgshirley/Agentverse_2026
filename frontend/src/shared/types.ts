@@ -90,6 +90,13 @@ export interface Market {
   auction_quiet_Ends_at?: number | null;
   /** Real time the auction closes; resets on every bid. */
   auction_closes_at_wall_ms?: number | null;
+  /** Wall-clock time betting closes; after it the creator enters the result. */
+  closes_at_wall_ms?: number | null;
+  /** Set on settlement so everyone can see the result and who won what. */
+  settled_outcome?: number | null;
+  settled_at_wall_ms?: number | null;
+  /** Net CHIP won (+) or lost (-) per player id. */
+  settlement_pnl?: Record<string, number> | null;
   quote_deadline_at?: number | null;
   version: number; // Optimistic concurrency version
   created_at: number;

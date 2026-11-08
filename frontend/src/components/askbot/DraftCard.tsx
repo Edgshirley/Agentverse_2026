@@ -1,6 +1,6 @@
 import React from 'react';
 import { Icon } from '../Icon';
-import { AskBot } from '../../hooks/useAskBot';
+import { AskBot, CLOSE_OPTIONS } from '../../hooks/useAskBot';
 import { PAYOUT_MODES } from '../market/payouts';
 import { PixelMascot } from '../PixelMascot';
 
@@ -32,6 +32,8 @@ export const DraftCard: React.FC<{ bot: AskBot }> = ({ bot }) => {
     setParentMarketId,
     activePlayer,
     handleConfirmLaunchMarket,
+    closeInHours,
+    setCloseInHours,
   } = bot;
 
   if (!draft || !classification) return null;
@@ -120,6 +122,21 @@ export const DraftCard: React.FC<{ bot: AskBot }> = ({ bot }) => {
         <span className="badge-outline">
           {creatorShowPositionsToAll ? 'Positions & Stops: Visible' : 'Positions & Stops: Hidden'}
         </span>
+        <label className="badge-outline" style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+          Closes in
+          <select
+            value={closeInHours}
+            onChange={(e) => setCloseInHours(e.target.value)}
+            aria-label="Betting closes in"
+            style={{ padding: '2px 4px', fontSize: 11 }}
+          >
+            {CLOSE_OPTIONS.map((o) => (
+              <option key={o.hours} value={String(o.hours)}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       {/* Expandable Rules Drawer — only opens when the user wants to tweak defaults */}

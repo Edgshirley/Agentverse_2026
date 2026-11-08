@@ -6,8 +6,12 @@ export function deriveMarketView(bundle: ActiveMarketBundle, activePlayer: Playe
   const { market, positions, orders, mmEscrowToks, widthBids } = bundle;
   const isSpread = market.archetype === 'spread';
   const openOrders = orders.filter((o) => o.status === 'open');
-  const unitLabel =
-    market.unit && market.unit !== 'binary' && market.unit !== '%' ? market.unit : '°C';
+  // Yes/no bets are priced as the chance of YES in %; window bets use their own unit
+  const unitLabel = !isSpread
+    ? '%'
+    : market.unit && market.unit !== 'binary' && market.unit !== '%'
+      ? market.unit
+      : 'units';
 
   const myPositions = positions.filter((p) => p.player_id === activePlayer.id);
   const myActivePos = myPositions.find((p) => p.lots > 0 || p.live_equity_toks > 0);
@@ -17,9 +21,7 @@ export function deriveMarketView(bundle: ActiveMarketBundle, activePlayer: Playe
 
   const currentUnitCenter = isSpread
     ? Math.round(((market.L ?? 3) + (market.H ?? 5)) / 2)
-    : market.live_implied_value <= 35
-      ? market.live_implied_value
-      : 24;
+    : Math.round(market.live_implied_value);
 
   return {
     market,

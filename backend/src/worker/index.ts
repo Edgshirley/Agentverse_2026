@@ -27,6 +27,16 @@ import { MESSAGE_BUS } from '../backend/bus';
 export { globalStore, EdgeStateStore } from './db';
 export { config, PostgresConnectionSingleton, REDIS, MESSAGE_BUS };
 
+/** Betting closes at the market's close time; the result is entered after that. */
+function assertBettingOpen(market: Market): void {
+  if (market.state === 'settled' || market.state === 'void') {
+    throw new Error('This bet is finished.');
+  }
+  if (market.closes_at_wall_ms != null && Date.now() >= market.closes_at_wall_ms) {
+    throw new Error("Betting has closed on this one. Waiting for the result.");
+  }
+}
+
 export const app = new Hono<{ Bindings: Env }>();
 
 app.use('/api/*', cors());
@@ -299,6 +309,10 @@ app.post('/api/markets', async (c) => {
       },
       version: 1,
       created_at: now,
+      closes_at_wall_ms:
+        body.closes_at_wall_ms != null && Number.isFinite(Number(body.closes_at_wall_ms))
+          ? Number(body.closes_at_wall_ms)
+          : null,
     };
 
     if (archetype === 'spread') {
@@ -480,6 +494,7 @@ app.post('/api/markets/:id/take', async (c) => {
     }>();
     const validPlayerId = ensurePlayerRegistered(playerId);
     const mkt = globalStore.engine.getMarket(marketId);
+    assertBettingOpen(mkt);
     if (
       mkt.archetype === 'spread' &&
       mkt.mm_player_id === validPlayerId &&
@@ -593,6 +608,7 @@ app.post('/api/markets/:id/orders', async (c) => {
     globalStore.clock.advance(250);
     const key = idempotencyKey || `ord_${marketId}_${validPlayerId}_${globalStore.clock.now()}`;
     const mkt = globalStore.engine.getMarket(marketId);
+    assertBettingOpen(mkt);
     const res = globalStore.engine.poolBook.placeOrder(
       mkt,
       validPlayerId,
@@ -813,6 +829,7 @@ app.post('/api/markets/:id/strategy/activate', async (c) => {
     const now = globalStore.clock.now();
     const validPlayerId = ensurePlayerRegistered(body.player_id || 'you');
     const mkt = globalStore.engine.getMarket(marketId);
+    assertBettingOpen(mkt);
     if (
       mkt.archetype === 'spread' &&
       mkt.mm_player_id === validPlayerId &&
@@ -1024,11 +1041,18 @@ app.post('/api/markets/:id/resolve/settle', async (c) => {
     const marketId = c.req.param('id');
     const { outcomeX } = await c.req.json<{ outcomeX: number }>();
     globalStore.clock.advance(250);
-    globalStore.engine.settleMarket(
+    const { market: settled, netPnlByPlayer } = globalStore.engine.settleMarket(
       marketId,
       Number(outcomeX),
       `settle_${marketId}_${globalStore.clock.now()}`
     );
+    // Keep the result and everyone's win/loss on the market for the results card + chat
+    globalStore.engine.createMarket({
+      ...settled,
+      settled_outcome: Number(outcomeX),
+      settled_at_wall_ms: Date.now(),
+      settlement_pnl: { ...netPnlByPlayer },
+    });
     globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));

@@ -30,7 +30,7 @@ export const DepthGraph: React.FC<DepthGraphProps> = ({ view, players, activePla
   }, [market.id]);
 
   const ladderStep =
-    market.unit === 'pit stops' || market.unit === 'laps' ? 1 : isSpread ? 3 : 1;
+    market.unit === 'pit stops' || market.unit === 'laps' ? 1 : isSpread ? 3 : 5; // yes/no: 5% steps
 
   const baseLevels = [
     currentUnitCenter + ladderStep * 3,

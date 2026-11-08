@@ -27,3 +27,22 @@ export function looksLikeBetProposal(text: string): boolean {
   const asksOutcome = OUTCOME_QUESTION.test(t) || t.endsWith('?');
   return asksOutcome && EVENT_WORDS.test(t);
 }
+
+// ---------------------------------------------------------------------------
+// Single bot type box: decide whether a request makes a NEW bet or sets a
+// STRATEGY (stake / side / sell / stop) on the open market. Rules only.
+// ---------------------------------------------------------------------------
+
+const NEW_MARKET =
+  /\b(make a (market|bet)|new (market|bet)|create|start a (bet|market)|let'?s bet on|i want to (bet on|make)|market (for|on)|who wins|will it|how many|internal company bet|stacked bet)\b/i;
+
+const STRATEGY =
+  /\b(sell (at|if|when)|take[- ]?profit|cash out|stop(-| )?loss|stop me( out)?|stops?\b|floor|put \d+|bet \d+|\d+\s*chips? on|on (above|below|over|under|yes|no)\b|go (above|below|over|under|long|short)|right now)\b/i;
+
+export function classifyBotRequest(
+  text: string,
+  hasActiveMarket: boolean
+): 'propose' | 'strategy' {
+  if (!hasActiveMarket || NEW_MARKET.test(text)) return 'propose';
+  return STRATEGY.test(text) ? 'strategy' : 'propose';
+}

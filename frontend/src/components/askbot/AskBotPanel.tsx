@@ -1,5 +1,4 @@
 import React from 'react';
-import { Icon } from '../Icon';
 import { AskBotOptions, useAskBot } from '../../hooks/useAskBot';
 import { AskBotOrb } from './AskBotOrb';
 import { BotPromptBox } from './BotPromptBox';
@@ -21,11 +20,8 @@ export const AskBotPanel: React.FC<AskBotPanelProps> = ({
   const bot = useAskBot(props);
   const {
     activeMarket,
-    allMarkets,
     intentMode,
-    setIntentMode,
     gateError,
-    setGateError,
     draft,
     classification,
     showRiskGateCard,
@@ -37,32 +33,6 @@ export const AskBotPanel: React.FC<AskBotPanelProps> = ({
         <HintBubble text="CLICK TO TALK" placement="stacked" onClick={onTalkHintSeen} />
       )}
       <AskBotOrb bot={bot} needsFirstTap={showTalkHint} onFirstTap={onTalkHintSeen} />
-
-      {/* Mode Switcher Pills */}
-      {allMarkets.length > 0 && (
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <button
-            className={intentMode === 'propose' ? 'btn-brand' : ''}
-            onClick={() => {
-              setIntentMode('propose');
-              setGateError(null);
-            }}
-          >
-            <Icon name="plus" size={14} />
-            NEW
-          </button>
-          <button
-            className={intentMode === 'strategy' ? 'btn-mint' : ''}
-            onClick={() => {
-              setIntentMode('strategy');
-              setGateError(null);
-            }}
-          >
-            <Icon name="target" size={14} />
-            STRATEGY
-          </button>
-        </div>
-      )}
 
       <BotPromptBox bot={bot} />
 

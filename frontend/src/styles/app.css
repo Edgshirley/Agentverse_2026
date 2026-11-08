@@ -1594,3 +1594,68 @@ button:disabled {
   left: calc(50% - 5px);
   background-color: var(--pastel-gold-bg);
 }
+
+/* ============================================================================
+ * Chat market announcements, rail divider, see-through chat
+ * ============================================================================ */
+
+/* Compact bubble inside a row (no tail), e.g. CLICK TO JOIN on a chat market card */
+.hint-bubble--inline {
+  position: relative;
+  flex-shrink: 0;
+  padding: 4px 8px 4px 5px;
+  font-size: 9.5px;
+}
+.hint-bubble--inline::before,
+.hint-bubble--inline::after {
+  display: none;
+}
+.hint-bubble--inline .hint-bubble__bang {
+  width: 16px;
+  height: 16px;
+  font-size: 11px;
+}
+
+.chat-market-card {
+  align-self: center;
+  width: min(100%, 520px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  background-color: var(--bg-elevated);
+  color: var(--fg-primary);
+  box-shadow: 3px 3px 0px var(--pixel-shadow);
+  font-weight: 600;
+}
+.chat-market-card.joinable {
+  border-color: var(--pastel-gold-border);
+  background-color: var(--pastel-gold-bg);
+  color: var(--pastel-gold-text);
+}
+.chat-market-card__kicker {
+  display: block;
+  font-size: 9.5px;
+  opacity: 0.85;
+  margin-bottom: 2px;
+}
+.chat-market-card__question {
+  display: block;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Dashed line between the bets list (market area) and the cat + type box */
+.rail-bot {
+  border-top: 2px dashed var(--border-strong);
+  padding-top: 14px;
+}
+
+/* Let the floating card / chip background show through the chat box */
+.chat-feed-box {
+  background-color: color-mix(in srgb, var(--bg-panel) 55%, transparent);
+}

@@ -9,6 +9,7 @@ import {
 } from '../shared/types';
 import { usePushToTalk } from './usePushToTalk';
 import { sfx } from '../utils/soundEffects';
+import { classifyBotRequest } from '../utils/betDetection';
 import { AppPanel } from '../App';
 
 export interface AskBotOptions {
@@ -46,9 +47,8 @@ export function useAskBot({
   const [gateError, setGateError] = useState<string | null>(null);
 
   // Market Creation (Agent 1 Intake -> Agent 2 Classifier)
-  const [proposeInput, setProposeInput] = useState<string>(
-    'I want to make a market for pit stops in the f1 race tomorrow'
-  );
+  // One type box for everything: `askBot` decides new bet vs strategy by rules
+  const [proposeInput, setProposeInput] = useState<string>('');
   const [draft, setDraft] = useState<DraftMarketProposal | null>(null);
   const [classification, setClassification] = useState<ClassifyMarketProposal | null>(null);
 
@@ -115,14 +115,19 @@ export function useAskBot({
   }, [activeMarket, parentMarketId]);
 
   const ptt = usePushToTalk((transcript) => {
-    if (intentMode === 'propose') {
-      setProposeInput(transcript);
-      handleSendToBot('propose', transcript);
-    } else {
-      setStrategyInput(transcript);
-      handleSendToBot('strategy', transcript);
-    }
+    setProposeInput(transcript);
+    askBot(transcript);
   });
+
+  /** Single entry point for the type box and voice: routes to new bet or strategy. */
+  const askBot = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const mode = classifyBotRequest(trimmed, !!activeMarket);
+    setIntentMode(mode);
+    if (mode === 'strategy') setStrategyInput(trimmed);
+    handleSendToBot(mode, trimmed);
+  };
 
   const handleSendToBot = async (
     modeOverride?: 'propose' | 'strategy',
@@ -342,6 +347,7 @@ export function useAskBot({
       : 'orb-stage';
 
   return {
+    askBot,
     activeMarket,
     allMarkets,
     activePlayer,

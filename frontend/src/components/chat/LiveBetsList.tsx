@@ -10,7 +10,6 @@ interface LiveBetsListProps {
   allMarkets: Market[];
   onSelectMarket: (marketId: string) => void;
   onOpenPanel: (panel: AppPanel) => void;
-  onNewBet: () => void;
 }
 
 export const LiveBetsList: React.FC<LiveBetsListProps> = ({
@@ -18,7 +17,6 @@ export const LiveBetsList: React.FC<LiveBetsListProps> = ({
   allMarkets,
   onSelectMarket,
   onOpenPanel,
-  onNewBet,
 }) => {
   return (
     <div className="live-bets-list">
@@ -33,10 +31,6 @@ export const LiveBetsList: React.FC<LiveBetsListProps> = ({
           <Icon name="chart" />
           {allMarkets.length}
         </span>
-        <button className="btn-mint pixel-font" onClick={onNewBet}>
-          <Icon name="plus" size={14} />
-          BET
-        </button>
       </div>
 
       {allMarkets.length === 0 ? (

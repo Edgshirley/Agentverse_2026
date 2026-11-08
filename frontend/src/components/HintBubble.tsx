@@ -3,7 +3,7 @@ import React from 'react';
 interface HintBubbleProps {
   text: string;
   /** Where the bubble sits relative to the thing it points at. */
-  placement: 'below-right' | 'above' | 'stacked';
+  placement: 'below-right' | 'above' | 'stacked' | 'inline';
   onClick?: () => void;
 }
 

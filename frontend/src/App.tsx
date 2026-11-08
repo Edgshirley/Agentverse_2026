@@ -99,7 +99,7 @@ export const App: React.FC = () => {
   const [showUnitLadder, setShowUnitLadder] = useState<boolean>(true);
   const [mobilePane, setMobilePane] = useState<MobilePane>('chat');
   const [betDrawerOpen, setBetDrawerOpen] = useState<boolean>(false);
-  const [newBetRequest, setNewBetRequest] = useState<number>(0);
+  const [newBetRequest] = useState<number>(0);
 
   // Player Profile State: 6 Cat Avatars + Custom or Auto-Generated Themed Gamer Name.
   // Saved in this browser's localStorage for now (see TEAM_TASKS.md: move to the server profile later).
@@ -156,11 +156,6 @@ export const App: React.FC = () => {
     setBetDrawerOpen(false);
     setMobilePane(panel === 'askbot' ? 'bot' : 'chat');
   }, []);
-
-  const startNewBet = useCallback(() => {
-    openPanel('askbot');
-    setNewBetRequest((n) => n + 1);
-  }, [openPanel]);
 
   if (authStatus === 'anonymous') {
     return (
@@ -385,6 +380,8 @@ export const App: React.FC = () => {
             onDispatch={handleDispatchWithSound}
             onOpenPanel={openPanel}
             standInFriends={standInFriends}
+            allMarkets={markets}
+            onSelectMarket={setSelectedMarketId}
           />
         </section>
 
@@ -395,7 +392,6 @@ export const App: React.FC = () => {
               allMarkets={markets}
               onSelectMarket={setSelectedMarketId}
               onOpenPanel={openPanel}
-              onNewBet={startNewBet}
             />
             {activeBundle && !['settled', 'void'].includes(activeBundle.market.state) && (
               <OutsideOddsPanel marketId={activeBundle.market.id} />

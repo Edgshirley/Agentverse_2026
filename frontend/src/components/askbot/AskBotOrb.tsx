@@ -9,7 +9,7 @@ export const AskBotOrb: React.FC<{
   needsFirstTap?: boolean;
   onFirstTap?: () => void;
 }> = ({ bot, needsFirstTap = false, onFirstTap }) => {
-  const { orbClass, ptt, intentMode, proposeInput, strategyInput, isProcessing } = bot;
+  const { orbClass, ptt, proposeInput, isProcessing } = bot;
 
   return (
     <div
@@ -19,7 +19,10 @@ export const AskBotOrb: React.FC<{
       aria-label={ptt.isRecording ? 'Stop and send' : 'Click to talk to the bot'}
       onClick={() => {
         if (needsFirstTap) onFirstTap?.();
-        ptt.toggleRecording(intentMode === 'propose' ? proposeInput : strategyInput);
+        // Without speech support the typed text (or a sample bet) stands in for voice
+        ptt.toggleRecording(
+          proposeInput.trim() || 'I want to make a market for pit stops in the f1 race tomorrow'
+        );
       }}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {

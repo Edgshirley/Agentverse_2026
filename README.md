@@ -50,35 +50,35 @@ Agentverse_2026/
 
 ---
 
-## Makefile & Docker Compose (`dev` & `prod`)
+## Dev Stack (`make dev`) — FastAPI + Keycloak
+
+Modelled on `../freevo-api`. `make dev` runs `docker compose --env-file dev.env -f docker-compose.dev.yml up --build`:
+
+| Service      | Port  | Role |
+|--------------|-------|------|
+| `frontend`   | 5173  | Vite UI; proxies `/api` (HTTP + WebSocket) to `api` |
+| `api`        | 8000  | **FastAPI** (`api/`): Keycloak login, Redis cookie sessions, Postgres users, `/api/v1/ws` WebSocket, authenticated gateway to the engine |
+| `keycloak`   | 8080  | Identity provider (console: `admin` / `admin`) — dev compose only |
+| `kc-config`  | —     | One-shot: creates the `spread-api` / `spread-ui` clients, users, writes the client secret to `spread-storage/shared` |
+| `db-migrate` | —     | One-shot: `python -m src.migrate` (advisory-locked, additive schema sync) |
+| `engine`     | (4000, internal) | TypeScript rules engine (`backend/`), reachable only from `api`; publishes every state change on the Redis bus |
+| `postgres`, `redis` | 5432, 6379 | Users + engine snapshots; sessions (db 2) + message bus |
+| `seed`       | —     | Resets the engine to a clean ring |
+
+Open http://localhost:5173 and log in as `alice` / `bob` / `carol` / `dave` (password `spread123`).
+
+**Auth flow:** `GET /api/v1/system/login` → Keycloak (authorization code + PKCE, `spread-ui`) → `GET /api/v1/system/callback` stores the tokens in Redis and sets an httpOnly `session_id` cookie. Every other `/api/*` call requires that cookie; the gateway introspects the token (`spread-api`), refreshes it when expired, and overwrites `playerId` / `player_id` / `proposer_id` in JSON bodies with the caller's own player id before forwarding to the engine.
+
+**Realtime:** engine mutation → Redis `BUS_CHANNEL` → `ws_worker` in each API replica → browsers on `/api/v1/ws` (cookie-authenticated). The UI refetches `/api/state` on each frame and falls back to polling without a socket.
 
 ```bash
-# Start development stack (backend :4000, frontend :5173, Python seed)
-make dev
-
-# Stop development stack
-make dev-down
-
-# Start production stack (backend :4000, frontend :3000)
-make prod
-
-# Stop production stack
-make prod-down
+make dev        # start everything
+make dev-down   # stop
+make api-test   # FastAPI unit tests (no stack needed)
+python api/tests/live_login_check.py   # end-to-end check against the running stack
 ```
 
-### 1. Development (`docker-compose.dev.yml`)
-Mounts `./backend` into the `backend` container (`:4000`), mounts `./frontend` into the `frontend` container (`:5173`), and runs the Python `seed` container ([`backend/scripts/seed_dev.py`](file:///Users/andreas/Documents/Agentverse_2026/backend/scripts/seed_dev.py)) once the backend healthcheck passes:
-
-```bash
-docker compose -f docker-compose.dev.yml up --build
-```
-
-### 2. Production (`docker-compose.prod.yml`)
-Builds production images for `backend` (`:4000`) and `frontend` (`:3000`) without the dev `seed` container:
-
-```bash
-docker compose -f docker-compose.prod.yml up --build -d
-```
+**Production** (`make prod`, env from `prod.env`, template in `prod.env.example`) runs the same services without `kc-config`/`seed`, published on loopback only for the host's reverse proxy: UI `127.0.0.1:3900`, FastAPI `127.0.0.1:8900`, Keycloak `127.0.0.1:8980` (`start`, `KC_HOSTNAME` = public URL). Engine, Postgres and Redis (password-protected) stay on the compose network. Create the `spread-api` / `spread-ui` clients once in the Keycloak console and set `KEYCLOAK_CLIENT_SECRET`.
 
 ---
 

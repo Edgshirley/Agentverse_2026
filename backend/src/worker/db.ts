@@ -5,6 +5,10 @@
 import { DeterministicClock } from '../engine/clock';
 import { SpreadEngine } from '../engine/state_machine';
 import { Group, Market } from '../shared/types';
+import { PostgresConnectionSingleton } from '../backend/postgres';
+import { REDIS } from '../backend/redis';
+import { MESSAGE_BUS } from '../backend/bus';
+import { config } from '../config';
 
 export interface Env {
   DB?: D1Database;
@@ -245,7 +249,8 @@ export class EdgeStateStore {
 
   public notifyListeners(
     type: StateUpdateNotification['type'] = 'STATE_UPDATED',
-    marketId?: string
+    marketId?: string,
+    actionSummary?: string
   ): void {
     const payload: StateUpdateNotification = {
       type,
@@ -259,6 +264,29 @@ export class EdgeStateStore {
       } catch {
         // Ignore individual listener errors
       }
+    }
+
+    // Publish on the Redis bus -> FastAPI ws_worker -> browser WebSockets.
+    // Clients refetch /api/state for their own market, so no state blob here.
+    try {
+      const terminalPayload = this.getTerminalStatePayload(marketId);
+      const latestTrace = terminalPayload.activeBundle?.wireTrace?.[0] || null;
+      void MESSAGE_BUS()
+        .publish({
+          type,
+          action: actionSummary || latestTrace?.action || type,
+          timestamp: new Date().toISOString(),
+          data: {
+            type,
+            marketId: marketId || terminalPayload.activeBundle?.market?.id,
+            stateVersion: this.stateVersion,
+            serverClockMs: this.clock.now(),
+            latestTrace,
+          },
+        })
+        .catch(() => {});
+    } catch {
+      // Non-fatal if bus is initializing
     }
   }
 
@@ -977,6 +1005,121 @@ export class EdgeStateStore {
     } catch {
       // Non-fatal in environments without D1 binding
     }
+
+    // Also persist to PostgreSQL (`PostgresConnectionSingleton`) and Redis (`db=2`)
+    await this.persistToPostgresAndRedis();
+  }
+
+  /**
+   * Synchronizes the deterministic engine state to PostgreSQL (`market_state_snapshots`)
+   * and caches the active state in Redis (`db=2`) following ../freevo-api patterns.
+   */
+  public async persistToPostgresAndRedis(): Promise<void> {
+    const replayIndices: Record<string, number> = {};
+    for (const [k, v] of this.replayIndexByMarket.entries()) {
+      replayIndices[k] = v;
+    }
+
+    const snapshotPayloadObj = {
+      group: this.group,
+      stateVersion: this.stateVersion,
+      replayIndices,
+      engineSnapshot: this.engine.exportSnapshot(),
+    };
+    const snapshotJson = JSON.stringify(snapshotPayloadObj);
+
+    // 1. Cache in Redis (db=2)
+    if (config.REDIS_ENABLED) try {
+      await REDIS.set('spread:latest_snapshot', snapshotJson);
+      await REDIS.set('spread:state_version', String(this.stateVersion));
+    } catch {
+      // Non-fatal if Redis is offline
+    }
+
+    // 2. Persist in PostgreSQL (table created by the API's db-migrate)
+    if (config.POSTGRES_ENABLED) try {
+      const pool = PostgresConnectionSingleton.getInstance();
+      await pool.query(
+        `CREATE TABLE IF NOT EXISTS market_state_snapshots (
+           id TEXT PRIMARY KEY,
+           game_id TEXT NOT NULL,
+           seq INTEGER NOT NULL DEFAULT 0,
+           state_json JSONB NOT NULL,
+           updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+         )`
+      );
+      await pool.query(
+        `INSERT INTO market_state_snapshots (id, game_id, seq, state_json, updated_at)
+         VALUES ($1, $2, $3, $4::jsonb, NOW())
+         ON CONFLICT (id) DO UPDATE SET
+           game_id = EXCLUDED.game_id,
+           seq = EXCLUDED.seq,
+           state_json = EXCLUDED.state_json,
+           updated_at = NOW()`,
+        ['singleton', this.group.id, this.stateVersion, snapshotJson]
+      );
+    } catch {
+      // Non-fatal in offline unit test environments without Postgres running
+    }
+  }
+
+  /**
+   * Restores state from PostgreSQL (`market_state_snapshots`) or Redis (`db=2`) at startup.
+   */
+  public async hydrateFromPostgresOrRedis(): Promise<boolean> {
+    // 1. Try PostgreSQL first
+    if (config.POSTGRES_ENABLED) try {
+      const pool = PostgresConnectionSingleton.getInstance();
+      const res = await pool.query<{ seq: number; state_json: any }>(
+        `SELECT seq, state_json FROM market_state_snapshots WHERE id = $1`,
+        ['singleton']
+      );
+      if (res.rows.length > 0 && res.rows[0].state_json) {
+        const parsed =
+          typeof res.rows[0].state_json === 'string'
+            ? JSON.parse(res.rows[0].state_json)
+            : res.rows[0].state_json;
+        if (parsed.engineSnapshot) {
+          this.group = parsed.group ?? this.group;
+          this.stateVersion = parsed.stateVersion ?? res.rows[0].seq ?? 1;
+          if (typeof parsed.engineSnapshot.clockNow === 'number') {
+            this.clock.set(parsed.engineSnapshot.clockNow);
+          }
+          this.replayIndexByMarket.clear();
+          for (const [k, v] of Object.entries(parsed.replayIndices ?? {})) {
+            this.replayIndexByMarket.set(k, Number(v));
+          }
+          this.engine.importSnapshot(parsed.engineSnapshot);
+          return true;
+        }
+      }
+    } catch {
+      // Fall back to Redis or D1
+    }
+
+    // 2. Try Redis (db=2) cache
+    if (config.REDIS_ENABLED) try {
+      const cached = await REDIS.get('spread:latest_snapshot');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.engineSnapshot) {
+          this.group = parsed.group ?? this.group;
+          this.stateVersion = parsed.stateVersion ?? 1;
+          if (typeof parsed.engineSnapshot.clockNow === 'number') {
+            this.clock.set(parsed.engineSnapshot.clockNow);
+          }
+          this.replayIndexByMarket.clear();
+          for (const [k, v] of Object.entries(parsed.replayIndices ?? {})) {
+            this.replayIndexByMarket.set(k, Number(v));
+          }
+          this.engine.importSnapshot(parsed.engineSnapshot);
+          return true;
+        }
+      }
+    } catch {
+      // Ignore
+    }
+    return false;
   }
 
   /**

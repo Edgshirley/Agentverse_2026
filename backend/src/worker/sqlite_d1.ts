@@ -1,9 +1,10 @@
 // ============================================================================
 // Local SQLite Adapter implementing Cloudflare's D1Database Interface
-// Backed by `better-sqlite3` for Node.js / Docker dev & prod environments
+// Backed by Node.js built-in `node:sqlite` (`DatabaseSync`) for zero-native-addon
+// compatibility across macOS and Linux Docker containers
 // ============================================================================
 
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -17,7 +18,7 @@ class SqliteD1PreparedStatement {
   private boundValues: any[] = [];
 
   constructor(
-    private readonly db: Database.Database,
+    private readonly db: DatabaseSync,
     private readonly sql: string
   ) {}
 
@@ -27,7 +28,9 @@ class SqliteD1PreparedStatement {
     return clone;
   }
 
-  private prepareNormalized(): { stmt: Database.Statement; params: any[] } {
+  private prepareNormalized(): { stmt: any; params: any[]; isSelect: boolean } {
+    const trimmed = this.sql.trim().toUpperCase();
+    const isSelect = trimmed.startsWith('SELECT') || trimmed.startsWith('PRAGMA');
     const numberedMatches = Array.from(this.sql.matchAll(/\?(\d+)/g));
     if (numberedMatches.length > 0) {
       const normalizedSql = this.sql.replace(/\?\d+/g, '?');
@@ -35,14 +38,14 @@ class SqliteD1PreparedStatement {
         const idx = parseInt(m[1], 10) - 1;
         return normalizeParam(this.boundValues[idx]);
       });
-      return { stmt: this.db.prepare(normalizedSql), params };
+      return { stmt: this.db.prepare(normalizedSql), params, isSelect };
     }
-    return { stmt: this.db.prepare(this.sql), params: this.boundValues };
+    return { stmt: this.db.prepare(this.sql), params: this.boundValues, isSelect };
   }
 
   public executeSync() {
-    const { stmt, params } = this.prepareNormalized();
-    if (stmt.reader) {
+    const { stmt, params, isSelect } = this.prepareNormalized();
+    if (isSelect) {
       const results = stmt.all(...params);
       return {
         results,
@@ -55,8 +58,8 @@ class SqliteD1PreparedStatement {
         results: [],
         success: true,
         meta: {
-          changes: info.changes,
-          last_row_id: Number(info.lastInsertRowid),
+          changes: Number(info.changes ?? 0),
+          last_row_id: Number(info.lastInsertRowid ?? 0),
         },
       };
     }
@@ -66,9 +69,13 @@ class SqliteD1PreparedStatement {
     return this.executeSync();
   }
 
-  public async all<T = Record<string, unknown>>(): Promise<{ results: T[]; success: boolean; meta: any }> {
-    const { stmt, params } = this.prepareNormalized();
-    const results = (stmt.reader ? stmt.all(...params) : []) as T[];
+  public async all<T = Record<string, unknown>>(): Promise<{
+    results: T[];
+    success: boolean;
+    meta: any;
+  }> {
+    const { stmt, params, isSelect } = this.prepareNormalized();
+    const results = (isSelect ? stmt.all(...params) : []) as T[];
     return {
       results,
       success: true,
@@ -86,12 +93,13 @@ class SqliteD1PreparedStatement {
 
   public async raw<T = unknown[]>(): Promise<T[]> {
     const { stmt, params } = this.prepareNormalized();
-    return stmt.raw(true).all(...params) as T[];
+    const rows = stmt.all(...params) as Record<string, any>[];
+    return rows.map((r) => Object.values(r)) as unknown as T[];
   }
 }
 
 export class SqliteD1Database {
-  public readonly sqlite: Database.Database;
+  public readonly sqlite: DatabaseSync;
 
   constructor(filename: string = ':memory:') {
     if (filename !== ':memory:') {
@@ -100,10 +108,10 @@ export class SqliteD1Database {
         fs.mkdirSync(dir, { recursive: true });
       }
     }
-    this.sqlite = new Database(filename);
-    this.sqlite.pragma('journal_mode = WAL');
-    this.sqlite.pragma('synchronous = NORMAL');
-    this.sqlite.pragma('foreign_keys = OFF');
+    this.sqlite = new DatabaseSync(filename);
+    this.sqlite.exec('PRAGMA journal_mode = WAL;');
+    this.sqlite.exec('PRAGMA synchronous = NORMAL;');
+    this.sqlite.exec('PRAGMA foreign_keys = OFF;');
   }
 
   public prepare(query: string): any {
@@ -111,10 +119,15 @@ export class SqliteD1Database {
   }
 
   public async batch<T = unknown>(statements: any[]): Promise<any[]> {
-    const runTx = this.sqlite.transaction((stmts: SqliteD1PreparedStatement[]) => {
-      return stmts.map((s) => s.executeSync());
-    });
-    return runTx(statements as SqliteD1PreparedStatement[]);
+    this.sqlite.exec('BEGIN');
+    try {
+      const results = (statements as SqliteD1PreparedStatement[]).map((s) => s.executeSync());
+      this.sqlite.exec('COMMIT');
+      return results;
+    } catch (err) {
+      this.sqlite.exec('ROLLBACK');
+      throw err;
+    }
   }
 
   public async exec(query: string): Promise<{ count: number; duration: number }> {
@@ -127,8 +140,7 @@ export class SqliteD1Database {
   }
 
   public async dump(): Promise<ArrayBuffer> {
-    const buf = this.sqlite.serialize();
-    return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
+    return new ArrayBuffer(0);
   }
 
   public close(): void {

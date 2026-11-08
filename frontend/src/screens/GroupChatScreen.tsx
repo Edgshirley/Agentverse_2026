@@ -157,7 +157,7 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
             >
               + SIMULATE FRIEND MESSAGE
             </button>
-            <span className="badge-outline">INVITE: SPREAD-2026</span>
+            <span className="badge-outline">INVITE: MARKETMATE-2026</span>
           </div>
         </div>
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Group, Player } from '../shared/types';
 import { AppScreen } from '../App';
+import { PixelMascot } from './PixelMascot';
 
 interface HeaderBarProps {
   group: Group;
@@ -27,8 +28,9 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     <header className="terminal-header">
       {/* Brand + Group Name */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span className="btn-brand pixel-font" style={{ padding: '5px 12px', fontSize: 13 }}>
-          ♠ SPREAD
+        <span className="brand-lockup">
+          <PixelMascot size={32} />
+          <span className="pixel-font brand-wordmark">MarketMate</span>
         </span>
         <span style={{ fontWeight: 700, fontSize: 13 }}>{group.name}</span>
       </div>

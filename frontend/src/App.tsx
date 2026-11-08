@@ -35,7 +35,7 @@ export const App: React.FC = () => {
   if (loading || !data) {
     return (
       <div className="citadel-shell" data-theme={theme} style={{ padding: 40, textAlign: 'center' }}>
-        <span className="pixel-font">♠ LOADING SPREAD...</span>
+        <span className="pixel-font">LOADING MARKETMATE...</span>
       </div>
     );
   }

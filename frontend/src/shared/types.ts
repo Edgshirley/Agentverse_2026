@@ -1,5 +1,5 @@
 // ============================================================================
-// Friend Spreader (Spread) — Unified Data Model & AI Tool Contract Types
+// MarketMate — Unified Data Model & AI Tool Contract Types
 // ============================================================================
 
 export type MarketArchetype = 'simple' | 'spread' | 'stacked' | 'ranking';

@@ -212,7 +212,7 @@ export class EdgeStateStore {
     this.group = {
       id: 'grp_citadel',
       name: seedDemoFixtures ? 'CITADEL // NORTH LONDON SYNDICATE' : 'FRIENDS BETTING CLUB',
-      invite_code: 'SPREAD-2026',
+      invite_code: 'MARKETMATE-2026',
       created_at: this.clock.now(),
     };
     if (this.seedDemoFixtures) {

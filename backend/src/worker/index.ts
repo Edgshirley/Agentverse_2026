@@ -25,7 +25,7 @@ app.use('/api/*', cors());
 // Root status endpoint when visiting http://localhost:4000/ directly in a browser
 app.get('/', async (c) => {
   return c.json({
-    service: 'Friend Spreader (Spread) — Citadel Poker Terminal Backend API',
+    service: 'MarketMate Backend API',
     status: 'ONLINE',
     stateVersion: globalStore.stateVersion,
     frontendUrl: 'http://localhost:5173',

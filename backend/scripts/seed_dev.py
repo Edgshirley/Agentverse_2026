@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Friend Spreader (Spread) — Dev Environment Python Seeder
+MarketMate — Dev Environment Python Seeder
 Used exclusively by the `seed` container in `docker-compose.dev.yml`.
 """
 
@@ -56,7 +56,7 @@ def run_seed() -> None:
     players = final_state.get("players", [])
 
     print("=" * 72)
-    print(f"SPREAD // CLEAN START READY — {len(players)} PLAYER(S) | {len(markets)} ACTIVE MARKETS")
+    print(f"MARKETMATE // CLEAN START READY — {len(players)} PLAYER(S) | {len(markets)} ACTIVE MARKETS")
     print("=" * 72)
 
 

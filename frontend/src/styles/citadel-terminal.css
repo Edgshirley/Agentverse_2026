@@ -366,6 +366,18 @@ button:disabled {
   background-color: var(--bg-panel);
 }
 
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-wordmark {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--brand-border);
+}
+
 .nav-pills-group {
   display: flex;
   gap: 8px;

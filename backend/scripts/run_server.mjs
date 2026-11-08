@@ -186,6 +186,6 @@ wss.on('connection', (ws, _request, fullUrl) => {
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(
-    `SPREAD // BACKEND ENGINE API + WEBSOCKETS listening on http://0.0.0.0:${PORT} (SQLite: ${SQLITE_DB_PATH}, hydrated=${hydrated})`
+    `MARKETMATE // BACKEND ENGINE API + WEBSOCKETS listening on http://0.0.0.0:${PORT} (SQLite: ${SQLITE_DB_PATH}, hydrated=${hydrated})`
   );
 });

@@ -173,7 +173,7 @@ export async function runAgent1Intake(
     lint?: Partial<LintCriteriaProposal>;
   }>(
     env,
-    `You are Agent 1 (Market Intake & Structuring) for Friend Spreader (Spread).
+    `You are Agent 1 (Market Intake & Structuring) for MarketMate.
 Return JSON with:
 {
   "draft": {
@@ -384,7 +384,7 @@ export async function runAgent2Classifier(
 ): Promise<ClassifyMarketProposal> {
   const aiClass = await callLlmJson<ClassifyMarketProposal>(
     env,
-    `You are Agent 2 (Market Classifier) for Friend Spreader (Spread).
+    `You are Agent 2 (Market Classifier) for MarketMate.
 Classify the market into:
 - archetype: "simple" | "spread" | "stacked" | "ranking"
 - verifiability: "public_verifiable" | "custom_unverifiable" | "social_group"
@@ -507,7 +507,7 @@ export async function parseStrategyRuleWithRiskGate(
     parsed_strategy_summary?: string | null;
   }>(
     env,
-    `You are the Risk Gate Strategy Parser (parse_rule) for Friend Spreader.
+    `You are the Risk Gate Strategy Parser (parse_rule) for MarketMate.
 Extract from the player's transcript:
 - side: "OVER" | "UNDER" | "YES" | "NO"
 - stake_toks: integer TOKS to stake

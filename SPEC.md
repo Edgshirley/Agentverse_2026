@@ -1,4 +1,4 @@
-# Friend Spreader (Spread) — Master Specification
+# MarketMate — Master Specification
 
 **Date:** November 7, 2026  
 **Currency:** Stokens (`TOKS` — play-money "Spread Tokens" only; integer balances, zero monetary value)  
@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary & Core Pillars
 
-**Friend Spreader (Spread)** is a real-time social market-making and continuous trading application where friend groups run spread, binary, scalar, ranking, and stacked derivative markets on anything—from live football matches and tomorrow's weather to private office rankings. An AI multi-agent pipeline drafts markets, classifies payoff and oracle routes, enforces strategy risk guardrails, tracks live feeds, and proposes outcomes, while a deterministic zero-sum engine governs every `TOK`.
+**MarketMate** is a real-time social market-making and continuous trading application where friend groups run spread, binary, scalar, ranking, and stacked derivative markets on anything—from live football matches and tomorrow's weather to private office rankings. An AI multi-agent pipeline drafts markets, classifies payoff and oracle routes, enforces strategy risk guardrails, tracks live feeds, and proposes outcomes, while a deterministic zero-sum engine governs every `TOK`.
 
 1. **Simple, Spread (`[L, H]`), & Stacked Markets** — Supports casual one-line propositions (*"24°C tomorrow"*), width-auction market-making (`[L, H]`), and **stacked (derivative) markets** that settle on the outcome, live odds path, volume, or player P&L of parent markets.
 2. **Continuous Mark-to-Market & Dual Early Exit** — Markets stay live until the underlying event completes. Every trade, limit/stop fill, or withdrawal updates implied odds and each player's `live_equity` in real time. Supports both **P2P lot sales** (standing bids & ask listings for MM spread markets) and **anytime partial/full pool withdrawal** (`live_equity > 0`) for continuous markets.

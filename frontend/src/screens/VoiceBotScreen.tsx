@@ -403,7 +403,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
       {allMarkets.length > 0 && (
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
           <button
-            className={intentMode === 'propose' ? 'btn-coral' : ''}
+            className={intentMode === 'propose' ? 'btn-brand' : ''}
             onClick={() => {
               setIntentMode('propose');
               setGateError(null);
@@ -523,7 +523,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
             style={{ flex: 1, padding: '10px 12px', fontSize: 13.5 }}
           />
           <button
-            className={intentMode === 'propose' ? 'btn-coral pixel-font' : 'btn-mint pixel-font'}
+            className={intentMode === 'propose' ? 'btn-brand pixel-font' : 'btn-mint pixel-font'}
             onClick={() => handleSendToBot()}
             disabled={isProcessing}
             style={{ padding: '0 22px', fontSize: 12 }}

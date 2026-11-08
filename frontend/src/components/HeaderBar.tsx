@@ -27,7 +27,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     <header className="terminal-header">
       {/* Brand + Group Name */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span className="btn-coral pixel-font" style={{ padding: '5px 12px', fontSize: 13 }}>
+        <span className="btn-brand pixel-font" style={{ padding: '5px 12px', fontSize: 13 }}>
           ♠ SPREAD
         </span>
         <span style={{ fontWeight: 700, fontSize: 13 }}>{group.name}</span>

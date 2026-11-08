@@ -220,7 +220,7 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
                 &rdquo;) on the Main Page to make the bet!
               </div>
               <button
-                className="btn-coral pixel-font"
+                className="btn-brand pixel-font"
                 style={{ fontSize: 10, padding: '5px 10px', width: '100%' }}
                 onClick={() => {
                   onNavigateScreen('voice');
@@ -248,7 +248,7 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
             placeholder="Message friends (e.g. 'lets make a bet on f1')..."
             style={{ flex: 1, padding: '8px 12px' }}
           />
-          <button type="submit" className="btn-coral pixel-font">
+          <button type="submit" className="btn-brand pixel-font">
             SEND
           </button>
         </form>
@@ -282,7 +282,7 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
             <p style={{ fontSize: 12, color: 'var(--fg-muted)', marginBottom: 14 }}>
               Type a bet idea in Chat or ask the Tuxedo Cat Bot on the Main Page!
             </p>
-            <button className="btn-coral pixel-font" onClick={() => onNavigateScreen('voice')}>
+            <button className="btn-brand pixel-font" onClick={() => onNavigateScreen('voice')}>
               ASK BOT TO CREATE BET
             </button>
           </div>

@@ -82,7 +82,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
           Ask the Tuxedo Cat Bot to create your first bet (e.g. F1 pit stops window market or
           tomorrow&apos;s temperature).
         </p>
-        <button className="btn-coral pixel-font" onClick={() => onNavigateScreen('voice')}>
+        <button className="btn-brand pixel-font" onClick={() => onNavigateScreen('voice')}>
           ASK BOT TO START A BET -&gt;
         </button>
       </div>
@@ -436,7 +436,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
         : 'READY TO BET',
       pct: Math.min(95, Math.max(18, myLiveBalance > 0 ? Math.round((myLiveBalance / Math.max(100, totalPotSprd)) * 100) : 32)),
       colorClass: 'filled-mint' as const,
-      accentHex: '#5bc49f',
+      accent: 'var(--pastel-mint-border)',
       rightLabel: `${myLiveBalance} SPRD`,
     },
     ...activePositions
@@ -456,7 +456,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
           subtitle: `${pos.side === 'OVER' ? 'ABOVE' : pos.side === 'UNDER' ? 'BELOW' : pos.side} · ${pos.live_equity_toks} SPRD`,
           pct,
           colorClass: idx % 2 === 0 ? ('filled-coral' as const) : ('filled-sky' as const),
-          accentHex: idx % 2 === 0 ? '#e57368' : '#78b7e6',
+          accent: idx % 2 === 0 ? 'var(--pastel-coral-border)' : 'var(--pastel-sky-border)',
           rightLabel: `${pos.live_equity_toks} SPRD`,
         };
       }),
@@ -622,7 +622,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
 
                   {/* 8-Bit Pixel Racer Sprite sitting on top of the active block */}
                   <div className="race-avatar-pin" style={{ left: `${avatarLeftPct}%` }}>
-                    <PixelRacerAvatar accent={item.accentHex} size={22} />
+                    <PixelRacerAvatar accent={item.accent} size={22} />
                   </div>
 
                   {/* 16 Segmented Blocks */}
@@ -639,7 +639,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
                   style={{
                     fontSize: 13,
                     textAlign: 'right',
-                    color: item.accentHex,
+                    color: item.accent,
                   }}
                 >
                   {item.rightLabel}
@@ -657,7 +657,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
             <div className="depth-header-grid">
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingRight: 8 }}>
                 <span style={{ color: 'var(--fg-muted)', fontSize: 10 }}>VOLUME (SPRD)</span>
-                <span style={{ color: '#6bc4a2' }}>
+                <span style={{ color: 'var(--accent-pos)' }}>
                   {isSpread ? '▲ ABOVE / BID' : '✓ YES / BID'}
                 </span>
               </div>
@@ -665,7 +665,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
                 LEVEL ({unitLabel.toUpperCase()})
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 8 }}>
-                <span style={{ color: '#e58585' }}>
+                <span style={{ color: 'var(--accent-neg)' }}>
                   {isSpread ? '▼ BELOW / STOPS' : '✗ NO / STOPS'}
                 </span>
                 <span style={{ color: 'var(--fg-muted)', fontSize: 10 }}>VOLUME (SPRD)</span>

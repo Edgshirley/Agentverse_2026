@@ -76,7 +76,7 @@ export const App: React.FC = () => {
             bottom: '14%',
             left: '6%',
             transform: 'rotate(6deg)',
-            color: '#e58585',
+            color: 'var(--accent-neg)',
             animationDelay: '2.4s',
           }}
         >

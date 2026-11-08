@@ -25,3 +25,12 @@ prod.env
 
 # Keycloak client secret written by make dev
 spread-storage/
+
+# ---- SECRETS: never commit (see INSTRUCTIONS.md) ----
+secrets.env
+*.secrets.env
+.env.*
+!.env.example
+*.pem
+*.key
+service-account*.json

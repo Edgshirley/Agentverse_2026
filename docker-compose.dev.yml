@@ -104,6 +104,10 @@ services:
       dockerfile: Dockerfile
       target: dev
     container_name: marketmate-engine
+    # LLM keys live in git-ignored secrets.env (see INSTRUCTIONS.md)
+    env_file:
+      - path: secrets.env
+        required: false
     expose:
       - "4000"
     environment:
@@ -118,8 +122,8 @@ services:
       - REDIS_HOST=${REDIS_HOST}
       - MESSAGE_BUS=${MESSAGE_BUS}
       - BUS_CHANNEL=${BUS_CHANNEL}
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      # GEMINI_API_KEY / GEMINI_MODEL come from secrets.env (env_file above).
+      # Don't set them here: `environment` overrides env_file, even with an empty value.
     volumes:
       - ./backend:/app
       - /app/node_modules

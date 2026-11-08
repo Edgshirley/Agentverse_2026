@@ -4,6 +4,8 @@ Turn any argument in your group chat into a market. Friends bet play-money `CHIP
 
 ![MarketMate: group chat in the centre, live bets and the bot in the right rail](docs/screenshot.png)
 
+> ⚠️ **Before committing, read [INSTRUCTIONS.md](INSTRUCTIONS.md)** — API keys must never be pushed to GitHub.
+
 ## How a bet works
 
 ```mermaid
@@ -64,7 +66,7 @@ cd backend && npm test
 make api-test
 ```
 
-The bot works without keys using built-in rules. Set `GEMINI_API_KEY` in `dev.env` or `prod.env` for LLM parsing and the outside-odds panel, which uses Google Search to show what other sites say about a market.
+The bot works without keys using built-in rules. Set `GEMINI_API_KEY` in `secrets.env` (dev, copy `secrets.env.example`) or `prod.env` (prod), both git-ignored, never in the committed `dev.env`, for LLM parsing and the outside-odds panel, which uses Google Search to show what other sites say about a market.
 
 ## Dev tools
 

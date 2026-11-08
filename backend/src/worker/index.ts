@@ -370,7 +370,7 @@ app.post('/api/markets/:id/auction/timeout', async (c) => {
       'MARKET_ENGINE',
       'BROADCAST',
       'MM_QUOTE_TIMEOUT_FORFEIT',
-      `MM missed 3m deadline -> forfeited ${market.lot_stake_k} TOKS ante to ${updated.mm_player_id ?? 'VOID'}`
+      `MM missed 3m deadline -> forfeited ${market.lot_stake_k} CHIP ante to ${updated.mm_player_id ?? 'VOID'}`
     );
     globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
@@ -461,7 +461,7 @@ app.post('/api/markets/:id/withdraw', async (c) => {
           refund,
           'PARTIAL_WITHDRAWAL',
           key,
-          `${playerId} withdrew ${refund} SPRD from window market`
+          `${playerId} withdrew ${refund} CHIP from window market`
         );
         const remaining = Math.max(0, pos.staked_toks - refund);
         positions[posIdx] = {
@@ -516,14 +516,14 @@ app.post('/api/markets/:id/orders', async (c) => {
       playerId,
       'LIVE',
       'L',
-      `${type.toUpperCase()} @ ${triggerLevel}% (${sizeToks} TOKS)`
+      `${type.toUpperCase()} @ ${triggerLevel}% (${sizeToks} CHIP)`
     );
     globalStore.engine.emitWireTrace(
       marketId,
       'PLAYER',
       'MARKET_ENGINE',
       `PLACE_${type.toUpperCase()}`,
-      `${playerId.toUpperCase()} placed public ${type.toUpperCase()} on ${side} @ ${triggerLevel}% for ${sizeToks} TOKS`
+      `${playerId.toUpperCase()} placed public ${type.toUpperCase()} on ${side} @ ${triggerLevel}% for ${sizeToks} CHIP`
     );
     globalStore.engine.logCascadesToWireAndSwimlanes(marketId, res.cascades);
     globalStore.bumpVersion(marketId);
@@ -580,7 +580,7 @@ app.post('/api/markets/:id/p2p/bid', async (c) => {
       buyerId,
       'LIVE',
       'L',
-      `P2P Bid ${priceToks} TOKS (1x ${side})`,
+      `P2P Bid ${priceToks} CHIP (1x ${side})`,
       -Number(priceToks)
     );
     globalStore.engine.emitWireTrace(
@@ -588,7 +588,7 @@ app.post('/api/markets/:id/p2p/bid', async (c) => {
       'PLAYER',
       'MARKET_ENGINE',
       'P2P_STANDING_BID',
-      `${buyerId.toUpperCase()} posted standing bid: ${priceToks} TOKS for 1x ${side}`,
+      `${buyerId.toUpperCase()} posted standing bid: ${priceToks} CHIP for 1x ${side}`,
       -Number(priceToks)
     );
     if (res.autoMatchedSale) {
@@ -597,7 +597,7 @@ app.post('/api/markets/:id/p2p/bid', async (c) => {
         res.autoMatchedSale.sellerId,
         'LIVE',
         'W',
-        `Auto-Sold 1x ${side} @ ${res.autoMatchedSale.priceToks} TOKS`,
+        `Auto-Sold 1x ${side} @ ${res.autoMatchedSale.priceToks} CHIP`,
         res.autoMatchedSale.priceToks
       );
     }
@@ -636,8 +636,8 @@ app.post('/api/markets/:id/p2p/ask', async (c) => {
       'LIVE',
       res.autoMatchedSale ? 'W' : 'L',
       res.autoMatchedSale
-        ? `Matched ${orderKind} 1x ${side} @ ${res.autoMatchedSale.priceToks} TOKS`
-        : `${orderKind} 1x ${side} @ ${minPriceToks} TOKS`,
+        ? `Matched ${orderKind} 1x ${side} @ ${res.autoMatchedSale.priceToks} CHIP`
+        : `${orderKind} 1x ${side} @ ${minPriceToks} CHIP`,
       res.autoMatchedSale ? res.autoMatchedSale.priceToks : undefined
     );
     globalStore.engine.emitWireTrace(
@@ -645,7 +645,7 @@ app.post('/api/markets/:id/p2p/ask', async (c) => {
       'PLAYER',
       'MARKET_ENGINE',
       `P2P_${orderKind}`,
-      `${sellerId.toUpperCase()} posted ${orderKind} for 1x ${side} @ ${minPriceToks} TOKS`
+      `${sellerId.toUpperCase()} posted ${orderKind} for 1x ${side} @ ${minPriceToks} CHIP`
     );
     globalStore.bumpVersion(marketId);
     await globalStore.persistToD1(c.env);
@@ -672,7 +672,7 @@ app.post('/api/markets/:id/p2p/cashout', async (c) => {
       sellerId,
       'LIVE',
       'W',
-      `P2P Cash-Out 1x ${side} to ${res.matchedBid.buyer_id.toUpperCase()} (+${res.matchedBid.price_toks} TOKS)`,
+      `P2P Cash-Out 1x ${side} to ${res.matchedBid.buyer_id.toUpperCase()} (+${res.matchedBid.price_toks} CHIP)`,
       res.matchedBid.price_toks
     );
     globalStore.engine.emitWireTrace(
@@ -680,7 +680,7 @@ app.post('/api/markets/:id/p2p/cashout', async (c) => {
       'PLAYER',
       'MARKET_ENGINE',
       'P2P_INSTANT_CASHOUT',
-      `${sellerId.toUpperCase()} cashed out 1x ${side} lot to ${res.matchedBid.buyer_id.toUpperCase()} @ ${res.matchedBid.price_toks} TOKS`,
+      `${sellerId.toUpperCase()} cashed out 1x ${side} lot to ${res.matchedBid.buyer_id.toUpperCase()} @ ${res.matchedBid.price_toks} CHIP`,
       res.matchedBid.price_toks
     );
     globalStore.bumpVersion(marketId);

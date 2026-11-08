@@ -141,7 +141,7 @@ export class SpreadEngine {
         'PLAYER',
         'MARKET_ENGINE',
         'CREATE_MARKET',
-        `[${copy.archetype.toUpperCase()} / ${copy.route.toUpperCase()}] "${copy.question}" (k=${copy.lot_stake_k} TOKS)`
+        `[${copy.archetype.toUpperCase()} / ${copy.route.toUpperCase()}] "${copy.question}" (k=${copy.lot_stake_k} CHIP)`
       );
     }
     return { ...copy };
@@ -283,7 +283,7 @@ export class SpreadEngine {
       'PLAYER',
       'RISK_AGENT',
       `CONFIRM_RISK_GATE_${mandate.input_modality.toUpperCase()}`,
-      `Confirmed 3-part Risk Gate: Summary="${mandate.parsed_strategy_summary}", TP=@${mandate.take_profit_level}, Floor=@${mandate.min_balance_floor} TOKS`
+      `Confirmed 3-part Risk Gate: Summary="${mandate.parsed_strategy_summary}", TP=@${mandate.take_profit_level}, Floor=@${mandate.min_balance_floor} CHIP`
     );
 
     const list = this.mandatesByMarket.get(marketId) ?? [];
@@ -359,7 +359,7 @@ export class SpreadEngine {
           mandate.player_id,
           'OPEN',
           'B',
-          `AI Strategy Entry (${mandate.stake_toks} TOKS)`,
+          `AI Strategy Entry (${mandate.stake_toks} CHIP)`,
           -mandate.stake_toks
         );
 
@@ -394,7 +394,7 @@ export class SpreadEngine {
           mandate.player_id,
           'MID',
           'L',
-          `TP @ ${mandate.take_profit_level} / Floor @ ${mandate.min_balance_floor} TOKS`
+          `TP @ ${mandate.take_profit_level} / Floor @ ${mandate.min_balance_floor} CHIP`
         );
       }
     }
@@ -441,7 +441,7 @@ export class SpreadEngine {
         'PLAYER',
         'MARKET_ENGINE',
         'ONE_TAP_TAKE',
-        `${playerId} took ${lotsOrToks}x ${spreadSide} (${res.position.staked_toks} TOKS escrowed)`,
+        `${playerId} took ${lotsOrToks}x ${spreadSide} (${res.position.staked_toks} CHIP escrowed)`,
         -res.position.staked_toks
       );
       this.syncChildStackedMarkets(marketId, `${idempotencyKey}:stacked`);
@@ -456,7 +456,7 @@ export class SpreadEngine {
         playerId,
         'OPEN',
         'B',
-        `1-Tap ${side} (${stakeToks} TOKS)`,
+        `1-Tap ${side} (${stakeToks} CHIP)`,
         -stakeToks
       );
       this.emitWireTrace(
@@ -464,7 +464,7 @@ export class SpreadEngine {
         'PLAYER',
         'MARKET_ENGINE',
         'ONE_TAP_POOL_ENTRY',
-        `${playerId} entered ${side} for ${stakeToks} TOKS -> odds now ${res.market.live_implied_value}%`,
+        `${playerId} entered ${side} for ${stakeToks} CHIP -> odds now ${res.market.live_implied_value}%`,
         -stakeToks
       );
       this.logCascadesToWireAndSwimlanes(marketId, res.cascades);
@@ -494,7 +494,7 @@ export class SpreadEngine {
       playerId,
       'LIVE',
       code,
-      `${fractionP >= 1 ? 'Exit All' : `Withdraw ${Math.round(fractionP * 100)}%`} (+${res.withdrawnToks} TOKS)`,
+      `${fractionP >= 1 ? 'Exit All' : `Withdraw ${Math.round(fractionP * 100)}%`} (+${res.withdrawnToks} CHIP)`,
       res.withdrawnToks
     );
     this.emitWireTrace(
@@ -502,7 +502,7 @@ export class SpreadEngine {
       'PLAYER',
       'MARKET_ENGINE',
       fractionP >= 1 ? 'FULL_POOL_EXIT' : 'PARTIAL_POOL_WITHDRAW',
-      `${playerId} withdrew ${Math.round(fractionP * 100)}% (${res.withdrawnToks} TOKS) -> odds shifted to ${res.market.live_implied_value}%`,
+      `${playerId} withdrew ${Math.round(fractionP * 100)}% (${res.withdrawnToks} CHIP) -> odds shifted to ${res.market.live_implied_value}%`,
       res.withdrawnToks
     );
     this.logCascadesToWireAndSwimlanes(marketId, res.cascades);
@@ -543,7 +543,7 @@ export class SpreadEngine {
         pid,
         'SETTLE',
         'X',
-        `Settled @ X=${outcomeX} (${pnl >= 0 ? '+' : ''}${pnl} TOKS)`,
+        `Settled @ X=${outcomeX} (${pnl >= 0 ? '+' : ''}${pnl} CHIP)`,
         pnl
       );
     }
@@ -605,7 +605,7 @@ export class SpreadEngine {
       'MARKET_ENGINE',
       'BROADCAST',
       'MARKET_VOIDED',
-      `Market ${marketId} voided — all escrowed TOKS refunded.`
+      `Market ${marketId} voided — all escrowed CHIP refunded.`
     );
     this.syncChildStackedMarkets(marketId, `${idempotencyKey}:stacked`);
     return voided;
@@ -659,7 +659,7 @@ export class SpreadEngine {
         c.playerId,
         'LIVE',
         code,
-        `${c.type.toUpperCase()} @ ${c.triggerLevel} (${c.sizeToks} TOKS)`
+        `${c.type.toUpperCase()} @ ${c.triggerLevel} (${c.sizeToks} CHIP)`
       );
       this.emitWireTrace(
         marketId,

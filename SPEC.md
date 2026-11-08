@@ -1,7 +1,7 @@
 # MarketMate — Master Specification
 
 **Date:** November 7, 2026  
-**Currency:** Stokens (`TOKS` — play-money "Spread Tokens" only; integer balances, zero monetary value)  
+**Currency:** Stokens (`CHIP` — play-money "Spread Tokens" only; integer balances, zero monetary value)  
 ** Aesthetic:** Full Dual-Theme Citadel Poker Terminal (`#000000` Live Terminal + `#FAFAFA` Strategy & Allocation Sheet)
 
 ---
@@ -33,7 +33,7 @@
 
 ### 2.2 End-to-End Market Lifecycle
 
-1. **Propose & Classify (< 30s target):** A player speaks or types a bet. **Agent 1 (Intake)** drafts the question, unit, bounds, resolution source/criteria, deadline, payoff mode, stake $k$ (`TOKS` per lot), and no-event fallback value. **Agent 2 (Classifier)** determines the archetype and resolution route (`Auto`, `Arbiter`, `Group`). The proposer confirms the draft card.
+1. **Propose & Classify (< 30s target):** A player speaks or types a bet. **Agent 1 (Intake)** drafts the question, unit, bounds, resolution source/criteria, deadline, payoff mode, stake $k$ (`CHIP` per lot), and no-event fallback value. **Agent 2 (Classifier)** determines the archetype and resolution route (`Auto`, `Arbiter`, `Group`). The proposer confirms the draft card.
 2. **Width Auction (Spread Markets):** Players bid range widths $w$; each bid must narrow the standing best by at least the minimum step. Closes after a **30s quiet period**.
 3. **Quote:** The narrowest bidder becomes `MM` and sets lower bound $L$. The engine sets $H = L + w$ within the market bounds.
 4. **Entry (1-Tap Take or Conversational Strategy):**
@@ -53,12 +53,12 @@
 
 **Auction & Quote Fallbacks:**
 - **No width bids:** Proposer becomes `MM` at preset $w_{\max}$; if they decline, the market voids.
-- **MM misses quote deadline (3 min):** `MM` forfeits an ante of $k$ `TOKS` to the next-narrowest bidder, who quotes at their own bid width. If no bidders remain, the market voids.
-- **No takers:** Market voids and all escrowed `TOKS` return.
+- **MM misses quote deadline (3 min):** `MM` forfeits an ante of $k$ `CHIP` to the next-narrowest bidder, who quotes at their own bid width. If no bidders remain, the market voids.
+- **No takers:** Market voids and all escrowed `CHIP` return.
 
 ### 2.3 Payoff Modes, Escrow & Worked Golden Test
 
-Fixed at market creation: $k$ = `TOKS` per lot, $w = H - L$, $c$ = cap in widths (default $3$).
+Fixed at market creation: $k$ = `CHIP` per lot, $w = H - L$, $c$ = cap in widths (default $3$).
 
 | Mode | Payoff per Lot | Max Loss per Lot | Best For |
 | :--- | :--- | :--- | :--- |
@@ -73,10 +73,10 @@ $$\pi_{\text{over}} = k \cdot \mathrm{clamp}\!\left(\frac{X - H}{w}, -c, c\right
 **Escrow & Zero-Sum Rounding:**
 - In **Pot** mode, takers stake $k$ per lot; the `MM` stakes $k \times \max(\text{Over lots}, \text{Under lots})$.
 - Across all modes, the engine escrows each participant's worst-case loss by evaluating payoffs at the bounds, $L$, $H$, and cap points $\pm c$.
-- All balances are integers (`TOKS`). Any integer division remainder goes to the `MM`, guaranteeing every settlement sums strictly to zero.
+- All balances are integers (`CHIP`). Any integer division remainder goes to the `MM`, guaranteeing every settlement sums strictly to zero.
 
 **Worked Golden Example (Engine Golden Test):**  
-*Pot mode, $k = 10$ `TOKS`. Question: "When will Team A score first?" (minutes, bounds `0..95`, no goal = `95`). Width bids: `20, 15, 10, 8`. Ana wins (`w = 8`) and quotes `[35, 43]`. Ben (1 Over), Cat (1 Over), Dan (1 Under). Total pot = `50 TOKS` (`30` from takers + `20` from Ana). At minute 30 (`0–0`), Cat bids `20 TOKS` for Ben's Over lot; Ben sells. Cat now holds `2 Over` lots.*
+*Pot mode, $k = 10$ `CHIP`. Question: "When will Team A score first?" (minutes, bounds `0..95`, no goal = `95`). Width bids: `20, 15, 10, 8`. Ana wins (`w = 8`) and quotes `[35, 43]`. Ben (1 Over), Cat (1 Over), Dan (1 Under). Total pot = `50 CHIP` (`30` from takers + `20` from Ana). At minute 30 (`0–0`), Cat bids `20 CHIP` for Ben's Over lot; Ben sells. Cat now holds `2 Over` lots.*
 
 | Outcome $X$ | Ben (Sold @ 20) | Cat (2 Over) | Dan (1 Under) | Ana (MM) | Row Sum |
 | :--- | :---: | :---: | :---: | :---: | :---: |
@@ -87,18 +87,18 @@ $$\pi_{\text{over}} = k \cdot \mathrm{clamp}\!\left(\frac{X - H}{w}, -c, c\right
 
 #### A. Peer-to-Peer Position Transfer (MM Spread Markets)
 Selling a lot transfers ownership of the escrowed stake and payout rights to the buyer, leaving market escrow and final settlement math untouched:
-1. **Standing Bids & Asks:** Any player (including the `MM` buying back risk, though the `MM` cannot sell the `MM` side in v1) can post a balance-backed bid (e.g., *"20 TOKS for 1 Over lot"*) or list an held lot at an ask price.
+1. **Standing Bids & Asks:** Any player (including the `MM` buying back risk, though the `MM` cannot sell the `MM` side in v1) can post a balance-backed bid (e.g., *"20 CHIP for 1 Over lot"*) or list an held lot at an ask price.
 2. **Instant Cash-Out:** A holder taps **Cash Out** to match the best standing bid immediately.
-3. **Auto-Sell Rules:** A player speaks or types a conditional exit (e.g., *"Sell my Over if anyone bids 15+ TOKS"*); the AI generates a `parse_rule` card for confirmation and executes automatically on match.
+3. **Auto-Sell Rules:** A player speaks or types a conditional exit (e.g., *"Sell my Over if anyone bids 15+ CHIP"*); the AI generates a `parse_rule` card for confirmation and executes automatically on match.
 4. **Fair-Value Advisory:** Shown alongside bid/ask prices using an analytical engine model where available (e.g., Poisson goal model) or a labelled AI estimate (`estimate_fair_value`). Advisory only; never auto-triggers trades.
 
 #### B. Continuous Pool Withdrawal & Public Limit/Stop Order Book (Continuous & Stacked Markets)
-1. **Anytime Partial or Full Withdrawal:** Any participant with `live_equity > 0` can withdraw fraction $p \in (0, 1]$ of their position prior to event lock. The liquidated slice converts back to wallet `TOKS` at live implied odds and shifts market odds for remaining holders.
+1. **Anytime Partial or Full Withdrawal:** Any participant with `live_equity > 0` can withdraw fraction $p \in (0, 1]$ of their position prior to event lock. The liquidated slice converts back to wallet `CHIP` at live implied odds and shifts market odds for remaining holders.
 2. **Order Types:**
    - `MARKET`: Immediate entry or partial/full withdrawal at live odds.
-   - `LIMIT_BUY` / `LIMIT_SELL`: Enter or exit a specified `TOKS` size when implied odds/value reach $P_{\text{limit}}$.
+   - `LIMIT_BUY` / `LIMIT_SELL`: Enter or exit a specified `CHIP` size when implied odds/value reach $P_{\text{limit}}$.
    - `STOP_LOSS` / `TAKE_PROFIT`: Automatically liquidate all or part of a position if market value crosses $P_{\text{stop}}$ or if position equity drops to the player's floor $B_{\text{floor}}$.
-3. **Public Order Book ("Swing Map"):** All active limit and stop orders (player, side, trigger level, size in `TOKS`) are visible to the entire group so players can identify stop clusters and cascading swing zones.
+3. **Public Order Book ("Swing Map"):** All active limit and stop orders (player, side, trigger level, size in `CHIP`) are visible to the entire group so players can identify stop clusters and cascading swing zones.
 
 ---
 
@@ -132,8 +132,8 @@ flowchart LR
 ### 3.3 Conversational Strategy Entry & Mandatory 3-Part Risk Gate
 
 - **Manual 1-Tap Bypass:** Standard manual UI buttons (`Over`, `Under`, `Cash Out`) execute in one tap with wallet/escrow validation.
-- **Hard Risk Gate on Conversational/Voice Strategies (`FR-91`):** Whenever a player enters a market or configures automated orders via natural language (text or push-to-talk voice, e.g., *"Put 100 TOKS in if tomorrow's temp odds dip below 40%, scale out half up 50%, cut me at 60 TOKS"*), the bot **MUST** verify three explicit parameters before activating any order:
-  1. **Interpreted Strategy Summary** (entry trigger, direction, stake in `TOKS`),
+- **Hard Risk Gate on Conversational/Voice Strategies (`FR-91`):** Whenever a player enters a market or configures automated orders via natural language (text or push-to-talk voice, e.g., *"Put 100 CHIP in if tomorrow's temp odds dip below 40%, scale out half up 50%, cut me at 60 CHIP"*), the bot **MUST** verify three explicit parameters before activating any order:
+  1. **Interpreted Strategy Summary** (entry trigger, direction, stake in `CHIP`),
   2. **Take-Profit / Exit Target** (`take_profit_level` — odds, price, or equity target to sell), and
   3. **Risk Tolerance / Drawdown Floor** (`min_balance_floor` — lowest `live_equity` level before auto-liquidation).
   If any parameter is missing, the bot prompts the user to supply it and presents a structured confirmation card requiring explicit voice or tap approval.
@@ -148,7 +148,7 @@ The AI never mutates database state or balances directly; every tool returns a s
 | `classify_market` | Archetype (`simple`, `spread`, `stacked`, `ranking`), verifiability, and route (`Auto`, `Arbiter`, `Group`) | Requires `arbiter_id` + `countdown_ends_at` if `Arbiter` |
 | `lint_criteria` | Clarifying questions on ambiguous resolution rules | Answered or dismissed before launch |
 | `suggest_width` | Reference spread width $w$ with one-line rationale | Display only |
-| `estimate_fair_value` | Advisory position fair value in `TOKS` with rationale (when no analytical model applies) | Display only |
+| `estimate_fair_value` | Advisory position fair value in `CHIP` with rationale (when no analytical model applies) | Display only |
 | `commentate` | Concise one-line live commentary on score or swing events | Display only |
 | `parse_rule` | Structured `StrategyMandate`, auto-sell rule, or limit/stop order from voice/text | Player confirms all 3 Risk Gate fields |
 | `propose_outcome` | Proposed outcome $X$ with source citation | Enters route challenge window |
@@ -164,25 +164,25 @@ The AI never mutates database state or balances directly; every tool returns a s
 - **Single-Card Velocity:** Every active market operates without full-page reloads; optimistic UI updates are reconciled in real time via WebSockets.
 - **Dual Theme System:**
   1. **Live Market & Replay Terminal (Dark Theme):** Pure black `#000000` canvas, crisp `#FFFFFF` primary foreground, `#888888` muted telemetry labels, and inverted solid white badges (`[8x]`, `[W]`, `[OVER]`) for active selections.
-  2. **Strategy & Allocation Sheet (Light Theme):** Off-white `#FAFAFA` paper surface with high-contrast `#000000` ink, dot-matrix stake visualizers, and clean underline numeric inputs (`0 / 100 TOKS`) used when drafting markets, sizing allocations, and confirming the 3-part AI Strategy Risk Gate.
+  2. **Strategy & Allocation Sheet (Light Theme):** Off-white `#FAFAFA` paper surface with high-contrast `#000000` ink, dot-matrix stake visualizers, and clean underline numeric inputs (`0 / 100 CHIP`) used when drafting markets, sizing allocations, and confirming the 3-part AI Strategy Risk Gate.
 
 ### 4.2 The Five Core Screen Exhibits
 
 1. **Exhibit A — Market Table & Radial Player Ring:**
-   - Circular/radial seat layout displaying each friend in the market, their live mark-to-market balance (`live_equity` in `TOKS`), active direction (`MM`, `OVER`, `UNDER`, `LONG/SHORT`), and net P&L delta (`+2,350 TOKS`).
+   - Circular/radial seat layout displaying each friend in the market, their live mark-to-market balance (`live_equity` in `CHIP`), active direction (`MM`, `OVER`, `UNDER`, `LONG/SHORT`), and net P&L delta (`+2,350 CHIP`).
    - Center board displays the market question, live implied value/odds or `[L, H]` range, live score ticker, and total active pot/liquidity.
 2. **Exhibit B (Middle) — Participant Action Swimlanes:**
    - Horizontal per-player timeline across lifecycle phases (`OPEN ─── MID ─── LIVE ─── SETTLE`) plotted with single-letter action nodes:
      `B` Bet/Take · `L` Limit Placed · `F` Limit Filled · `W` Partial Withdraw / Cash-Out · `S` Stop Triggered · `X` Exit All.
 3. **Exhibit B (Bottom) — Branching Swing Tree & Counterfactual Trajectory:**
-   - Interactive branching graph showing the actual market path (`MAIN LINE: MARKET AS PLAYED`) alongside counterfactual branches (`SIDE BRANCHES: STOPS/LIMITS NOT HIT YET`), annotating exact `+/- TOKS` balance swings if a cluster of public stops or limits is triggered.
+   - Interactive branching graph showing the actual market path (`MAIN LINE: MARKET AS PLAYED`) alongside counterfactual branches (`SIDE BRANCHES: STOPS/LIMITS NOT HIT YET`), annotating exact `+/- CHIP` balance swings if a cluster of public stops or limits is triggered.
 4. **Exhibit C — Heads-Up Position Telemetry Card:**
    - Framed inspection box for any selected player or stacked market:
      ```text
      51 │ === POSITION TELEMETRY :: ANA ========================
      52 │ > IMPLIED ODDS   .42          > RANGE       [35 .. 43]
-     53 │ > LIVE EQUITY    840 TOKS     > UNREALIZED   -160 TOKS
-     54 │ > TAKE PROFIT    @ 1,350 TOKS > STOP FLOOR   @ 600 TOKS (HARD)
+     53 │ > LIVE EQUITY    840 CHIP     > UNREALIZED   -160 CHIP
+     54 │ > TAKE PROFIT    @ 1,350 CHIP > STOP FLOOR   @ 600 CHIP (HARD)
      55 │ > SWING RISK     3 STOPS WITHIN 4% OF CURRENT ODDS
      ```
 5. **Exhibit D — Live Order & Agent Wire Trace:**
@@ -214,7 +214,7 @@ The AI never mutates database state or balances directly; every tool returns a s
 | **StrategyMandate** | `id`, `market_id`, `player_id`, `input_modality` (`voice`, `text`), `raw_transcript`, `parsed_strategy_json`, `take_profit_level`, `min_balance_floor`, `confirmed_at` | Enforces the mandatory 3-part AI Risk Gate |
 | **OutcomeProposal / Vote** | `id`, `market_id`, `proposer_id`, `proposed_x`, `source_url`, `challenge_deadline`, `votes_json` | Governs `Auto`, `Arbiter`, and `Group` resolution |
 | **LiveEvent** | `id`, `market_id`, `event_type` (`goal`, `halftime`, `fulltime`, `correction`), `minute`, `payload` | Driven by live sports API or Replay Mode |
-| **LedgerEntry** | `id`, `player_id`, `market_id`, `account` (`wallet`, `escrow`), `delta_toks`, `tx_type`, `created_at` | Immutable double-entry `TOKS` ledger |
+| **LedgerEntry** | `id`, `player_id`, `market_id`, `account` (`wallet`, `escrow`), `delta_toks`, `tx_type`, `created_at` | Immutable double-entry `CHIP` ledger |
 | **AgentAction / Job** | `id`, `market_id`, `tool_name`, `input_json`, `output_json`, `status`, `scheduled_at` | Full AI audit trail & deterministic timers |
 
 ---
@@ -226,8 +226,8 @@ The AI never mutates database state or balances directly; every tool returns a s
 | ID | Area | Requirement | Priority |
 | :--- | :--- | :--- | :---: |
 | **FR-01** | Creation & Intake | Players create Simple, Spread (`[L, H]`), Ranking, or Stacked markets via text or push-to-talk voice routed through **Agent 1 (Intake)** and **Agent 2 (Classifier)**. | MUST |
-| **FR-02** | Width Auction & Quote | Spread markets run a 30s quiet-period width auction; narrowest bidder becomes `MM` and quotes $[L, L+w]$ within 3 minutes or forfeits $k$ `TOKS` ante to the next bidder. | MUST |
-| **FR-03** | 1-Tap Manual Takes | Manual Over/Under takes execute in one tap, escrow worst-case `TOKS`, and remain hidden until the take window locks. | MUST |
+| **FR-02** | Width Auction & Quote | Spread markets run a 30s quiet-period width auction; narrowest bidder becomes `MM` and quotes $[L, L+w]$ within 3 minutes or forfeits $k$ `CHIP` ante to the next bidder. | MUST |
+| **FR-03** | 1-Tap Manual Takes | Manual Over/Under takes execute in one tap, escrow worst-case `CHIP`, and remain hidden until the take window locks. | MUST |
 | **FR-04** | AI Strategy Risk Gate | Any conversational/voice strategy entry MUST collect and confirm (1) strategy summary, (2) take-profit target, and (3) minimum balance drawdown floor before activating orders. | MUST |
 | **FR-05** | Live Mark-to-Market | Market odds and every participant's `live_equity_toks` recalculate and broadcast via WebSockets in real time on every trade, order fill, score event, or withdrawal. | MUST |
 | **FR-06** | Dual Early Exit | MM spread markets support P2P position sales (standing bids, asks, auto-sell rules); continuous and stacked markets support anytime partial/full pool withdrawal while `live_equity_toks > 0`. | MUST |
@@ -257,10 +257,10 @@ The AI never mutates database state or balances directly; every tool returns a s
 ## 7. Verification Suite & Implementation Milestones
 
 ### 7.1 Correctness & Test Suite
-- **Golden Tests:** Exact reproduction of the Section 2.3 worked example (`Ana`, `Ben`, `Cat`, `Dan`, mid-match `20 TOKS` P2P sale, and settlement at $X = 50$ and $X = 39$).
+- **Golden Tests:** Exact reproduction of the Section 2.3 worked example (`Ana`, `Ben`, `Cat`, `Dan`, mid-match `20 CHIP` P2P sale, and settlement at $X = 50$ and $X = 39$).
 - **Property-Based Tests (`fast-check` + `Vitest`):**
   1. *Zero-Sum Invariant:* $\sum \Delta \text{wallet\_balance\_toks} = 0$ across every settlement, P2P transfer, partial withdrawal, and cascading stop execution.
-  2. *Solvency Invariant:* Escrowed `TOKS` always cover worst-case losses across `Pot`, `Binary`, `Linear`, and `Log` modes; `live_equity_toks` never drops below `0`.
+  2. *Solvency Invariant:* Escrowed `CHIP` always cover worst-case losses across `Pot`, `Binary`, `Linear`, and `Log` modes; `live_equity_toks` never drops below `0`.
   3. *Deterministic Replay:* Replaying an identical command + `LiveEvent` log with an injected clock yields the exact same ledger and Swing Tree state.
 - **End-to-End Integration:** Recorded match feed in Replay Mode driving a full market from voice/text draft $\rightarrow$ width auction $\rightarrow$ takes $\rightarrow$ live order book & cash-out $\rightarrow$ auto-resolution $\rightarrow$ recap.
 

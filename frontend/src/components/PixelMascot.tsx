@@ -143,7 +143,7 @@ export const PixelJokerCard: React.FC<{ className?: string; style?: React.CSSPro
 };
 
 /**
- * Perfectly Centered 8-Bit SPRD Casino Chip Component
+ * Perfectly Centered 8-Bit CHIP Casino Chip Component
  */
 export const PixelPokerChip: React.FC<{
   amount: string;
@@ -154,7 +154,7 @@ export const PixelPokerChip: React.FC<{
     <div className={`floating-chip-bg ${className}`} style={style}>
       <span style={{ display: 'block', fontSize: 10, lineHeight: 1.05 }}>{amount}</span>
       <span style={{ display: 'block', fontSize: 7.5, lineHeight: 1.05, opacity: 0.9 }}>
-        SPRD
+        CHIP
       </span>
     </div>
   );

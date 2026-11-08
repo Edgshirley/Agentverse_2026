@@ -41,7 +41,7 @@ function createTestMarket(): Market {
 
 describe('Two-Stage AI Classification & Mandatory 3-Part Strategy Risk Gate (SPEC §3.1 & §3.3)', () => {
   it('classifies Spread, Stacked, and Private/Arbiter prompts accurately via Agent 1 -> Agent 2', async () => {
-    const spreadPrompt = 'When will Arsenal score first vs Chelsea? 10 TOKS';
+    const spreadPrompt = 'When will Arsenal score first vs Chelsea? 10 CHIP';
     const a1Spread = await runAgent1Intake(spreadPrompt);
     const a2Spread = await runAgent2Classifier(spreadPrompt, a1Spread.draft);
     expect(a2Spread.archetype).toBe('spread');
@@ -63,7 +63,7 @@ describe('Two-Stage AI Classification & Mandatory 3-Part Strategy Risk Gate (SPE
   it('blocks conversational strategy entry missing take_profit_level or min_balance_floor (FR-04 / FR-91)', async () => {
     const mkt = createTestMarket();
     const incompleteProposal = await parseStrategyRuleWithRiskGate(
-      'Put 100 TOKS on YES right now',
+      'Put 100 CHIP on YES right now',
       'voice',
       mkt
     );
@@ -92,8 +92,8 @@ describe('Two-Stage AI Classification & Mandatory 3-Part Strategy Risk Gate (SPE
           market_id: mkt.id,
           player_id: 'ana',
           input_modality: 'voice',
-          raw_transcript: 'Put 100 TOKS on YES right now',
-          parsed_strategy_summary: 'YES 100 TOKS',
+          raw_transcript: 'Put 100 CHIP on YES right now',
+          parsed_strategy_summary: 'YES 100 CHIP',
           side: 'YES',
           stake_toks: 100,
           take_profit_level: null,
@@ -109,7 +109,7 @@ describe('Two-Stage AI Classification & Mandatory 3-Part Strategy Risk Gate (SPE
   it('activates conversational strategy once all 3 Risk Gate fields are supplied and confirmed', async () => {
     const mkt = createTestMarket();
     const completeProposal = await parseStrategyRuleWithRiskGate(
-      'Put 100 TOKS on YES, take profit at 72%, cut me at 44% floor',
+      'Put 100 CHIP on YES, take profit at 72%, cut me at 44% floor',
       'voice',
       mkt
     );

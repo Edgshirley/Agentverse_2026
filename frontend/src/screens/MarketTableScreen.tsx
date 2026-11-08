@@ -36,10 +36,10 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
   // Contextual popups — only appear when required / clicked
   const [showCustomWithdraw, setShowCustomWithdraw] = useState<boolean>(false);
   const [withdrawValue, setWithdrawValue] = useState<string>('25');
-  const [withdrawMode, setWithdrawMode] = useState<'SPRD' | '%'>('SPRD');
+  const [withdrawMode, setWithdrawMode] = useState<'CHIP' | '%'>('CHIP');
   const [selectedGraphLevel, setSelectedGraphLevel] = useState<number | null>(null);
   const [orderType, setOrderType] = useState<OrderType>('stop_loss');
-  const [orderSizeSprd, setOrderSizeSprd] = useState<string>('25');
+  const [orderSizeChip, setOrderSizeChip] = useState<string>('25');
   const [showAdminDrawer, setShowAdminDrawer] = useState<boolean>(false);
 
   // Step 1 (Width Auction) & Step 2 (Window [L, H]) state
@@ -115,7 +115,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
   const myPositions = positions.filter((p) => p.player_id === activePlayer.id);
   const myActivePos = myPositions.find((p) => p.lots > 0 || p.live_equity_toks > 0);
   const myLiveBalance = myPositions.reduce((acc, p) => acc + p.live_equity_toks, 0);
-  const totalPotSprd =
+  const totalPotChip =
     positions.reduce((acc, p) => acc + p.staked_toks, 0) + mmEscrowToks;
 
   // Step 1 Agent-Guided Handler: Bids your width, simulates friend counter-bid if needed, and advances to Step 2
@@ -220,7 +220,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
               AGENT STEP 1 OF 2 · WINDOW WIDTH BIDDING
             </div>
             <div style={{ fontSize: 16, fontWeight: 700 }}>
-              {market.question.replace(/TOKS/gi, 'SPRD')}
+              {market.question.replace(/TOKS/gi, 'CHIP')}
             </div>
           </div>
         </div>
@@ -432,12 +432,12 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
       id: 'you_racer',
       name: activePlayer.nickname,
       subtitle: myActivePos
-        ? `${myActivePos.side === 'OVER' ? 'ABOVE' : myActivePos.side === 'UNDER' ? 'BELOW' : myActivePos.side} · ${myLiveBalance} SPRD`
+        ? `${myActivePos.side === 'OVER' ? 'ABOVE' : myActivePos.side === 'UNDER' ? 'BELOW' : myActivePos.side} · ${myLiveBalance} CHIP`
         : 'READY TO BET',
-      pct: Math.min(95, Math.max(18, myLiveBalance > 0 ? Math.round((myLiveBalance / Math.max(100, totalPotSprd)) * 100) : 32)),
+      pct: Math.min(95, Math.max(18, myLiveBalance > 0 ? Math.round((myLiveBalance / Math.max(100, totalPotChip)) * 100) : 32)),
       colorClass: 'filled-mint' as const,
       accent: 'var(--pastel-mint-border)',
-      rightLabel: `${myLiveBalance} SPRD`,
+      rightLabel: `${myLiveBalance} CHIP`,
     },
     ...activePositions
       .filter((p) => p.player_id !== activePlayer.id)
@@ -448,16 +448,16 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
           pos.player_id.toUpperCase();
         const pct = Math.min(
           92,
-          Math.max(24, Math.round((pos.live_equity_toks / Math.max(100, totalPotSprd)) * 100))
+          Math.max(24, Math.round((pos.live_equity_toks / Math.max(100, totalPotChip)) * 100))
         );
         return {
           id: pos.id,
           name: nick,
-          subtitle: `${pos.side === 'OVER' ? 'ABOVE' : pos.side === 'UNDER' ? 'BELOW' : pos.side} · ${pos.live_equity_toks} SPRD`,
+          subtitle: `${pos.side === 'OVER' ? 'ABOVE' : pos.side === 'UNDER' ? 'BELOW' : pos.side} · ${pos.live_equity_toks} CHIP`,
           pct,
           colorClass: idx % 2 === 0 ? ('filled-coral' as const) : ('filled-sky' as const),
           accent: idx % 2 === 0 ? 'var(--pastel-coral-border)' : 'var(--pastel-sky-border)',
-          rightLabel: `${pos.live_equity_toks} SPRD`,
+          rightLabel: `${pos.live_equity_toks} CHIP`,
         };
       }),
   ];
@@ -493,10 +493,10 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
               {isSpread
                 ? `WINDOW MARKET [${market.L ?? 3} .. ${market.H ?? 5}] ${unitLabel.toUpperCase()}`
                 : `${market.archetype.toUpperCase()} MARKET`}{' '}
-              · POT: {totalPotSprd} SPRD
+              · POT: {totalPotChip} CHIP
             </div>
             <div style={{ fontSize: 17, fontWeight: 700, marginTop: 2 }}>
-              {market.question.replace(/TOKS/gi, 'SPRD')}
+              {market.question.replace(/TOKS/gi, 'CHIP')}
             </div>
           </div>
 
@@ -656,7 +656,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
           <div className="depth-graph-wrap">
             <div className="depth-header-grid">
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingRight: 8 }}>
-                <span style={{ color: 'var(--fg-muted)', fontSize: 10 }}>VOLUME (SPRD)</span>
+                <span style={{ color: 'var(--fg-muted)', fontSize: 10 }}>VOLUME (CHIP)</span>
                 <span style={{ color: 'var(--accent-pos)' }}>
                   {isSpread ? '▲ ABOVE / BID' : '✓ YES / BID'}
                 </span>
@@ -668,7 +668,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
                 <span style={{ color: 'var(--accent-neg)' }}>
                   {isSpread ? '▼ BELOW / STOPS' : '✗ NO / STOPS'}
                 </span>
-                <span style={{ color: 'var(--fg-muted)', fontSize: 10 }}>VOLUME (SPRD)</span>
+                <span style={{ color: 'var(--fg-muted)', fontSize: 10 }}>VOLUME (CHIP)</span>
               </div>
             </div>
 
@@ -688,7 +688,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
                   {/* LEFT BAR: Green BID / BUY / ABOVE Volume */}
                   <div className="depth-side-bid">
                     <div className="depth-bar-bid" style={{ width: `${bidWidthPct}%` }}>
-                      <span>{row.totalBidVol} SPRD</span>
+                      <span>{row.totalBidVol} CHIP</span>
                       <span style={{ opacity: 0.75, fontSize: 9.5 }}>●</span>
                     </div>
                   </div>
@@ -710,7 +710,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
                       <span style={{ opacity: 0.85, fontSize: 9.5 }}>
                         {row.stopLabels.length > 0 ? row.stopLabels[0] : '●'}
                       </span>
-                      <span>{row.totalAskVol} SPRD</span>
+                      <span>{row.totalAskVol} CHIP</span>
                     </div>
                   </div>
                 </div>
@@ -747,11 +747,11 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
                 </select>
                 <input
                   type="number"
-                  value={orderSizeSprd}
-                  onChange={(e) => setOrderSizeSprd(e.target.value)}
+                  value={orderSizeChip}
+                  onChange={(e) => setOrderSizeChip(e.target.value)}
                   style={{ width: 68, padding: '4px 8px', fontSize: 11.5 }}
                 />
-                <span style={{ fontSize: 11.5 }}>SPRD</span>
+                <span style={{ fontSize: 11.5 }}>CHIP</span>
                 <button
                   className="btn-inverted pixel-font"
                   style={{ fontSize: 10, padding: '5px 10px' }}
@@ -761,7 +761,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
                       side: myActivePos?.side || (isSpread ? 'OVER' : 'YES'),
                       type: orderType,
                       triggerLevel: selectedGraphLevel,
-                      sizeToks: Number(orderSizeSprd),
+                      sizeToks: Number(orderSizeChip),
                     });
                     setSelectedGraphLevel(null);
                   }}
@@ -798,7 +798,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
                       })
                     }
                   >
-                    ▲ BET ABOVE (&gt; {market.H ?? 5} {unitLabel}) · +{market.lot_stake_k} SPRD
+                    ▲ BET ABOVE (&gt; {market.H ?? 5} {unitLabel}) · +{market.lot_stake_k} CHIP
                   </button>
                   <button
                     className="btn-coral pixel-font"
@@ -811,7 +811,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
                       })
                     }
                   >
-                    ▼ BET BELOW (&lt; {market.L ?? 3} {unitLabel}) · +{market.lot_stake_k} SPRD
+                    ▼ BET BELOW (&lt; {market.L ?? 3} {unitLabel}) · +{market.lot_stake_k} CHIP
                   </button>
                 </>
               ) : (
@@ -827,7 +827,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
                       })
                     }
                   >
-                    ✓ BET YES (+{market.lot_stake_k} SPRD)
+                    ✓ BET YES (+{market.lot_stake_k} CHIP)
                   </button>
                   <button
                     className="btn-coral pixel-font"
@@ -840,7 +840,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
                       })
                     }
                   >
-                    ✗ BET NO (+{market.lot_stake_k} SPRD)
+                    ✗ BET NO (+{market.lot_stake_k} CHIP)
                   </button>
                 </>
               )}
@@ -849,7 +849,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
               {myLiveBalance > 0 && (
                 <>
                   <button onClick={() => setShowCustomWithdraw((v) => !v)}>
-                    WITHDRAW X% / SPRD
+                    WITHDRAW X% / CHIP
                   </button>
                   <button
                     onClick={() =>
@@ -860,7 +860,7 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
                       })
                     }
                   >
-                    WITHDRAW ALL ({myLiveBalance} SPRD)
+                    WITHDRAW ALL ({myLiveBalance} CHIP)
                   </button>
                 </>
               )}
@@ -888,10 +888,10 @@ export const MarketTableScreen: React.FC<MarketTableScreenProps> = ({
                 />
                 <select
                   value={withdrawMode}
-                  onChange={(e) => setWithdrawMode(e.target.value as 'SPRD' | '%')}
+                  onChange={(e) => setWithdrawMode(e.target.value as 'CHIP' | '%')}
                   style={{ padding: '4px 8px', fontWeight: 700 }}
                 >
-                  <option value="SPRD">SPRD</option>
+                  <option value="CHIP">CHIP</option>
                   <option value="%">%</option>
                 </select>
                 <button className="btn-mint pixel-font" onClick={handleCustomWithdraw}>

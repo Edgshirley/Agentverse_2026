@@ -2,7 +2,7 @@
 
 Updated: Nov 8, 2026
 
-This document tracks the UX, AI Agent pipeline, and backend rules-engine tasks to complete alongside the new **8-Bit Casino Pastel UI (`SPRD`)**.
+This document tracks the UX, AI Agent pipeline, and backend rules-engine tasks to complete alongside the new **8-Bit Casino Pastel UI (`CHIP`)**.
 
 ---
 
@@ -26,12 +26,12 @@ This document tracks the UX, AI Agent pipeline, and backend rules-engine tasks t
 
 ---
 
-## 3. Continuous Withdrawals & `SPRD` Currency Ledger
+## 3. Continuous Withdrawals & `CHIP` Currency Ledger
 
-- [ ] **ENG-03: Direct `SPRD` Amount or `%` Partial Withdrawal**
-  - **Task:** Extend `POST /api/markets/:id/withdraw` in `backend/src/worker/index.ts` to accept either `{ fractionP: number }` (e.g. `25%`) or `{ amountSprd: number }` (e.g. `25 SPRD`), automatically computing the exact slice while keeping `live_equity > 0` and integer `SPRD` zero-sum rounding intact.
-- [ ] **ENG-04: Standardise Currency Symbol to `SPRD`**
-  - **Task:** Update remaining backend log strings, AI system prompts in `backend/src/worker/agents.ts`, and `SPEC.md` references from `TOKS` to `SPRD`.
+- [ ] **ENG-03: Direct `CHIP` Amount or `%` Partial Withdrawal**
+  - **Task:** Extend `POST /api/markets/:id/withdraw` in `backend/src/worker/index.ts` to accept either `{ fractionP: number }` (e.g. `25%`) or `{ amountChip: number }` (e.g. `25 CHIP`), automatically computing the exact slice while keeping `live_equity > 0` and integer `CHIP` zero-sum rounding intact.
+- [x] **ENG-04: Standardise Currency Symbol to `CHIP`**
+  - **Done:** UI, backend log strings, AI prompts and `SPEC.md` all use `CHIP`. Internal `*_toks` fields and database columns keep their names.
 
 ---
 

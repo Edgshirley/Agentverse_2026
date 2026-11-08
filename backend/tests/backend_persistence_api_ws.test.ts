@@ -101,7 +101,7 @@ describe('SQLite / D1 Relational Persistence, Full API Routes & Real-Time Pub/Su
       const inspectJson: any = await inspectRes.json();
       expect(inspectJson.tableCounts.markets).toBe(4);
 
-      // 2. P2P Ask auto-matching Cat's standing 20 TOKS bid on mkt_arsenal
+      // 2. P2P Ask auto-matching Cat's standing 20 CHIP bid on mkt_arsenal
       const askRes = await app.fetch(
         new Request('http://localhost:4000/api/markets/mkt_arsenal/p2p/ask', {
           method: 'POST',
@@ -120,7 +120,7 @@ describe('SQLite / D1 Relational Persistence, Full API Routes & Real-Time Pub/Su
       const catPos = askBundle.positions.find((p: any) => p.player_id === 'cat' && p.side === 'OVER');
       expect(catPos.lots).toBe(2);
 
-      // 3. Cancel Dan's open limit_buy order on mkt_weather and verify 60 TOKS escrow is refunded
+      // 3. Cancel Dan's open limit_buy order on mkt_weather and verify 60 CHIP escrow is refunded
       const weatherBundleBefore = globalStore.getFullMarketBundle('mkt_weather');
       const danLimOrder = weatherBundleBefore.orders.find(
         (o) => o.player_id === 'dan' && o.type === 'limit_buy' && o.status === 'open'

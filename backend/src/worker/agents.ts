@@ -229,8 +229,8 @@ Return JSON with:
     lower.includes('odds hit') ||
     lower.includes('stacked');
 
-  // Extract stake k if mentioned (e.g. "25 SPRD" or "25 TOKS")
-  const stakeMatch = prompt.match(/(\d+)\s*(?:toks?|sprd)/i);
+  // Extract stake k if mentioned (e.g. "25 CHIP" or "25 CHIP")
+  const stakeMatch = prompt.match(/(\d+)\s*chips?/i);
   const k = stakeMatch ? Math.max(5, parseInt(stakeMatch[1], 10)) : isFootballMinute ? 10 : 25;
 
   let bounds: [number, number] = [0, 100];
@@ -485,7 +485,7 @@ Classify the market into:
 /**
  * Conversational Strategy Parser & Mandatory 3-Part Hard Risk Gate (`parse_rule` — SPEC §3.3 & FR-04 / FR-91).
  * Verifies:
- *   1. `parsed_strategy_summary` (entry trigger, direction, stake in TOKS)
+ *   1. `parsed_strategy_summary` (entry trigger, direction, stake in CHIP)
  *   2. `take_profit_level` (exit target)
  *   3. `min_balance_floor` (drawdown floor)
  */
@@ -510,7 +510,7 @@ export async function parseStrategyRuleWithRiskGate(
     `You are the Risk Gate Strategy Parser (parse_rule) for MarketMate.
 Extract from the player's transcript:
 - side: "OVER" | "UNDER" | "YES" | "NO"
-- stake_toks: integer TOKS to stake
+- stake_toks: integer CHIP to stake
 - entry_trigger_level: number or null (only if conditional entry trigger mentioned)
 - take_profit_level: number or null (ONLY if an explicit take-profit / target / exit level is stated; null if omitted!)
 - min_balance_floor: number or null (ONLY if an explicit stop-loss / drawdown floor / cut level is stated; null if omitted!)
@@ -531,10 +531,10 @@ Extract from the player's transcript:
     side = aiParsed.side;
   }
 
-  // Extract stake in SPRD / TOKS (e.g. "Put 100 SPRD" or "stake 80")
+  // Extract stake in CHIP / CHIP (e.g. "Put 100 CHIP" or "stake 80")
   const stakeMatch =
-    clean.match(/(?:put|bet|stake|enter|buy)\s+(\d+)\s*(?:toks?|sprd)?/i) ||
-    clean.match(/(\d+)\s*(?:toks?|sprd)/i);
+    clean.match(/(?:put|bet|stake|enter|buy)\s+(\d+)\s*chips??/i) ||
+    clean.match(/(\d+)\s*chips?/i);
   const stakeToks = stakeMatch
     ? parseInt(stakeMatch[1], 10)
     : Number.isInteger(Number(aiParsed?.stake_toks)) && Number(aiParsed?.stake_toks) > 0
@@ -575,7 +575,7 @@ Extract from the player's transcript:
   const parsedSummary = hasValidPrompt
     ? typeof aiParsed?.parsed_strategy_summary === 'string' && aiParsed.parsed_strategy_summary.trim()
       ? aiParsed.parsed_strategy_summary.trim()
-      : `${side} ${stakeToks} TOKS${
+      : `${side} ${stakeToks} CHIP${
           entryTriggerLevel != null ? ` (ENTRY TRIGGER @ ${entryTriggerLevel}%)` : ' (MARKET ENTRY)'
         }`
     : null;
@@ -625,14 +625,14 @@ export function generateMarketRecap(
 
   const winnerText =
     topWinner && topWinner[1] > 0
-      ? `${topWinner[0].toUpperCase()} led the table with +${topWinner[1]} TOKS`
+      ? `${topWinner[0].toUpperCase()} led the table with +${topWinner[1]} CHIP`
       : 'Flat zero-sum settlement across seats';
   const loserText =
-    topLoser && topLoser[1] < 0 ? `(${topLoser[0].toUpperCase()}: ${topLoser[1]} TOKS)` : '';
+    topLoser && topLoser[1] < 0 ? `(${topLoser[0].toUpperCase()}: ${topLoser[1]} CHIP)` : '';
 
   return {
     headline: `SETTLED // ${market.question} -> X = ${market.outcome_x}`,
-    winner_summary: `${winnerText} ${loserText}. Zero-sum ledger invariant verified (Σ ΔTOKS = 0).`,
+    winner_summary: `${winnerText} ${loserText}. Zero-sum ledger invariant verified (Σ ΔCHIP = 0).`,
     calibration_note:
       market.archetype === 'spread'
         ? `Quoted spread [${market.L}, ${market.H}] vs realized outcome X=${market.outcome_x} (${

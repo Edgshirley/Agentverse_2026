@@ -40,8 +40,8 @@ export interface Player {
   group_id: string;
   nickname: string;
   is_admin: boolean;
-  wallet_balance_toks: number; // Strictly integer TOKS
-  escrow_balance_toks: number; // Strictly integer TOKS locked in active markets
+  wallet_balance_toks: number; // Strictly integer CHIP
+  escrow_balance_toks: number; // Strictly integer CHIP locked in active markets
 }
 
 export interface MarketToggles {
@@ -65,7 +65,7 @@ export interface Market {
   criteria: string;
   resolution_source: string;
   payoff_mode: PayoffMode;
-  lot_stake_k: number; // Integer TOKS per lot
+  lot_stake_k: number; // Integer CHIP per lot
   cap_widths_c: number; // Default 3
   state: MarketState;
   verifiability: Verifiability;
@@ -118,11 +118,11 @@ export interface Position {
   player_id: string;
   side: PositionSide;
   lots: number;
-  staked_toks: number; // Escrowed worst-case liability in integer TOKS
+  staked_toks: number; // Escrowed worst-case liability in integer CHIP
   entry_cost_toks: number; // Actual acquisition cost (stake or P2P purchase price)
   realized_pnl_toks: number; // Realized gains/losses from P2P sales or partial withdrawals
   current_shares: number; // Fraction remaining in continuous pool (0..1, scaled or exact)
-  live_equity_toks: number; // Continuous mark-to-market value in integer TOKS (>= 0)
+  live_equity_toks: number; // Continuous mark-to-market value in integer CHIP (>= 0)
   withdrawn_toks: number;
   is_hidden: boolean;
   updated_at: number;
@@ -135,7 +135,7 @@ export interface PositionBid {
   side: PositionSide;
   buyer_id: string;
   seller_id?: string | null;
-  price_toks: number; // Offer/Ask price in integer TOKS for 1 lot
+  price_toks: number; // Offer/Ask price in integer CHIP for 1 lot
   kind: 'BID' | 'ASK' | 'AUTO_SELL';
   status: 'open' | 'matched' | 'cancelled';
   escrowed_toks: number;
@@ -149,7 +149,7 @@ export interface Order {
   side: PositionSide;
   type: OrderType;
   trigger_level: number; // Implied odds/value threshold or equity floor
-  size_toks: number; // Integer TOKS size
+  size_toks: number; // Integer CHIP size
   escrowed_toks: number; // Backed by wallet escrow for limit_buy
   status: OrderStatus;
   visible_to_group: boolean; // Always true per SPEC §1.3 & §2.4.B.3

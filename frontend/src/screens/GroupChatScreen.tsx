@@ -56,7 +56,7 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
     const t = text.trim().toLowerCase();
     if (t.length < 5) return false;
     if (/^(hi|hey|hello|yo|sup|ok|okay|thanks|lol|haha)[!?.]*$/i.test(t)) return false;
-    return /\b(bet|make a|market|f1|race|pit|stop|odds|will|score|temp|°c|sprd|rank|win|over|under|window|linear|who|when|how many)\b/i.test(
+    return /\b(bet|make a|market|f1|race|pit|stop|odds|will|score|temp|°c|chips?|rank|win|over|under|window|linear|who|when|how many)\b/i.test(
       t
     );
   };
@@ -90,7 +90,7 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
         });
         const c = res.classification;
         setMascotAlert({
-          question: trimmed.replace(/TOKS/gi, 'SPRD'),
+          question: trimmed.replace(/TOKS/gi, 'CHIP'),
           archetype: c.archetype === 'spread' ? 'LINEAR WINDOW' : c.archetype.toUpperCase(),
           route: c.route,
         });
@@ -109,9 +109,9 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
     const friendSamples = [
       {
         sender: 'ALEX',
-        text: 'I want to make a market for pit stops in the F1 race tomorrow, 25 SPRD!',
+        text: 'I want to make a market for pit stops in the F1 race tomorrow, 25 CHIP!',
       },
-      { sender: 'SAM', text: "I'm down! Let's bet 50 SPRD on whether it hits 24°C tomorrow." },
+      { sender: 'SAM', text: "I'm down! Let's bet 50 CHIP on whether it hits 24°C tomorrow." },
       { sender: 'JORDAN', text: 'Are we doing the Q4 team ranking bet with the boss as arbiter?' },
     ];
     const pick = friendSamples[chatMessages.length % friendSamples.length];
@@ -309,7 +309,7 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
                   {m.state.toUpperCase()}
                 </div>
                 <div style={{ fontWeight: 700, fontSize: 14, marginTop: 2 }}>
-                  {m.question.replace(/TOKS/gi, 'SPRD')}
+                  {m.question.replace(/TOKS/gi, 'CHIP')}
                 </div>
               </div>
               <button className="btn-inverted pixel-font" style={{ fontSize: 10 }}>

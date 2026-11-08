@@ -318,7 +318,7 @@ export class EdgeStateStore {
 
     // ========================================================================
     // Market 1: Flagship Spread / MM Market (SPEC §2.3 Golden Example)
-    // "When will Arsenal score first?" (0..95 min, k = 10 TOKS, Ana MM @ [35, 43])
+    // "When will Arsenal score first?" (0..95 min, k = 10 CHIP, Ana MM @ [35, 43])
     // ========================================================================
     let m1: Market = {
       id: 'mkt_arsenal',
@@ -376,7 +376,7 @@ export class EdgeStateStore {
     );
     this.engine.createMarket(lockedM1);
 
-    // Post standing P2P bid from Cat for 20 TOKS on 1 OVER lot (ready for 1-tap Cash Out or P2P match!)
+    // Post standing P2P bid from Cat for 20 CHIP on 1 OVER lot (ready for 1-tap Cash Out or P2P match!)
     this.engine.p2p.postStandingBid(
       this.engine.getMarket('mkt_arsenal'),
       'cat',
@@ -384,13 +384,13 @@ export class EdgeStateStore {
       20,
       'seed_cat_standing_bid_20'
     );
-    this.engine.recordSwimlane('mkt_arsenal', 'cat', 'MID', 'L', 'Standing Bid 20 TOKS (1x OVER)', -20);
+    this.engine.recordSwimlane('mkt_arsenal', 'cat', 'MID', 'L', 'Standing Bid 20 CHIP (1x OVER)', -20);
     this.engine.emitWireTrace(
       'mkt_arsenal',
       'PLAYER',
       'MARKET_ENGINE',
       'P2P_STANDING_BID',
-      'CAT posted balance-backed standing bid: 20 TOKS for 1 OVER lot',
+      'CAT posted balance-backed standing bid: 20 CHIP for 1 OVER lot',
       -20
     );
 
@@ -445,8 +445,8 @@ export class EdgeStateStore {
         player_id: 'ana',
         input_modality: 'voice',
         raw_transcript:
-          'Put 100 TOKS on YES, take profit if odds hit 72%, cut me at 44% stop floor',
-        parsed_strategy_summary: 'LONG YES 100 TOKS | TP @ 72% | HARD STOP @ 44%',
+          'Put 100 CHIP on YES, take profit if odds hit 72%, cut me at 44% stop floor',
+        parsed_strategy_summary: 'LONG YES 100 CHIP | TP @ 72% | HARD STOP @ 44%',
         side: 'YES',
         stake_toks: 100,
         entry_trigger_level: null,
@@ -468,7 +468,7 @@ export class EdgeStateStore {
       80,
       'seed_m2_ben_stop'
     );
-    this.engine.recordSwimlane('mkt_weather', 'ben', 'MID', 'L', 'Stop-Loss @ 48% (80 TOKS)');
+    this.engine.recordSwimlane('mkt_weather', 'ben', 'MID', 'L', 'Stop-Loss @ 48% (80 CHIP)');
 
     this.engine.poolBook.placeOrder(
       m2Current,
@@ -479,7 +479,7 @@ export class EdgeStateStore {
       60,
       'seed_m2_dan_limbuy'
     );
-    this.engine.recordSwimlane('mkt_weather', 'dan', 'MID', 'L', 'Limit Buy YES @ 46% (60 TOKS)', -60);
+    this.engine.recordSwimlane('mkt_weather', 'dan', 'MID', 'L', 'Limit Buy YES @ 46% (60 CHIP)', -60);
 
     // ========================================================================
     // Market 3: Stacked (Meta / Derivative) Market referencing Market 1
@@ -491,10 +491,10 @@ export class EdgeStateStore {
       proposer_id: 'cat',
       archetype: 'stacked',
       question: 'STACKED // Will ANA finish Arsenal Market M1 with positive P&L?',
-      unit: 'TOKS P&L',
+      unit: 'CHIP P&L',
       bounds: [0, 100],
       no_event_value: 0,
-      criteria: 'Settles YES (100) if ANA net P&L on mkt_arsenal > 0 TOKS at settlement.',
+      criteria: 'Settles YES (100) if ANA net P&L on mkt_arsenal > 0 CHIP at settlement.',
       resolution_source: 'Parent Market mkt_arsenal Ledger',
       payoff_mode: 'pot',
       lot_stake_k: 40,

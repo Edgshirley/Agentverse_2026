@@ -54,7 +54,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="citadel-shell" data-theme={theme}>
-      {/* Subtle Gently-Floating 8-Bit Playing Cards, Joker Card & Centered SPRD Poker Chips */}
+      {/* Subtle Gently-Floating 8-Bit Playing Cards, Joker Card & Centered CHIP Poker Chips */}
       <div className="bg-betting-decor" aria-hidden="true">
         <div
           className="floating-card-bg"
@@ -94,7 +94,7 @@ export const App: React.FC = () => {
           }}
         />
 
-        {/* Centered 8-Bit SPRD Poker Chips */}
+        {/* Centered 8-Bit CHIP Poker Chips */}
         <PixelPokerChip
           amount="100"
           style={{ top: '48%', left: '3%', animationDelay: '0.7s' }}
@@ -137,7 +137,7 @@ export const App: React.FC = () => {
           }}
         >
           <span>
-            <strong>HOLD ON:</strong> {errorBanner.replace(/TOKS/g, 'SPRD')}
+            <strong>HOLD ON:</strong> {errorBanner.replace(/TOKS/g, 'CHIP')}
           </span>
           <button onClick={() => setErrorBanner(null)}>OK</button>
         </div>

@@ -100,7 +100,7 @@ export function evaluateStackedMarket(
         updatedChildMarket: updatedChild,
         action: 'SETTLE',
         outcomeX: won ? 100 : 0,
-        reason: `Player ${targetPlayer} finished parent market with P&L ${pnl} TOKS (target > ${target})`,
+        reason: `Player ${targetPlayer} finished parent market with P&L ${pnl} CHIP (target > ${target})`,
       };
     }
 

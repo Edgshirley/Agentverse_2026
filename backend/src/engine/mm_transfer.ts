@@ -121,7 +121,7 @@ export class P2PTransferEngine {
     this.assertMarketTradable(market, buyerId);
     ToksLedger.assertIntegerToks(priceToks, 'priceToks');
     if (priceToks <= 0) {
-      throw new P2PTransferError('Standing bid price must be > 0 TOKS');
+      throw new P2PTransferError('Standing bid price must be > 0 CHIP');
     }
 
     // Lock the buyer's bid price in escrow so the standing bid is balance-backed
@@ -131,7 +131,7 @@ export class P2PTransferEngine {
       priceToks,
       'ESCROW_LOCK',
       `${idempotencyKey}:bid_lock`,
-      `Standing bid: ${priceToks} TOKS for 1 ${side} lot`
+      `Standing bid: ${priceToks} CHIP for 1 ${side} lot`
     );
 
     const now = this.clock.now();
@@ -199,7 +199,7 @@ export class P2PTransferEngine {
     this.assertMarketTradable(market, sellerId);
     ToksLedger.assertIntegerToks(minPriceToks, 'minPriceToks');
     if (minPriceToks <= 0) {
-      throw new P2PTransferError('Ask / Auto-Sell price must be > 0 TOKS');
+      throw new P2PTransferError('Ask / Auto-Sell price must be > 0 CHIP');
     }
 
     const positions = this.spreadBook.getPositions(market.id);
@@ -306,7 +306,7 @@ export class P2PTransferEngine {
    * - Transfers 1 lot of `bid.side` (and its per-lot `staked_toks` in the market pot) from `sellerId` to `bid.buyer_id`.
    * - Buyer already has `bid.price_toks` locked in escrow from posting the standing bid.
    * - Seller's escrow releases `perLotStake` (`S`), buyer's escrow releases `P` and locks `S` (net escrow change for buyer: `S - P`),
-   *   and seller's wallet is credited with `P` TOKS!
+   *   and seller's wallet is credited with `P` CHIP!
    * - Total market escrow (`sum of all positions staked_toks + MM escrow`) remains 100% unchanged!
    */
   private executeLotTransfer(
@@ -356,7 +356,7 @@ export class P2PTransferEngine {
       perLotStake,
       'ESCROW_RELEASE',
       `${idempotencyKey}:unlock_seller_stake`,
-      `Release seller lot stake (${perLotStake} TOKS) on P2P sale`
+      `Release seller lot stake (${perLotStake} CHIP) on P2P sale`
     );
 
     // Step 3: Transfer `priceToks` from buyer's wallet to seller's wallet,
@@ -374,7 +374,7 @@ export class P2PTransferEngine {
           netCashFromBuyerToSeller,
           'P2P_LOT_SALE',
           `${idempotencyKey}:p2p_net_cash`,
-          `P2P lot sale payment (${priceToks} TOKS price vs ${perLotStake} TOKS lot stake)`
+          `P2P lot sale payment (${priceToks} CHIP price vs ${perLotStake} CHIP lot stake)`
         );
       }
     } else {
@@ -386,7 +386,7 @@ export class P2PTransferEngine {
         netDiscountFromSellerToBuyer,
         'P2P_LOT_SALE',
         `${idempotencyKey}:p2p_net_discount`,
-        `P2P discount lot transfer (${priceToks} TOKS price vs ${perLotStake} TOKS lot stake)`
+        `P2P discount lot transfer (${priceToks} CHIP price vs ${perLotStake} CHIP lot stake)`
       );
     }
 
@@ -397,7 +397,7 @@ export class P2PTransferEngine {
       perLotStake,
       'ESCROW_LOCK',
       `${idempotencyKey}:lock_buyer_stake`,
-      `Lock buyer market stake (${perLotStake} TOKS) for acquired ${bid.side} lot`
+      `Lock buyer market stake (${perLotStake} CHIP) for acquired ${bid.side} lot`
     );
 
     // Update positions in SpreadMarketBook

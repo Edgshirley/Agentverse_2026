@@ -65,7 +65,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
 
   // Strategy & Mandatory Risk Gate (in terms of the unit being bet)
   const [strategyInput, setStrategyInput] = useState<string>(
-    'Bet 50 SPRD on ABOVE, sell at 6 pit stops, stop me out if it drops to 2 pit stops'
+    'Bet 50 CHIP on ABOVE, sell at 6 pit stops, stop me out if it drops to 2 pit stops'
   );
   const [parsedRule, setParsedRule] = useState<ParseRuleProposal | null>(null);
   const [showRiskGateCard, setShowRiskGateCard] = useState<boolean>(false);
@@ -171,7 +171,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
         });
         const prop: ParseRuleProposal = res.proposal;
         setParsedRule(prop);
-        setSummaryField((prop.parsed_strategy_summary || '').replace(/TOKS/g, 'SPRD'));
+        setSummaryField((prop.parsed_strategy_summary || '').replace(/TOKS/g, 'CHIP'));
         setStakeField(String(prop.stake_toks || 50));
         setSideField(prop.side);
         setTpField(prop.take_profit_level != null ? String(prop.take_profit_level) : '');
@@ -216,7 +216,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
       const res = await onDispatch('/api/markets', {
         proposer_id: activePlayer.id,
         archetype: classification.archetype,
-        question: draft.question.replace(/TOKS/gi, 'SPRD'),
+        question: draft.question.replace(/TOKS/gi, 'CHIP'),
         unit: finalUnit,
         bounds: finalBounds,
         no_event_value: draft.no_event_value,
@@ -270,7 +270,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
       // Otherwise for a Simple/Stacked market, flow into the 3-Part Strategy & Risk Tolerance Confirmation Card
       setIntentMode('strategy');
       const isDeg = createdMarket?.unit === '°C';
-      setSummaryField(`YES ${createdMarket?.lot_stake_k ?? 50} SPRD`);
+      setSummaryField(`YES ${createdMarket?.lot_stake_k ?? 50} CHIP`);
       setStakeField(String(createdMarket?.lot_stake_k ?? 50));
       setSideField('YES');
       setTpField(isDeg ? '27' : '70');
@@ -451,7 +451,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
               </button>
               <button
                 className="preset-pill-btn"
-                onClick={() => setProposeInput('I bet it will be 24°C tomorrow, 50 SPRD')}
+                onClick={() => setProposeInput('I bet it will be 24°C tomorrow, 50 CHIP')}
               >
                 🌡️ 24°C Tomorrow
               </button>
@@ -459,7 +459,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
                 className="preset-pill-btn"
                 onClick={() =>
                   setProposeInput(
-                    'Internal company bet: Q4 team performance ranking, boss inputs answer after countdown, 40 SPRD'
+                    'Internal company bet: Q4 team performance ranking, boss inputs answer after countdown, 40 CHIP'
                   )
                 }
               >
@@ -470,7 +470,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
                   className="preset-pill-btn"
                   onClick={() =>
                     setProposeInput(
-                      `Stacked bet: Will "${allMarkets[0].question}" hit 26? 30 SPRD`
+                      `Stacked bet: Will "${allMarkets[0].question}" hit 26? 30 CHIP`
                     )
                   }
                 >
@@ -484,7 +484,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
                 className="preset-pill-btn"
                 onClick={() =>
                   setStrategyInput(
-                    `Bet 50 SPRD on ${
+                    `Bet 50 CHIP on ${
                       activeMarket?.archetype === 'spread' ? 'ABOVE' : 'YES'
                     }, sell at ${
                       betUnitLabel === 'pit stops' ? '6' : '27'
@@ -498,7 +498,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
               </button>
               <button
                 className="preset-pill-btn"
-                onClick={() => setStrategyInput('Put 100 SPRD in right now with no stops')}
+                onClick={() => setStrategyInput('Put 100 CHIP in right now with no stops')}
               >
                 🛡️ Test Missing Risk Tolerance Gate
               </button>
@@ -570,7 +570,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
           </div>
 
           <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>
-            &ldquo;{draft.question.replace(/TOKS/gi, 'SPRD')}&rdquo;
+            &ldquo;{draft.question.replace(/TOKS/gi, 'CHIP')}&rdquo;
           </div>
 
           {/* Compact Agent Summary Pill Row */}
@@ -590,7 +590,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
                 ? `Window Unit: ${inHouseUnit}`
                 : classification.archetype.toUpperCase()}
             </span>
-            <span className="badge-outline">{inHouseLotStake} SPRD / lot</span>
+            <span className="badge-outline">{inHouseLotStake} CHIP / lot</span>
             {classification.archetype === 'spread' && (
               <span className="badge-outline">
                 {inHousePayoffMode.toUpperCase()} · {inHouseCapC}x Cap
@@ -652,7 +652,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
                   <div style={{ display: 'flex', gap: 8 }}>
                     <div style={{ flex: 1 }}>
                       <label style={{ fontSize: 11, color: 'var(--fg-muted)', display: 'block', marginBottom: 4 }}>
-                        Stake (SPRD):
+                        Stake (CHIP):
                       </label>
                       <input
                         type="number"
@@ -787,7 +787,7 @@ export const VoiceBotScreen: React.FC<VoiceBotScreenProps> = ({
           >
             <div>
               <label style={{ fontSize: 11, color: 'var(--fg-muted)', display: 'block', marginBottom: 4 }}>
-                1. Position &amp; Stake (SPRD)
+                1. Position &amp; Stake (CHIP)
               </label>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <select

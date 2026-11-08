@@ -120,9 +120,9 @@ export const TradingControls: React.FC<TradingControlsProps> = ({
               </button>
               <button
                 onClick={() => onDispatch(`/api/markets/${market.id}/auction/timeout`, {})}
-                title="Simulate 3m MM quote timeout -> forfeits k TOKS ante to next bidder"
+                title="Simulate 3m MM quote timeout -> forfeits k CHIP ante to next bidder"
               >
-                SIMULATE 3m TIMEOUT (-{market.lot_stake_k} TOKS ANTE)
+                SIMULATE 3m TIMEOUT (-{market.lot_stake_k} CHIP ANTE)
               </button>
             </>
           )}
@@ -140,7 +140,7 @@ export const TradingControls: React.FC<TradingControlsProps> = ({
       >
         <div style={{ border: '1px solid var(--border-color)', padding: 8 }}>
           <div style={{ fontSize: 10, color: 'var(--fg-muted)', marginBottom: 6 }}>
-            1-TAP MANUAL TAKE (STAKE k = {market.lot_stake_k} TOKS / LOT)
+            1-TAP MANUAL TAKE (STAKE k = {market.lot_stake_k} CHIP / LOT)
           </div>
           {isSpread ? (
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -181,7 +181,7 @@ export const TradingControls: React.FC<TradingControlsProps> = ({
                   })
                 }
               >
-                [1-TAP YES] (+{market.lot_stake_k} TOKS)
+                [1-TAP YES] (+{market.lot_stake_k} CHIP)
               </button>
               <button
                 className="btn-inverted"
@@ -193,7 +193,7 @@ export const TradingControls: React.FC<TradingControlsProps> = ({
                   })
                 }
               >
-                [1-TAP NO] (+{market.lot_stake_k} TOKS)
+                [1-TAP NO] (+{market.lot_stake_k} CHIP)
               </button>
             </div>
           )}
@@ -230,7 +230,7 @@ export const TradingControls: React.FC<TradingControlsProps> = ({
                     })
                   }
                 >
-                  POST BID ({p2pPriceInput} TOKS)
+                  POST BID ({p2pPriceInput} CHIP)
                 </button>
                 {openStandingBids.map((b) => (
                   <button
@@ -243,9 +243,9 @@ export const TradingControls: React.FC<TradingControlsProps> = ({
                         bidId: b.id,
                       })
                     }
-                    title={`Sell 1 ${b.side} lot immediately to ${b.buyer_id.toUpperCase()} for ${b.price_toks} TOKS`}
+                    title={`Sell 1 ${b.side} lot immediately to ${b.buyer_id.toUpperCase()} for ${b.price_toks} CHIP`}
                   >
-                    CASH OUT 1x {b.side} @ {b.price_toks} TOKS (TO {b.buyer_id.toUpperCase()})
+                    CASH OUT 1x {b.side} @ {b.price_toks} CHIP (TO {b.buyer_id.toUpperCase()})
                   </button>
                 ))}
               </div>
@@ -308,7 +308,7 @@ export const TradingControls: React.FC<TradingControlsProps> = ({
               value={orderTrigger}
               onChange={(e) => setOrderTrigger(e.target.value)}
               style={{ width: 55, padding: '3px 5px' }}
-              title="Trigger odds % or TOKS level"
+              title="Trigger odds % or CHIP level"
             />
             <span>SIZE:</span>
             <input

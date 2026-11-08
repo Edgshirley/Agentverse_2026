@@ -60,13 +60,13 @@ export const PortfolioArbiterScreen: React.FC<PortfolioArbiterScreenProps> = ({
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
             <span style={{ color: 'var(--fg-muted)' }}>AVAILABLE WALLET:</span>
             <strong style={{ fontSize: 16 }}>
-              {activePlayer.wallet_balance_toks.toLocaleString()} TOKS
+              {activePlayer.wallet_balance_toks.toLocaleString()} CHIP
             </strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: 'var(--fg-muted)' }}>LOCKED IN ESCROW:</span>
             <strong style={{ fontSize: 16 }}>
-              {activePlayer.escrow_balance_toks.toLocaleString()} TOKS
+              {activePlayer.escrow_balance_toks.toLocaleString()} CHIP
             </strong>
           </div>
         </div>
@@ -105,7 +105,7 @@ export const PortfolioArbiterScreen: React.FC<PortfolioArbiterScreenProps> = ({
               {myOrders.map((o) => (
                 <div key={o.id} style={{ fontSize: 11, color: 'var(--fg-muted)' }}>
                   OPEN ORDER: {o.type.toUpperCase()} {o.side} @ {o.trigger_level} ({o.size_toks}{' '}
-                  TOKS)
+                  CHIP)
                 </div>
               ))}
             </div>
@@ -242,7 +242,7 @@ export const PortfolioArbiterScreen: React.FC<PortfolioArbiterScreenProps> = ({
               >
                 <span>
                   SIDE: <strong>{pos.side}</strong> · LIVE BALANCE:{' '}
-                  <strong>{pos.live_equity_toks} TOKS</strong> (ENTRY: {pos.entry_cost_toks} TOKS)
+                  <strong>{pos.live_equity_toks} CHIP</strong> (ENTRY: {pos.entry_cost_toks} CHIP)
                 </span>
                 {pos.live_equity_toks > 0 && activeMarket.archetype !== 'spread' && (
                   <button

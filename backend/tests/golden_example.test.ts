@@ -10,7 +10,7 @@ function createGoldenScenario() {
   const clock = new DeterministicClock(1762542000000);
   const ledger = new ToksLedger(clock);
 
-  // Register Ana, Ben, Cat, Dan with 1,000 TOKS each
+  // Register Ana, Ben, Cat, Dan with 1,000 CHIP each
   const initialBalance = 1000;
   for (const [id, nickname] of [
     ['ana', 'Ana'],
@@ -89,7 +89,7 @@ function createGoldenScenario() {
   market = spreadBook.takeSpreadPosition(market, 'cat', 'OVER', 1, 'take_cat').market;
   market = spreadBook.takeSpreadPosition(market, 'dan', 'UNDER', 1, 'take_dan').market;
 
-  // Verify total pot = 50 TOKS (30 from takers + 20 from Ana MM)
+  // Verify total pot = 50 CHIP (30 from takers + 20 from Ana MM)
   expect(spreadBook.getMmEscrow(market.id)).toBe(20);
   const totalEscrowBeforeSale = ledger
     .getAllPlayers()
@@ -100,7 +100,7 @@ function createGoldenScenario() {
   market = spreadBook.lockTakesAndGoLive(market, 'lock_takes');
   expect(market.state).toBe('live');
 
-  // 4. At minute 30 (0-0), Cat bids 20 TOKS for Ben's Over lot; Ben sells. Cat now holds 2 Over lots.
+  // 4. At minute 30 (0-0), Cat bids 20 CHIP for Ben's Over lot; Ben sells. Cat now holds 2 Over lots.
   clock.advance(30 * 60 * 1000);
   const { bid } = p2p.postStandingBid(market, 'cat', 'OVER', 20, 'cat_bid_20');
   p2p.acceptStandingBid(market, 'ben', 'OVER', 'ben_accept_20', bid.id);
@@ -177,7 +177,7 @@ describe('Section 2.3 Worked Golden Example (Engine Golden Test)', () => {
     expect(resH.netPnlByPlayer['ana']).toBe(30);
   });
 
-  it('handles MM quote deadline forfeiture (k TOKS ante to next-narrowest bidder) and integer remainder routing', () => {
+  it('handles MM quote deadline forfeiture (k CHIP ante to next-narrowest bidder) and integer remainder routing', () => {
     const clock = new DeterministicClock();
     const ledger = new ToksLedger(clock);
     for (const id of ['ana', 'ben', 'cat']) {
@@ -226,7 +226,7 @@ describe('Section 2.3 Worked Golden Example (Engine Golden Test)', () => {
     mkt = auction.finalizeAuction(mkt);
     expect(mkt.mm_player_id).toBe('ana');
 
-    // Ana misses 3-min quote deadline -> forfeits k=15 TOKS to Ben, who becomes MM at w=12
+    // Ana misses 3-min quote deadline -> forfeits k=15 CHIP to Ben, who becomes MM at w=12
     mkt = auction.handleQuoteTimeout(mkt, 'timeout_1');
     expect(mkt.mm_player_id).toBe('ben');
     expect(mkt.active_width_w).toBe(12);

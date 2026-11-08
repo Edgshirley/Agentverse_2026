@@ -84,17 +84,17 @@ export const ExhibitA_PlayerRing: React.FC<ExhibitAProps> = ({
           }}
         >
           <span>
-            LIVE EQ: <strong style={{ color: 'var(--fg-primary)' }}>{liveEquity} TOKS</strong>
+            LIVE EQ: <strong style={{ color: 'var(--fg-primary)' }}>{liveEquity} CHIP</strong>
           </span>
           <span>
             P&L:{' '}
             <strong style={{ color: 'var(--fg-primary)' }}>
-              {netDelta >= 0 ? `+${netDelta}` : netDelta} TOKS
+              {netDelta >= 0 ? `+${netDelta}` : netDelta} CHIP
             </strong>
           </span>
         </div>
         <div style={{ fontSize: 10, color: 'var(--fg-dim)', marginTop: 2 }}>
-          WALLET: {player.wallet_balance_toks} TOKS | ESCROW: {player.escrow_balance_toks} TOKS
+          WALLET: {player.wallet_balance_toks} CHIP | ESCROW: {player.escrow_balance_toks} CHIP
         </div>
       </div>
     );
@@ -176,7 +176,7 @@ export const ExhibitA_PlayerRing: React.FC<ExhibitAProps> = ({
 
             <div>
               <div style={{ color: 'var(--fg-muted)', fontSize: 10 }}>ACTIVE POT / LIQUIDITY</div>
-              <div style={{ fontSize: 16, fontWeight: 700 }}>{totalPotToks} TOKS</div>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>{totalPotToks} CHIP</div>
             </div>
 
             <div>
@@ -184,7 +184,7 @@ export const ExhibitA_PlayerRing: React.FC<ExhibitAProps> = ({
                 FAIR VALUE ({market.fair_value_source || 'POISSON'})
               </div>
               <div style={{ fontSize: 16, fontWeight: 700 }}>
-                {market.live_fair_value_toks ?? market.lot_stake_k} TOKS / LOT
+                {market.live_fair_value_toks ?? market.lot_stake_k} CHIP / LOT
               </div>
             </div>
           </div>
@@ -197,7 +197,7 @@ export const ExhibitA_PlayerRing: React.FC<ExhibitAProps> = ({
               </span>
             ) : (
               <span>
-                CRITERIA: {market.criteria} (STAKE k = {market.lot_stake_k} TOKS)
+                CRITERIA: {market.criteria} (STAKE k = {market.lot_stake_k} CHIP)
               </span>
             )}
           </div>

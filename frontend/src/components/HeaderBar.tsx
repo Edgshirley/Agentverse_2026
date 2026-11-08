@@ -57,12 +57,12 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         </button>
       </nav>
 
-      {/* Your SPRD Balance & Theme */}
+      {/* Your CHIP Balance & Theme */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div className="chip-wallet-badge">
           <span className="pixel-font">{activePlayer.wallet_balance_toks.toLocaleString()}</span>
           <span className="pixel-font" style={{ fontSize: 11, opacity: 0.9 }}>
-            SPRD
+            CHIP
           </span>
           {activePlayer.escrow_balance_toks > 0 && (
             <span style={{ fontSize: 11, opacity: 0.75 }}>

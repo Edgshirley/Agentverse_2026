@@ -27,7 +27,7 @@ export class ConflictError extends Error {
 export class Configuration {
   public readonly ENV: string = envObj.ENV || 'dev';
   public readonly VERSION: string = envObj.VERSION || '1.0.0';
-  public readonly TITLE: string = envObj.TITLE || 'Friend Spreader Rules Engine';
+  public readonly TITLE: string = envObj.TITLE || 'MarketMate Rules Engine';
 
   // PostgreSQL (schema owned by `python -m src.migrate` in ../api)
   public readonly POSTGRES_HOST: string = envObj.POSTGRES_HOST || 'localhost';

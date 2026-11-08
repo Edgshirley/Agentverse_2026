@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Friend Spreader (Spread) — Dev Environment Python Seeder
+MarketMate — Dev Environment Python Seeder
 Used exclusively by the `seed` container in `docker-compose.dev.yml`.
 """
 
@@ -26,7 +26,7 @@ def api_request(method: str, path: str, payload: dict | None = None) -> dict:
 
 
 def wait_for_app() -> None:
-    print(f"[SEED] Waiting for Citadel Terminal API at {API_BASE_URL}/api/state ...")
+    print(f"[SEED] Waiting for MarketMate API at {API_BASE_URL}/api/state ...")
     deadline = time.time() + MAX_WAIT_SECONDS
     while time.time() < deadline:
         try:
@@ -56,7 +56,7 @@ def run_seed() -> None:
     players = final_state.get("players", [])
 
     print("=" * 72)
-    print(f"SPREAD // CLEAN START READY — {len(players)} PLAYER(S) | {len(markets)} ACTIVE MARKETS")
+    print(f"MARKETMATE // CLEAN START READY — {len(players)} PLAYER(S) | {len(markets)} ACTIVE MARKETS")
     print("=" * 72)
 
 

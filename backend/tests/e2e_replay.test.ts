@@ -7,13 +7,13 @@ describe('End-to-End Integration: Recorded Match Replay Mode & Stacked Settlemen
   it('drives mkt_arsenal through P2P sale, VAR disallowed goal correction, confirmed goal at 50m, and Stacked market resolution', () => {
     const store = new EdgeStateStore();
 
-    // 1. Verify initial seeded mkt_arsenal state ([35, 43] quoted by Ana, Cat has open 20 TOKS standing bid)
+    // 1. Verify initial seeded mkt_arsenal state ([35, 43] quoted by Ana, Cat has open 20 CHIP standing bid)
     const initialBundle = store.getFullMarketBundle('mkt_arsenal');
     expect(initialBundle.market.state).toBe('live');
     expect(initialBundle.market.L).toBe(35);
     expect(initialBundle.market.H).toBe(43);
 
-    // 2. Ben accepts Cat's 20 TOKS standing P2P bid for 1 Over lot
+    // 2. Ben accepts Cat's 20 CHIP standing P2P bid for 1 Over lot
     const openBid = initialBundle.p2pBids.find((b) => b.status === 'open' && b.buyer_id === 'cat');
     expect(openBid).toBeDefined();
     store.engine.p2p.acceptStandingBid(
@@ -60,7 +60,7 @@ describe('End-to-End Integration: Recorded Match Replay Mode & Stacked Settlemen
     expect(tick50.market.outcome_x).toBe(50);
 
     // 7. Verify child Stacked market (`mkt_stacked_ana`: "Will ANA finish Arsenal Market M1 with positive P&L?")
-    // Since X=50 (Over wins), Ana (MM) finished with -20 TOKS P&L (not > 0), so mkt_stacked_ana automatically settled at X=0 (NO wins)!
+    // Since X=50 (Over wins), Ana (MM) finished with -20 CHIP P&L (not > 0), so mkt_stacked_ana automatically settled at X=0 (NO wins)!
     const childStacked = store.engine.getMarket('mkt_stacked_ana');
     expect(childStacked.state).toBe('settled');
     expect(childStacked.outcome_x).toBe(0);

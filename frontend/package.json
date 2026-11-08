@@ -1,15 +1,16 @@
 {
-  "name": "friend-spreader-frontend",
+  "name": "marketmate-frontend",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Friend Spreader (Spread) — Citadel Poker Terminal React UI",
+  "description": "MarketMate React UI",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0 --port 3000"
   },
   "dependencies": {
+    "pixelarticons": "^2.4.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

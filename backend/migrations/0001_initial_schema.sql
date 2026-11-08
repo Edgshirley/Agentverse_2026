@@ -1,5 +1,5 @@
 -- ============================================================================
--- Friend Spreader (Spread) — Cloudflare D1 Serverless SQLite Schema (SPEC §5.2)
+-- MarketMate — Cloudflare D1 Serverless SQLite Schema (SPEC §5.2)
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS groups (

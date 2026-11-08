@@ -23,6 +23,9 @@ spread-storage/
 .venv/
 prod.env
 
+# Keycloak client secret written by make dev
+spread-storage/
+
 # ---- SECRETS: never commit (see INSTRUCTIONS.md) ----
 secrets.env
 *.secrets.env

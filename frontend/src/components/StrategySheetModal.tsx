@@ -35,7 +35,7 @@ export const StrategySheetModal: React.FC<StrategySheetModalProps> = ({
 
   // Tab 1: Market Creation (Agent 1 -> Agent 2)
   const [rawPrompt, setRawPrompt] = useState<string>(
-    'When will Arsenal score their second goal vs Chelsea? 15 TOKS per lot'
+    'When will Arsenal score their second goal vs Chelsea? 15 CHIP per lot'
   );
   const [draft, setDraft] = useState<DraftMarketProposal | null>(null);
   const [lint, setLint] = useState<LintCriteriaProposal | null>(null);
@@ -47,7 +47,7 @@ export const StrategySheetModal: React.FC<StrategySheetModalProps> = ({
 
   // Tab 2: Conversational Strategy & Mandatory 3-Part Risk Gate (FR-04 / FR-91)
   const [strategyPrompt, setStrategyPrompt] = useState<string>(
-    'Put 100 TOKS in if odds dip below 40%, take profit at 72%, cut me at 44% floor'
+    'Put 100 CHIP in if odds dip below 40%, take profit at 72%, cut me at 44% floor'
   );
   const [parsedRule, setParsedRule] = useState<ParseRuleProposal | null>(null);
   const [summaryField, setSummaryField] = useState<string>('');
@@ -236,8 +236,8 @@ export const StrategySheetModal: React.FC<StrategySheetModalProps> = ({
               onMouseUp={() =>
                 ptt.stopRecording(
                   tab === 'create'
-                    ? 'When will Arsenal score their second goal vs Chelsea? 15 TOKS per lot'
-                    : 'Put 100 TOKS on YES, take profit at 75%, cut me at 42% floor'
+                    ? 'When will Arsenal score their second goal vs Chelsea? 15 CHIP per lot'
+                    : 'Put 100 CHIP on YES, take profit at 75%, cut me at 42% floor'
                 )
               }
             >
@@ -268,20 +268,20 @@ export const StrategySheetModal: React.FC<StrategySheetModalProps> = ({
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
               <button
                 onClick={() =>
-                  setRawPrompt('When will Arsenal score next? 15 TOKS spread market')
+                  setRawPrompt('When will Arsenal score next? 15 CHIP spread market')
                 }
               >
                 PRESET: SPREAD [L, H]
               </button>
               <button
-                onClick={() => setRawPrompt('I bet it will be 24°C in London tomorrow, 30 TOKS')}
+                onClick={() => setRawPrompt('I bet it will be 24°C in London tomorrow, 30 CHIP')}
               >
                 PRESET: SIMPLE WEATHER
               </button>
               <button
                 onClick={() =>
                   setRawPrompt(
-                    'Will Market M1 Over odds hit 75% before halftime? Stacked derivative 25 TOKS'
+                    'Will Market M1 Over odds hit 75% before halftime? Stacked derivative 25 CHIP'
                   )
                 }
               >
@@ -290,7 +290,7 @@ export const StrategySheetModal: React.FC<StrategySheetModalProps> = ({
               <button
                 onClick={() =>
                   setRawPrompt(
-                    'Internal office KPI: Will Team Atlas ship v3 before Friday? Private arbiter bet 40 TOKS'
+                    'Internal office KPI: Will Team Atlas ship v3 before Friday? Private arbiter bet 40 CHIP'
                   )
                 }
               >
@@ -333,7 +333,7 @@ export const StrategySheetModal: React.FC<StrategySheetModalProps> = ({
                   <span className="gutter-num">03</span>
                   <span>
                     BOUNDS: [{draft.bounds[0]} .. {draft.bounds[1]}] {draft.unit} | NO-EVENT
-                    FALLBACK: {draft.no_event_value} | STAKE k: {draft.lot_stake_k} TOKS
+                    FALLBACK: {draft.no_event_value} | STAKE k: {draft.lot_stake_k} CHIP
                   </span>
                 </div>
                 <div className="gutter-row">
@@ -440,7 +440,7 @@ export const StrategySheetModal: React.FC<StrategySheetModalProps> = ({
               <button
                 onClick={() =>
                   setStrategyPrompt(
-                    'Put 100 TOKS on YES, take profit at 72%, cut me at 44% floor'
+                    'Put 100 CHIP on YES, take profit at 72%, cut me at 44% floor'
                   )
                 }
               >
@@ -448,7 +448,7 @@ export const StrategySheetModal: React.FC<StrategySheetModalProps> = ({
               </button>
               <button
                 onClick={() =>
-                  setStrategyPrompt('Put 120 TOKS in right now on YES without any stops')
+                  setStrategyPrompt('Put 120 CHIP in right now on YES without any stops')
                 }
               >
                 PRESET 2: MISSING TP & FLOOR (TEST HARD GATE BLOCK)
@@ -482,7 +482,7 @@ export const StrategySheetModal: React.FC<StrategySheetModalProps> = ({
                   onChange={(e) => setStakeField(e.target.value)}
                   style={{ width: 70 }}
                 />{' '}
-                / {activePlayer.wallet_balance_toks} TOKS WALLET
+                / {activePlayer.wallet_balance_toks} CHIP WALLET
               </div>
 
               <div className="gutter-row" style={{ marginBottom: 6 }}>
@@ -493,7 +493,7 @@ export const StrategySheetModal: React.FC<StrategySheetModalProps> = ({
                     type="text"
                     className="underline-input"
                     value={summaryField}
-                    placeholder="REQUIRED: e.g. YES 100 TOKS"
+                    placeholder="REQUIRED: e.g. YES 100 CHIP"
                     onChange={(e) => setSummaryField(e.target.value)}
                     style={{ width: '60%' }}
                   />

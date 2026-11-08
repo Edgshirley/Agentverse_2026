@@ -47,14 +47,14 @@ export const ExhibitC_TelemetryCard: React.FC<ExhibitCTelemetryProps> = ({
 
   const tpText =
     latestMandate?.take_profit_level != null
-      ? `@ ${latestMandate.take_profit_level}${latestMandate.take_profit_level <= 100 ? '%' : ' TOKS'}`
+      ? `@ ${latestMandate.take_profit_level}${latestMandate.take_profit_level <= 100 ? '%' : ' CHIP'}`
       : playerTpOrder
         ? `@ ${playerTpOrder.trigger_level}%`
         : 'NONE SET (MANUAL)';
 
   const stopFloorText =
     latestMandate?.min_balance_floor != null
-      ? `@ ${latestMandate.min_balance_floor}${latestMandate.min_balance_floor <= 100 ? '%' : ' TOKS'} (HARD)`
+      ? `@ ${latestMandate.min_balance_floor}${latestMandate.min_balance_floor <= 100 ? '%' : ' CHIP'} (HARD)`
       : playerSlOrder
         ? `@ ${playerSlOrder.trigger_level}% (HARD)`
         : 'ESCROW CAP ONLY';
@@ -90,12 +90,12 @@ export const ExhibitC_TelemetryCard: React.FC<ExhibitCTelemetryProps> = ({
         <span className="gutter-num">53</span>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <span>
-            &gt; LIVE EQUITY &nbsp;&nbsp;&nbsp;<strong>{liveEquity.toLocaleString()} TOKS</strong>
+            &gt; LIVE EQUITY &nbsp;&nbsp;&nbsp;<strong>{liveEquity.toLocaleString()} CHIP</strong>
           </span>
           <span>
             &gt; UNREALIZED &nbsp;&nbsp;
             <strong>
-              {unrealized >= 0 ? `+${unrealized}` : unrealized} TOKS
+              {unrealized >= 0 ? `+${unrealized}` : unrealized} CHIP
             </strong>
           </span>
         </div>

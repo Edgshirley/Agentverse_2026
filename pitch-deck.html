@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketMate — Hackathon Pitch Deck & Architecture (v2.6)</title>
+
+  <!-- Google Web Fonts: Silkscreen (8-bit arcade) & JetBrains Mono (clean code/prose) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pastel: {
+              mint: 'var(--pastel-mint-border)',
+              sky: 'var(--pastel-sky-border)',
+              coral: 'var(--pastel-coral-border)',
+              gold: 'var(--pastel-gold-border)',
+              brand: 'var(--brand-border)',
+            }
+          },
+          fontFamily: {
+            pixel: ['"Silkscreen"', 'monospace'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Design tokens copied from frontend/src/styles/app.css so the deck matches the app */
+    body, body.theme-dark {
+      --bg-canvas: #0d0f12;
+      --bg-panel: #15181c;
+      --bg-elevated: #1c2025;
+      --fg-primary: #e6edf3;
+      --fg-muted: #8b949e;
+      --fg-dim: #6e7681;
+      --border-color: #292e36;
+      --border-strong: #d7dde3;
+      --pixel-shadow: #050607;
+      --pastel-mint-bg: #143018;  --pastel-mint-border: #54c546;  --pastel-mint-text: #cdf5c7;
+      --pastel-sky-bg: #0f2650;   --pastel-sky-border: #287eff;   --pastel-sky-text: #cfe1ff;
+      --pastel-coral-bg: #3b1416; --pastel-coral-border: #f9524e; --pastel-coral-text: #ffd6d4;
+      --pastel-gold-bg: #36280a;  --pastel-gold-border: #edb541;  --pastel-gold-text: #fbe8bb;
+      --brand-bg: #3a0d12; --brand-border: #e3212f; --brand-text: #ffd8da; --brand-ink: #ff5a60;
+      --badge-bg: #d7dde3; --badge-fg: #0d0f12;
+    }
+    body.theme-light {
+      --bg-canvas: #edeff1;
+      --bg-panel: #fafbfc;
+      --bg-elevated: #dfe2e6;
+      --fg-primary: #1a1e23;
+      --fg-muted: #59636e;
+      --fg-dim: #8a939d;
+      --border-color: #cdd2d8;
+      --border-strong: #1f2328;
+      --pixel-shadow: #c5cad1;
+      --pastel-mint-bg: #e3f7df;  --pastel-mint-border: #35a527;  --pastel-mint-text: #124a0b;
+      --pastel-sky-bg: #e1edff;   --pastel-sky-border: #125dce;   --pastel-sky-text: #0b3a82;
+      --pastel-coral-bg: #ffe4e3; --pastel-coral-border: #cf2c31; --pastel-coral-text: #761417;
+      --pastel-gold-bg: #fdf1d3;  --pastel-gold-border: #d69712;  --pastel-gold-text: #573b04;
+      --brand-bg: #fde3e4; --brand-border: #c8102e; --brand-text: #7a0a1c; --brand-ink: #c8102e;
+      --badge-bg: #1f2328; --badge-fg: #fafbfc;
+    }
+    /* Legacy deck names, resolved per theme */
+    body {
+      --bg-felt: var(--bg-canvas);
+      --bg-felt-dark: var(--bg-panel);
+      --bg-card: var(--bg-panel);
+      --border-felt: var(--border-color);
+      --border-accent: var(--border-strong);
+      --pastel-mint: var(--pastel-mint-border);
+      --pastel-sky: var(--pastel-sky-border);
+      --pastel-coral: var(--pastel-coral-border);
+      --pastel-gold: var(--pastel-gold-border);
+      --chip-shadow: 2px 2px 0px var(--pixel-shadow);
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: text;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-felt);
+      color: var(--fg-primary);
+      font-family: 'JetBrains Mono', monospace;
+      overflow: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Ambient Subtle Grid */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(to right, rgba(107, 196, 162, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(107, 196, 162, 0.04) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .pixel-font {
+      font-family: 'Silkscreen', monospace;
+      letter-spacing: 0.03em;
+    }
+
+    /* Custom 8-bit Buttons */
+    .btn-8bit {
+      font-family: 'Silkscreen', monospace;
+      padding: 6px 12px;
+      font-size: 11px;
+      border: 2px solid var(--border-felt);
+      background: var(--bg-card);
+      color: var(--fg-primary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+    .btn-8bit:hover {
+      border-color: var(--pastel-mint);
+      color: var(--pastel-mint);
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.4);
+    }
+    .btn-8bit:active {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.4);
+    }
+    .btn-8bit.active {
+      background: var(--pastel-mint);
+      color: var(--bg-panel);
+      border-color: var(--fg-primary);
+      font-weight: 700;
+    }
+
+    /* Pastel Cards */
+    .pastel-card {
+      background: var(--bg-card);
+      border: 2px solid var(--border-felt);
+      border-radius: 8px;
+      padding: 16px;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    .pastel-card.mint-accent { border-color: var(--pastel-mint); }
+    .pastel-card.sky-accent  { border-color: var(--pastel-sky); }
+    .pastel-card.coral-accent{ border-color: var(--pastel-coral); }
+    .pastel-card.gold-accent { border-color: var(--pastel-gold); }
+
+    .pastel-card:hover {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Side Note Highlight Box */
+    .sidenote-banner {
+      background: rgba(223, 192, 108, 0.1);
+      border: 2px dashed var(--pastel-gold);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 11.5px;
+      line-height: 1.45;
+    }
+
+    /* Deck Container */
+    #deck-container {
+      width: 100vw;
+      height: calc(100vh - 54px - 44px);
+      position: relative;
+      overflow: hidden;
+      z-index: 2;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      padding: 24px 36px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.985);
+      transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow-y: auto;
+    }
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
+      z-index: 5;
+    }
+
+    /* Continuous Scroll Mode */
+    body.view-scroll #deck-container {
+      overflow-y: auto;
+      height: auto;
+      max-height: calc(100vh - 98px);
+      display: block;
+    }
+    body.view-scroll .slide {
+      position: relative;
+      opacity: 1;
+      pointer-events: auto;
+      transform: none;
+      min-height: 85vh;
+      margin-bottom: 40px;
+      border-bottom: 2px dashed var(--border-felt);
+    }
+
+    /* 8-Bit Floating Chip Badge */
+    .chip-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 9px;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-family: 'Silkscreen', monospace;
+      font-weight: 700;
+      border: 1.5px solid currentColor;
+      line-height: 1;
+      letter-spacing: 0.05em;
+    }
+    .chip-mint  { color: var(--pastel-mint); background: rgba(107, 196, 162, 0.12); }
+    .chip-sky   { color: var(--pastel-sky);  background: rgba(120, 183, 230, 0.12); }
+    .chip-coral { color: var(--pastel-coral);background: rgba(229, 133, 133, 0.12); }
+    .chip-gold  { color: var(--pastel-gold); background: rgba(223, 192, 108, 0.12); }
+
+    /* Interactive Voice Orb (Screenshot 1 & VoiceBotScreen.tsx) */
+    .voice-orb {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, var(--pastel-sky-border) 0%, var(--pastel-mint-border) 55%, var(--bg-canvas) 100%);
+      box-shadow: 0 0 24px rgba(107, 196, 162, 0.5), inset 0 0 12px rgba(255, 255, 255, 0.4);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: orb-breathe 2.8s infinite ease-in-out;
+      cursor: pointer;
+    }
+    @keyframes orb-breathe {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(107, 196, 162, 0.4); }
+      50% { transform: scale(1.08); box-shadow: 0 0 32px rgba(120, 183, 230, 0.7); }
+    }
+    .voice-orb::after {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.85);
+      top: 14px;
+      left: 14px;
+      filter: blur(2px);
+    }
+
+    /* Segmented Race Track Bar (Screenshot 4 in App) */
+    .race-track-wrap {
+      background: var(--bg-felt-dark);
+      border: 2px solid var(--border-felt);
+      border-radius: 6px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .race-row {
+      display: grid;
+      grid-template-columns: 140px 1fr 100px;
+      align-items: center;
+      gap: 12px;
+    }
+    .race-lane {
+      position: relative;
+      height: 24px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-felt);
+      display: flex;
+      gap: 2px;
+      padding: 2px;
+    }
+    .race-block {
+      flex: 1;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      transition: background 0.3s ease;
+    }
+    .race-block.filled-mint  { background: var(--pastel-mint); }
+    .race-block.filled-sky   { background: var(--pastel-sky); }
+    .race-block.filled-coral { background: var(--pastel-coral); }
+
+    .race-target-line {
+      position: absolute;
+      top: -6px;
+      bottom: -6px;
+      width: 2px;
+      border-left: 2px dashed var(--pastel-gold);
+      z-index: 4;
+      pointer-events: none;
+    }
+    .race-target-flag {
+      position: absolute;
+      top: -18px;
+      transform: translateX(-50%);
+      font-size: 8.5px;
+      font-family: 'Silkscreen', monospace;
+      color: var(--pastel-gold);
+      white-space: nowrap;
+      background: var(--bg-card);
+      padding: 1px 4px;
+      border: 1px solid var(--pastel-gold);
+      border-radius: 3px;
+    }
+
+    /* Center-Spine Bid/Ask & Stop-Loss Depth Graph (Screenshot 3) */
+    .depth-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: var(--bg-felt-dark);
+      border: 2px solid var(--border-felt);
+      border-radius: 6px;
+      padding: 10px 14px;
+    }
+    .depth-row {
+      display: grid;
+      grid-template-columns: 1fr 120px 1fr;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      height: 28px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.15s ease;
+      padding: 0 6px;
+    }
+    .depth-row:hover {
+      background: rgba(107, 196, 162, 0.08);
+    }
+    .depth-side-bid {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      height: 100%;
+    }
+    .depth-bar-bid {
+      background: rgba(107, 196, 162, 0.35);
+      border-right: 3px solid var(--pastel-mint);
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 6px;
+      color: var(--pastel-mint);
+      font-weight: 700;
+      border-radius: 3px 0 0 3px;
+    }
+    .depth-side-ask {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      height: 100%;
+    }
+    .depth-bar-ask {
+      background: rgba(229, 133, 133, 0.35);
+      border-left: 3px solid var(--pastel-coral);
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 6px;
+      color: var(--pastel-coral);
+      font-weight: 700;
+      border-radius: 0 3px 3px 0;
+    }
+    .depth-pill {
+      text-align: center;
+      font-family: 'Silkscreen', monospace;
+      font-size: 11px;
+      padding: 3px 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border-felt);
+      color: var(--fg-muted);
+      border-radius: 4px;
+    }
+    .depth-pill.is-window {
+      border-color: var(--pastel-gold);
+      color: var(--pastel-gold);
+      background: rgba(223, 192, 108, 0.15);
+      font-weight: 700;
+    }
+
+    /* =========================================================================
+       DYNAMIC SLIDE TRANSITIONS ENGINE
+       ========================================================================= */
+    #transition-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      overflow: hidden;
+      display: none;
+    }
+
+    /* 1. CAT RUN TRANSITION */
+    .trans-cat-wrap {
+      position: absolute;
+      top: 45%;
+      left: -120px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      animation: cat-sprint 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+    @keyframes cat-sprint {
+      0% { transform: translateX(0) scaleX(1); }
+      100% { transform: translateX(calc(100vw + 240px)) scaleX(1); }
+    }
+    .trans-cat-dust {
+      width: 14px;
+      height: 14px;
+      background: var(--pastel-gold-border);
+      border-radius: 50%;
+      opacity: 0.8;
+      animation: dust-puff 0.2s infinite alternate;
+    }
+
+    /* 2. CHIPS FALLING CASCADE TRANSITION */
+    .trans-chip {
+      position: absolute;
+      top: -80px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 3px dashed #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Silkscreen', monospace;
+      font-size: 9px;
+      font-weight: 800;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+      animation: chip-fall 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    @keyframes chip-fall {
+      0%   { transform: translateY(0) rotate(0deg) scale(0.8); opacity: 0; }
+      15%  { opacity: 1; }
+      100% { transform: translateY(115vh) rotate(540deg) scale(1.1); opacity: 0.9; }
+    }
+
+    /* 3. F1 SPEED LINES & CHEQUERED BANNER */
+    .trans-f1-banner {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: -100vw;
+      width: 100vw;
+      background: repeating-linear-gradient(45deg, var(--bg-canvas), var(--bg-canvas) 16px, var(--pastel-mint-border) 16px, var(--pastel-mint-border) 32px);
+      box-shadow: 0 0 50px rgba(107, 196, 162, 0.8);
+      animation: f1-sweep 0.7s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 40px;
+    }
+    @keyframes f1-sweep {
+      0% { transform: translateX(0); }
+      50% { transform: translateX(100vw); }
+      100% { transform: translateX(200vw); }
+    }
+
+    /* 4. PIXEL BLINDS TRANSITION */
+    .trans-blind-strip {
+      position: absolute;
+      left: 0;
+      right: 0;
+      background: var(--bg-panel);
+      border-bottom: 2px solid var(--pastel-mint-border);
+      animation: blind-wipe 0.65s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+    }
+    @keyframes blind-wipe {
+      0% { transform: scaleY(0); transform-origin: top; }
+      50% { transform: scaleY(1); transform-origin: top; }
+      51% { transform: scaleY(1); transform-origin: bottom; }
+      100% { transform: scaleY(0); transform-origin: bottom; }
+    }
+
+    /* 5. CARD FAN CASCADE */
+    .trans-card {
+      position: absolute;
+      bottom: -150px;
+      left: 50%;
+      width: 90px;
+      height: 130px;
+      background: var(--fg-primary);
+      color: var(--bg-panel);
+      border: 3px solid var(--bg-panel);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 8px;
+      font-family: 'Silkscreen', monospace;
+      animation: card-fan 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    @keyframes card-fan {
+      0%   { transform: translate(-50%, 0) rotate(0deg) scale(0.5); opacity: 0; }
+      50%  { transform: translate(calc(-50% + var(--dx, 0px)), -45vh) rotate(var(--rot, 0deg)) scale(1.1); opacity: 1; }
+      100% { transform: translate(calc(-50% + var(--dx, 0px)), -120vh) rotate(var(--rot, 0deg)) scale(0.9); opacity: 0; }
+    }
+
+    /* 6. SCANLINE MATRIX WIPE */
+    .trans-scanline {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 12px;
+      background: var(--pastel-mint-border);
+      box-shadow: 0 0 30px var(--pastel-mint-border), 0 0 60px var(--pastel-sky-border);
+      animation: scan-sweep 0.75s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+    }
+    @keyframes scan-sweep {
+      0% { top: -20px; }
+      100% { top: 105vh; }
+    }
+
+    /* ===== App-matching component styles ===== */
+    html, body { background: var(--bg-canvas); }
+    body::before { display: none; }
+
+    .btn-8bit {
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      font-size: 11.5px;
+      border: 2px solid var(--border-color);
+      background: var(--bg-panel);
+      box-shadow: 2px 2px 0px var(--pixel-shadow);
+    }
+    .btn-8bit:hover {
+      border-color: var(--border-strong);
+      color: var(--fg-primary);
+      box-shadow: 3px 3px 0px var(--border-strong);
+    }
+    .btn-8bit:active { box-shadow: 1px 1px 0px var(--border-strong); }
+    .btn-8bit.active {
+      background: var(--brand-bg);
+      color: var(--brand-text);
+      border-color: var(--brand-border);
+      box-shadow: 3px 3px 0px var(--pixel-shadow);
+    }
+
+    .pastel-card {
+      border-radius: 10px;
+      border: 2px solid var(--border-color);
+      background-color: var(--bg-panel);
+      box-shadow: 4px 4px 0px var(--pixel-shadow);
+    }
+    .pastel-card:hover { box-shadow: 4px 4px 0px var(--pixel-shadow); }
+    .pastel-card.mint-accent  { background-color: var(--pastel-mint-bg);  border-color: var(--pastel-mint-border); }
+    .pastel-card.sky-accent   { background-color: var(--pastel-sky-bg);   border-color: var(--pastel-sky-border); }
+    .pastel-card.coral-accent { background-color: var(--pastel-coral-bg); border-color: var(--pastel-coral-border); }
+    .pastel-card.gold-accent  { background-color: var(--pastel-gold-bg);  border-color: var(--pastel-gold-border); }
+
+    .sidenote-banner {
+      background: var(--pastel-gold-bg);
+      border: 2px dashed var(--pastel-gold-border);
+      color: var(--pastel-gold-text);
+      border-radius: 6px;
+    }
+
+    .chip-badge { border-radius: 6px; border-width: 2px; padding: 4px 9px; }
+    .chip-mint  { color: var(--pastel-mint-text);  background: var(--pastel-mint-bg);  border-color: var(--pastel-mint-border); }
+    .chip-sky   { color: var(--pastel-sky-text);   background: var(--pastel-sky-bg);   border-color: var(--pastel-sky-border); }
+    .chip-coral { color: var(--pastel-coral-text); background: var(--pastel-coral-bg); border-color: var(--pastel-coral-border); }
+    .chip-gold  { color: var(--pastel-gold-text);  background: var(--pastel-gold-bg);  border-color: var(--pastel-gold-border); }
+
+    .brand-wordmark { color: var(--brand-ink); }
+
+    /* Voice orb: the app's red dashed ring instead of the blue/green glow */
+    .voice-orb {
+      background: var(--bg-panel);
+      border: 4px dashed var(--brand-border);
+      box-shadow: 4px 4px 0px var(--pixel-shadow), 0 0 0 10px var(--bg-panel), 0 0 0 12px var(--pastel-mint-border);
+      animation: orb-breathe 3.2s infinite ease-in-out;
+    }
+    .voice-orb svg rect { stroke: none; }
+    .voice-orb::after { display: none; }
+    @keyframes orb-breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    .race-track-wrap, .depth-grid {
+      background: var(--bg-canvas);
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      box-shadow: 4px 4px 0px var(--pixel-shadow);
+    }
+    .race-lane { background: var(--bg-panel); border: 2px solid var(--border-color); border-radius: 4px; }
+    .race-block { background: var(--bg-elevated); border-radius: 2px; }
+    .depth-bar-bid { background: var(--pastel-mint-bg); color: var(--pastel-mint-text); }
+    .depth-bar-ask { background: var(--pastel-coral-bg); color: var(--pastel-coral-text); }
+    .depth-row:hover { background: var(--bg-elevated); }
+    .depth-pill { background: var(--bg-panel); border-width: 2px; border-color: var(--border-color); }
+    .depth-pill.is-window { background: var(--pastel-gold-bg); color: var(--pastel-gold-text); border-color: var(--pastel-gold-border); }
+
+    /* Transitions recoloured to the app palette */
+    .trans-f1-banner {
+      background: repeating-linear-gradient(45deg, var(--bg-canvas), var(--bg-canvas) 16px, var(--brand-border) 16px, var(--brand-border) 32px);
+      box-shadow: none;
+    }
+    .trans-blind-strip { background: var(--bg-panel); border-bottom: 2px solid var(--brand-border); }
+    .trans-scanline { background: var(--brand-border); box-shadow: 0 0 24px var(--brand-border); }
+    .trans-chip { border: 3px dashed var(--pastel-gold-border); color: var(--pastel-gold-text); box-shadow: 3px 3px 0px var(--pixel-shadow); }
+    .trans-card { background: var(--bg-panel); color: var(--fg-primary); border: 2px solid var(--brand-border); box-shadow: 3px 3px 0px var(--pixel-shadow); }
+    .trans-cat-dust { background: var(--pastel-gold-border); }
+
+    /* Background cards & chips, like the app's .bg-betting-decor */
+    .bg-betting-decor { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; opacity: 0.24; }
+    .floating-card-bg {
+      position: absolute; width: 60px; height: 84px;
+      border: 2px solid var(--border-color); background: var(--bg-panel); border-radius: 6px;
+      box-shadow: 3px 3px 0px var(--pixel-shadow);
+      display: flex; flex-direction: column; justify-content: space-between; padding: 5px 7px;
+      font-family: 'Silkscreen', monospace; font-size: 11px; color: var(--fg-muted);
+      animation: gentleBgFloat 7.5s ease-in-out infinite alternate;
+    }
+    .floating-card-bg.joker-card { border-color: var(--brand-border); color: var(--brand-ink); }
+    .floating-chip-bg {
+      position: absolute; width: 58px; height: 58px; border-radius: 50%;
+      border: 4px dashed var(--pastel-gold-border); background: var(--pastel-gold-bg);
+      box-shadow: 3px 3px 0px var(--pixel-shadow);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Silkscreen', monospace; font-size: 9px; color: var(--pastel-gold-text);
+      animation: gentleBgFloat 6.8s ease-in-out infinite alternate;
+    }
+    @keyframes gentleBgFloat { 0% { margin-top: 0; } 100% { margin-top: -10px; } }
+
+    /* ===== Deck v3 layout helpers ===== */
+    .slide-inner { max-width: 1040px; margin: auto; width: 100%; }
+    .kicker { font-family: 'Silkscreen', monospace; font-size: 12px; letter-spacing: 0.08em; color: var(--brand-ink); }
+    .headline { font-family: 'Silkscreen', monospace; font-weight: 700; line-height: 1.12; font-size: clamp(28px, 4.4vw, 52px); color: var(--fg-primary); }
+    .sub { font-size: clamp(15px, 1.6vw, 19px); color: var(--fg-muted); line-height: 1.5; }
+    .punch { font-size: clamp(15px, 1.5vw, 18px); color: var(--fg-primary); }
+    .punch em { color: var(--pastel-gold-border); font-style: normal; }
+    .chat-bubble { border: 2px solid var(--border-color); border-radius: 8px; background: var(--bg-canvas); padding: 10px 14px; max-width: 86%; box-shadow: 2px 2px 0 var(--pixel-shadow); }
+    .chat-bubble.friend-msg { align-self: flex-start; background: var(--pastel-sky-bg); border-color: var(--pastel-sky-border); color: var(--pastel-sky-text); }
+    .chat-bubble.mine { align-self: flex-end; background: var(--pastel-mint-bg); border-color: var(--pastel-mint-border); color: var(--pastel-mint-text); }
+    .chat-name { font-family: 'Silkscreen', monospace; font-size: 10px; letter-spacing: 0.06em; opacity: 0.85; }
+    .chat-text { font-size: 15px; }
+    .step-num { font-family: 'Silkscreen', monospace; font-size: 30px; color: var(--brand-ink); line-height: 1; }
+    .step-title { font-family: 'Silkscreen', monospace; font-size: 14px; margin-top: 10px; color: var(--fg-primary); }
+    .step-body { font-size: 13.5px; color: var(--fg-muted); margin-top: 8px; line-height: 1.5; }
+    .big-stat { font-family: 'Silkscreen', monospace; font-weight: 700; font-size: clamp(40px, 6vw, 72px); line-height: 1; }
+    .screenshot-frame { border: 2px solid var(--border-strong); border-radius: 10px; box-shadow: 6px 6px 0 var(--pixel-shadow); overflow: hidden; background: var(--bg-panel); }
+    .screenshot-frame img { display: block; width: 100%; height: auto; }
+
+    /* Match timeline, 0..95 minutes */
+    .timeline-wrap { padding: 64px 0 72px; }
+    .timeline { position: relative; height: 26px; background: var(--bg-panel); border: 2px solid var(--border-color); border-radius: 6px; box-shadow: 3px 3px 0 var(--pixel-shadow); }
+    .timeline-window { position: absolute; top: -2px; bottom: -2px; background: var(--pastel-gold-bg); border: 2px solid var(--pastel-gold-border); }
+    .timeline-window-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; white-space: nowrap; font-family: 'Silkscreen', monospace; font-size: 10px; color: var(--pastel-gold-text); }
+    .tl-mark { position: absolute; top: -50px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .tl-mark .tl-tag { font-size: 12px; white-space: nowrap; padding: 3px 8px; border-radius: 6px; border: 2px solid var(--border-color); background: var(--bg-panel); box-shadow: 2px 2px 0 var(--pixel-shadow); }
+    .tl-mark .tl-stem { width: 2px; height: 26px; background: var(--border-strong); }
+    .tl-mark.voided .tl-tag { border-color: var(--pastel-coral-border); color: var(--pastel-coral-text); background: var(--pastel-coral-bg); text-decoration: line-through; }
+    .tl-mark.win .tl-tag { border-color: var(--pastel-mint-border); color: var(--pastel-mint-text); background: var(--pastel-mint-bg); }
+    .tl-mark.low { top: auto; bottom: -50px; flex-direction: column-reverse; }
+    .tl-axis { position: absolute; top: 100%; margin-top: 4px; font-size: 10px; color: var(--fg-dim); transform: translateX(-50%); }
+
+    @media (max-width: 760px) {
+      .slide { padding: 20px 16px; justify-content: flex-start; }
+      .tl-mark .tl-tag { font-size: 10px; padding: 2px 5px; }
+    }
+  </style>
+</head>
+
+<body class="theme-dark select-none">
+  <!-- Dynamic Transition Overlay -->
+  <div id="transition-overlay"></div>
+  <div class="bg-betting-decor" aria-hidden="true">
+    <div class="floating-card-bg" style="top: 14%; left: 3%; transform: rotate(-12deg);"><span>A&#9824;</span><span style="align-self:flex-end">A&#9824;</span></div>
+    <div class="floating-chip-bg" style="top: 70%; left: 5%;">CHIP</div>
+    <div class="floating-card-bg joker-card" style="top: 62%; right: 4%; transform: rotate(10deg);"><span>JKR</span><span style="align-self:flex-end">JKR</span></div>
+    <div class="floating-chip-bg" style="top: 18%; right: 6%; animation-delay: 1.4s;">CHIP</div>
+  </div>
+
+  <!-- =========================================================================
+       TOP HEADER NAV STRIP
+       ========================================================================= -->
+  <header class="h-[54px] border-b-2 border-[var(--border-color)] bg-[var(--bg-panel)] px-6 flex items-center justify-between z-10 relative">
+    <div class="flex items-center gap-3">
+      <!-- 8-Bit Tuxedo Cat Avatar SVG -->
+      <div class="relative w-8 h-8 flex-shrink-0">
+        <svg width="32" height="32" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+          <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+          <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+          <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+          <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+          <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+          <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+          <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+          <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+        </svg>
+      </div>
+
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="pixel-font font-bold text-sm tracking-wider brand-wordmark">MARKETMATE</span>
+          
+        </div>
+        <div class="text-[10px] text-[var(--fg-muted)] font-mono">Group-chat betting, dealt by a cat</div>
+      </div>
+    </div>
+
+    <!-- Slide Breadcrumb Pill -->
+    <div class="hidden md:flex items-center gap-2 bg-[var(--bg-panel)] border border-[var(--border-color)] px-3 py-1 rounded">
+      <span class="pixel-font text-xs text-[var(--pastel-gold-border)]" id="slide-num-pill">01 / 10</span>
+      <span class="text-[var(--fg-dim)] text-xs">|</span>
+      <span class="text-xs font-mono text-[var(--fg-primary)]" id="slide-title-pill">Put your chips where your mouth is</span>
+    </div>
+
+    <!-- Interactive Header Controls -->
+    <div class="flex items-center gap-2">
+      <!-- 8-Bit Web Audio Toggle -->
+      <button id="sfx-toggle-btn" class="btn-8bit active" title="Toggle 8-bit Synthesized Web Audio Sound Effects">
+        <span id="sfx-icon">🔊</span> SFX: ON
+      </button>
+
+      <!-- Dynamic Transition Mode Dropdown / Button -->
+      <button id="trans-cycle-btn" class="btn-8bit" title="Cycle through dynamic slide transitions">
+        <span>✨</span> TRANS: <span id="trans-mode-label" class="text-[var(--pastel-gold-border)]">AUTO</span>
+      </button>
+
+      <!-- Theme Switcher -->
+      <button id="theme-toggle-btn" class="btn-8bit" title="Toggle Felt Dark / Paper Light">
+        <span>♠</span> FELT
+      </button>
+
+      <!-- View Mode Switcher -->
+      <button id="view-toggle-btn" class="btn-8bit" title="Toggle Slide Presentation / Continuous Scroll">
+        <span>▤</span> SLIDE
+      </button>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       DECK CONTAINER (10 VIEWPORT-LOCKED SLIDES)
+       ========================================================================= -->
+  <main id="deck-container">
+
+    <!-- 01 TITLE -->
+    <section class="slide active" data-slide="0" data-title="Put your chips where your mouth is">
+      <div class="slide-inner flex flex-col md:flex-row items-center gap-12">
+        <div class="flex-1 space-y-6">
+          <div class="kicker">AGENTVERSE HACKATHON 2026</div>
+          <h1 class="pixel-font font-bold brand-wordmark" style="font-size: clamp(44px, 7.5vw, 92px); line-height: 1;">MARKETMATE</h1>
+          <p class="headline" style="font-size: clamp(20px, 2.6vw, 30px);">Turn any group-chat argument into a market.</p>
+          <p class="sub">Play money. Real order book. <span style="color: var(--pastel-gold-border)">Very real bragging rights.</span></p>
+        </div>
+        <div class="flex flex-col items-center gap-4">
+          <div class="voice-orb" style="width: 120px; height: 120px;" onclick="sound.playCatChirp(); triggerTransitionDemo('cat-run');">
+            <svg width="64" height="64" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+          <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+          <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+          <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+          <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+          <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+          <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+          <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+          <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+        </svg>
+          </div>
+          <div class="chip-badge chip-gold">YOUR DEALER TONIGHT</div>
+          <div class="text-xs text-[var(--fg-muted)]">Yes, it's a cat. No, it doesn't take tips.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 PROBLEM -->
+    <section class="slide" data-slide="1" data-title="The problem">
+      <div class="slide-inner grid md:grid-cols-2 gap-12 items-center">
+        <div class="space-y-5">
+          <div class="kicker">THE PROBLEM</div>
+          <h2 class="headline">Every group chat has this argument.</h2>
+          <p class="sub">And it always ends the same way.</p>
+        </div>
+        <div class="flex flex-col gap-3">
+          <div class="chat-bubble friend-msg"><div class="chat-name">MICHEL</div><div class="chat-text">Arsenal score before half time. Easy.</div></div>
+          <div class="chat-bubble mine"><div class="chat-name">NATHALIE</div><div class="chat-text">Bet?</div></div>
+          <div class="chat-bubble friend-msg"><div class="chat-name">MICHEL</div><div class="chat-text">…</div></div>
+          <div class="text-center text-xs text-[var(--fg-dim)] pt-2">Michel has muted this conversation.</div>
+          <div class="grid grid-cols-3 gap-2 pt-4 text-center text-xs">
+            <div class="pastel-card coral-accent" style="padding: 10px;">Nobody wants to be the bookie</div>
+            <div class="pastel-card coral-accent" style="padding: 10px;">Nobody remembers the terms</div>
+            <div class="pastel-card coral-accent" style="padding: 10px;">Nobody pays up</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 SOLUTION -->
+    <section class="slide" data-slide="2" data-title="The fix">
+      <div class="slide-inner space-y-6">
+        <div class="text-center space-y-3">
+          <div class="kicker">THE FIX</div>
+          <h2 class="headline">Say it in the chat. The cat deals it.</h2>
+        </div>
+        <div class="screenshot-frame max-w-4xl mx-auto">
+          <img src="docs/screenshot.png" alt="MarketMate: group chat in the centre, live bets and the dealer bot on the right">
+        </div>
+        <p class="sub text-center">Chat in the middle. Live bets and the dealer on the right. No spreadsheet in sight.</p>
+      </div>
+    </section>
+
+    <!-- 04 HOW A BET WORKS -->
+    <section class="slide" data-slide="3" data-title="How a bet works">
+      <div class="slide-inner space-y-8">
+        <div class="space-y-3">
+          <div class="kicker">HOW A BET WORKS</div>
+          <h2 class="headline">Four moves. No bookie.</h2>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="pastel-card">
+            <div class="step-num">01</div>
+            <div class="step-title">PROPOSE</div>
+            <div class="step-body">"First goal minute. 10 chips a lot."</div>
+          </div>
+          <div class="pastel-card">
+            <div class="step-num">02</div>
+            <div class="step-title">BID IT DOWN</div>
+            <div class="step-body">Jules offers a 12-minute window. Édouard says 8. <em class="text-[var(--fg-primary)] not-italic">Bon courage.</em></div>
+          </div>
+          <div class="pastel-card">
+            <div class="step-num">03</div>
+            <div class="step-title">BE THE HOUSE</div>
+            <div class="step-body">Tightest bid becomes market maker and picks the window: <strong class="text-[var(--pastel-gold-border)]">35–43 min</strong>.</div>
+          </div>
+          <div class="pastel-card">
+            <div class="step-num">04</div>
+            <div class="step-title">PICK A SIDE</div>
+            <div class="step-body">Everyone else bets <strong class="text-[var(--pastel-mint-border)]">above 43</strong> or <strong class="text-[var(--pastel-coral-border)]">below 35</strong>.</div>
+          </div>
+        </div>
+        <div class="sidenote-banner" style="font-size: 14px;">
+          <span>🎯</span><div>Goal lands inside the window? The house wins. The house is Édouard. Édouard is insufferable about it.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 MATCH NIGHT -->
+    <section class="slide" data-slide="4" data-title="Match night">
+      <div class="slide-inner space-y-4">
+        <div class="space-y-3">
+          <div class="kicker">MATCH NIGHT · ARSENAL v CHELSEA</div>
+          <h2 class="headline">Then football happens.</h2>
+        </div>
+        <div class="timeline-wrap"><div class="timeline">
+          <div class="timeline-window" style="left: 36.84%; width: 8.42%;"><div class="timeline-window-label">35–43</div></div>
+          <div class="tl-mark" style="left: 18.95%;"><span class="tl-tag">18' Saka hits the bar</span><span class="tl-stem"></span></div>
+          <div class="tl-mark voided low" style="left: 40.00%;"><span class="tl-tag">38' Havertz!</span><span class="tl-stem"></span></div>
+          <div class="tl-mark" style="left: 42.11%;"><span class="tl-tag">40' VAR: offside</span><span class="tl-stem"></span></div>
+          <div class="tl-mark win low" style="left: 52.63%;"><span class="tl-tag">50' Ødegaard ✓</span><span class="tl-stem"></span></div>
+          <span class="tl-axis" style="left: 0; transform: none;">0'</span>
+          <span class="tl-axis" style="left: 47.37%;">HT</span>
+          <span class="tl-axis" style="right: 0; left: auto; transform: none;">95'</span>
+        </div></div>
+        <div class="grid md:grid-cols-2 gap-4 pt-2">
+          <div class="pastel-card mint-accent"><div class="pixel-font text-sm">ABOVE WINS</div><div class="text-sm mt-1">Nathalie and André get paid. Automatically.</div></div>
+          <div class="pastel-card"><div class="pixel-font text-sm text-[var(--fg-primary)]">NOBODY ARGUED</div><div class="text-sm mt-1 text-[var(--fg-muted)]">The engine settled it on the official result. (Michel argued.)</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 PAYOUT MODES -->
+    <section class="slide" data-slide="5" data-title="Payout modes">
+      <div class="slide-inner space-y-8">
+        <div class="space-y-3">
+          <div class="kicker">PAYOUT MODES</div>
+          <h2 class="headline">Pick your poison.</h2>
+          <p class="sub">The creator picks how winners get paid.</p>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="pastel-card mint-accent"><div class="pixel-font text-base">BINARY</div><div class="text-sm mt-3">Right? Win your stake. Wrong? Lose it. Sleep well.</div></div>
+          <div class="pastel-card sky-accent"><div class="pixel-font text-base">LINEAR</div><div class="text-sm mt-3">The more right you are, the more you win. Capped, so nobody bets the car.</div></div>
+          <div class="pastel-card gold-accent"><div class="pixel-font text-base">LOG</div><div class="text-sm mt-3">Linear, for things that grow by ratio. Crypto bros, this one's yours.</div></div>
+          <div class="pastel-card coral-accent"><div class="pixel-font text-base">POT</div><div class="text-sm mt-3">Everyone chips in. Winners split it. The pub classic.</div></div>
+        </div>
+        <p class="text-xs text-[var(--fg-dim)]">Landing exactly on the edge of the window counts as inside. We don't make the rules. (We do. That's the rule.)</p>
+      </div>
+    </section>
+
+    <!-- 07 AI + ENGINE -->
+    <section class="slide" data-slide="6" data-title="The cat and the engine">
+      <div class="slide-inner space-y-8">
+        <div class="space-y-3">
+          <div class="kicker">THE AI BIT</div>
+          <h2 class="headline">The cat talks. The maths pays.</h2>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="pastel-card sky-accent space-y-3">
+            <div class="flex items-center gap-3"><svg width="36" height="36" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+          <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+          <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+          <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+          <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+          <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+          <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+          <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+          <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+        </svg><span class="pixel-font text-base">THE CAT (GEMINI)</span></div>
+            <ul class="text-sm space-y-1.5">
+              <li>▸ Spots a bet hiding in the chat</li>
+              <li>▸ Drafts the market for you</li>
+              <li>▸ Checks what the internet thinks the odds are</li>
+              <li>▸ Won't place a strategy until you confirm the stop-loss</li>
+            </ul>
+          </div>
+          <div class="pastel-card gold-accent space-y-3">
+            <div class="flex items-center gap-3"><span class="text-3xl">🧮</span><span class="pixel-font text-base">THE ENGINE</span></div>
+            <ul class="text-sm space-y-1.5">
+              <li>▸ Holds every chip in escrow</li>
+              <li>▸ Runs the auction and the order book</li>
+              <li>▸ Settles every bet to the chip</li>
+              <li>▸ Has never hallucinated. Not once.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="sidenote-banner" style="font-size: 14px;"><span>🔒</span><div>The AI can't move a single chip. It suggests; the engine decides. No API key? The cat falls back to built-in rules.</div></div>
+      </div>
+    </section>
+
+    <!-- 08 PROOF -->
+    <section class="slide" data-slide="7" data-title="Every chip accounted for">
+      <div class="slide-inner space-y-10">
+        <div class="space-y-3 text-center">
+          <div class="kicker">TRUST ISSUES? GOOD.</div>
+          <h2 class="headline">Every chip accounted for.</h2>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6 text-center">
+          <div class="pastel-card mint-accent py-8"><div class="big-stat">0</div><div class="text-sm mt-3">chips created or lost, in any settlement. Property-tested.</div></div>
+          <div class="pastel-card sky-accent py-8"><div class="big-stat">50+</div><div class="text-sm mt-3">automated tests across the engine and the gateway</div></div>
+          <div class="pastel-card gold-accent py-8"><div class="big-stat">ℤ</div><div class="text-sm mt-3">Integers only. No 0.1 + 0.2 drama. Leftover chips go to the market maker.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 09 STACK -->
+    <section class="slide" data-slide="8" data-title="Under the hood">
+      <div class="slide-inner space-y-10">
+        <div class="space-y-3">
+          <div class="kicker">UNDER THE HOOD</div>
+          <h2 class="headline">One command. Whole casino.</h2>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
+          <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">UI</div><div class="text-sm mt-2">React + Vite</div></div>
+          <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">GATEWAY</div><div class="text-sm mt-2">FastAPI + Keycloak</div></div>
+          <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">LIVE</div><div class="text-sm mt-2">Redis + WebSockets</div></div>
+          <div class="pastel-card"><div class="pixel-font text-xs text-[var(--brand-ink)]">AGENTS</div><div class="text-sm mt-2">Gemini</div></div>
+          <div class="pastel-card col-span-2 md:col-span-1"><div class="pixel-font text-xs text-[var(--brand-ink)]">ENGINE</div><div class="text-sm mt-2">TypeScript + Postgres</div></div>
+        </div>
+        <div class="pastel-card max-w-md mx-auto text-center" style="background: var(--bg-canvas);">
+          <code class="text-lg" style="color: var(--pastel-mint-border);">$ make dev</code>
+          <div class="text-xs text-[var(--fg-muted)] mt-2">That's it. That's the setup slide.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 NEXT + CLOSE -->
+    <section class="slide" data-slide="9" data-title="What's next">
+      <div class="slide-inner grid md:grid-cols-2 gap-12 items-center">
+        <div class="space-y-5">
+          <div class="kicker">WHAT'S NEXT</div>
+          <ul class="space-y-3 text-base">
+            <li class="flex gap-3"><span class="text-[var(--pastel-gold-border)]">▸</span>Teach the cat that "hi!" is not a bet</li>
+            <li class="flex gap-3"><span class="text-[var(--pastel-gold-border)]">▸</span>Office bets, with the boss as referee</li>
+            <li class="flex gap-3"><span class="text-[var(--pastel-gold-border)]">▸</span>Stop-losses in real units: minutes, °C, rank</li>
+            <li class="flex gap-3"><span class="text-[var(--pastel-gold-border)]">▸</span>Cash out an exact number of chips</li>
+          </ul>
+        </div>
+        <div class="flex flex-col items-center text-center gap-5">
+          <div class="voice-orb" style="width: 110px; height: 110px;" onclick="sound.playBetChord(); triggerTransitionDemo('chips-falling');"><svg width="56" height="56" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+          <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+          <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+          <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+          <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+          <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+          <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+          <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+          <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+          <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+          <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+          <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+          <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+          <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+          <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+          <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+          <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+          <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+          <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+          <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+          <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+        </svg></div>
+          <h2 class="headline">Settle it.</h2>
+          <a href="https://github.com/Edgshirley/Agentverse_2026" target="_blank" class="btn-8bit active text-sm">github.com/Edgshirley/Agentverse_2026 ↗</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =========================================================================
+       BOTTOM NAVIGATION & TRANSITION CONTROLS STRIP
+       ========================================================================= -->
+  <footer class="h-[44px] border-t-2 border-[var(--border-color)] bg-[var(--bg-panel)] px-6 flex items-center justify-between z-10 relative">
+    <div class="flex items-center gap-2">
+      <button id="prev-slide-btn" class="btn-8bit text-xs" onclick="navigateSlide(-1)">
+        ◀ PREV
+      </button>
+      <button id="next-slide-btn" class="btn-8bit text-xs active" onclick="navigateSlide(1)">
+        NEXT ▶
+      </button>
+    </div>
+
+    <!-- Quick Slide Indicator Dots -->
+    <div class="flex items-center gap-1.5" id="slide-dots-container">
+      <!-- Injected by JS -->
+    </div>
+
+  </footer>
+
+  <!-- =========================================================================
+       INTERACTIVE JAVASCRIPT & AUDIO / TRANSITION ENGINE
+       ========================================================================= -->
+  <script>
+    // =========================================================================
+    // 1. SYNTHESIZED 8-BIT WEB AUDIO ENGINE (ZERO EXTERNAL ASSET FAILURES)
+    // =========================================================================
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      getContext() {
+        if (!this.enabled || typeof window === 'undefined') return null;
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume().catch(() => {});
+        }
+        return this.ctx;
+      }
+
+      playTone(freq, startTime, duration, peakGain, type = 'sine') {
+        const ctx = this.getContext();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(0.001, startTime);
+        gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + duration + 0.01);
+      }
+
+      // WhatsApp-style Voice Button Pop (E5 -> B5)
+      playVoicePop() {
+        const ctx = this.getContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        this.playTone(659.25, now, 0.08, 0.16, 'sine');
+        this.playTone(987.77, now + 0.06, 0.14, 0.20, 'sine');
+      }
+
+      // 8-bit Tuxedo Cat Alert Chirp (Square wave two-note perk-up)
+      playCatChirp() {
+        const ctx = this.getContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        this.playTone(740, now, 0.065, 0.12, 'square');
+        this.playTone(1108.73, now + 0.07, 0.12, 0.14, 'square');
+      }
+
+      // F1 Race Engine Zip / Pass Rev
+      playF1Rev() {
+        const ctx = this.getContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(680, now + 0.25);
+        osc.frequency.exponentialRampToValueAtTime(160, now + 0.55);
+
+        gain.gain.setValueAtTime(0.01, now);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.58);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.6);
+      }
+
+      // Casino Chip Clink / Coin ding
+      playChipClink() {
+        const ctx = this.getContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        this.playTone(1480, now, 0.05, 0.12, 'triangle');
+        this.playTone(1975, now + 0.03, 0.07, 0.10, 'triangle');
+      }
+
+      // Casino Bet Placed Triad Chord (C5 -> E5 -> G5 -> C6)
+      playBetChord() {
+        const ctx = this.getContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((freq, idx) => {
+          this.playTone(freq, now + idx * 0.045, 0.12, 0.12, 'triangle');
+        });
+      }
+
+      // Mechanical Blinds / Shutter Click
+      playBlindsClick() {
+        const ctx = this.getContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        this.playTone(320, now, 0.03, 0.10, 'square');
+        this.playTone(210, now + 0.035, 0.03, 0.08, 'square');
+      }
+
+      // Card Fan Flutter
+      playCardFan() {
+        const ctx = this.getContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        for (let i = 0; i < 5; i++) {
+          this.playTone(400 + i * 80, now + i * 0.035, 0.025, 0.07, 'triangle');
+        }
+      }
+
+      // CRT Scanline Phosphor Buzz
+      playScanlineBuzz() {
+        const ctx = this.getContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        this.playTone(120, now, 0.25, 0.09, 'sawtooth');
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    // =========================================================================
+    // 2. DYNAMIC SLIDE TRANSITIONS ENGINE
+    // =========================================================================
+    const TRANSITIONS = ['cat-run', 'chips-falling', 'f1-speed', 'pixel-blinds', 'card-fan', 'scanline-matrix'];
+    let currentTransIndex = 0;
+    let transitionMode = 'auto'; // 'auto' or specific name
+
+    function executeTransitionEffect(effectType, onMidpoint) {
+      const overlay = document.getElementById('transition-overlay');
+      if (!overlay) {
+        if (onMidpoint) onMidpoint();
+        return;
+      }
+
+      overlay.innerHTML = '';
+      overlay.style.display = 'block';
+
+      // Pick sound and render DOM elements based on transition type
+      if (effectType === 'cat-run') {
+        sound.playCatChirp();
+        overlay.innerHTML = `
+          <div class="trans-cat-wrap">
+            <svg width="48" height="48" viewBox="0 0 16 16" fill="none" style="image-rendering: pixelated; display: block;">
+              <rect x="2" y="0" width="2" height="1" fill="#E2E8F0" />
+              <rect x="12" y="0" width="2" height="1" fill="#E2E8F0" />
+              <rect x="2" y="1" width="2" height="1" fill="#0F1117" />
+              <rect x="2" y="2" width="3" height="2" fill="#0F1117" />
+              <rect x="3" y="2" width="1" height="2" fill="#F8FAFC" />
+              <rect x="12" y="1" width="2" height="1" fill="#0F1117" />
+              <rect x="11" y="2" width="3" height="2" fill="#0F1117" />
+              <rect x="12" y="2" width="1" height="2" fill="#F8FAFC" />
+              <rect x="2" y="4" width="12" height="6" fill="#14161E" />
+              <rect x="1" y="6" width="1" height="3" fill="#14161E" />
+              <rect x="14" y="6" width="1" height="3" fill="#14161E" />
+              <rect x="7" y="5" width="2" height="2" fill="#F8FAFC" />
+              <rect x="5" y="7" width="6" height="3" fill="#F8FAFC" />
+              <rect x="3" y="6" width="2" height="2" fill="#F8FAFC" />
+              <rect x="4" y="6" width="1" height="2" fill="#0B0C10" />
+              <rect x="11" y="6" width="2" height="2" fill="#F8FAFC" />
+              <rect x="11" y="6" width="1" height="2" fill="#0B0C10" />
+              <rect x="7" y="8" width="2" height="1" fill="#0B0C10" />
+              <rect x="0" y="7" width="2" height="1" fill="#F8FAFC" />
+              <rect x="0" y="9" width="2" height="1" fill="#CBD5E1" />
+              <rect x="14" y="7" width="2" height="1" fill="#F8FAFC" />
+              <rect x="14" y="9" width="2" height="1" fill="#CBD5E1" />
+              <rect x="3" y="10" width="10" height="5" fill="#0F1117" />
+              <rect x="5" y="10" width="6" height="4" fill="#F8FAFC" />
+              <rect x="5" y="10" width="2" height="2" fill="#14161E" />
+              <rect x="9" y="10" width="2" height="2" fill="#14161E" />
+              <rect x="7" y="10" width="2" height="2" fill="#94A3B8" />
+              <rect x="3" y="14" width="2" height="1" fill="#F8FAFC" />
+              <rect x="11" y="14" width="2" height="1" fill="#F8FAFC" />
+              <rect x="13" y="11" width="2" height="3" fill="#14161E" />
+              <rect x="14" y="10" width="1" height="1" fill="#F8FAFC" />
+            </svg>
+            <div class="trans-cat-dust"></div>
+            <div class="pixel-font text-xs text-[var(--pastel-gold-border)] font-bold">10 CHIP ★</div>
+          </div>
+        `;
+      } else if (effectType === 'chips-falling') {
+        sound.playChipClink();
+        const colors = ['var(--pastel-mint-border)', 'var(--pastel-sky-border)', 'var(--pastel-coral-border)', 'var(--pastel-gold-border)'];
+        let chipsHtml = '';
+        for (let i = 0; i < 16; i++) {
+          const leftPct = Math.random() * 90 + 5;
+          const delay = Math.random() * 0.35;
+          const col = colors[i % colors.length];
+          chipsHtml += `<div class="trans-chip" style="left: ${leftPct}%; background: ${col}; animation-delay: ${delay}s;">CHIP</div>`;
+        }
+        overlay.innerHTML = chipsHtml;
+      } else if (effectType === 'f1-speed') {
+        sound.playF1Rev();
+        overlay.innerHTML = `
+          <div class="trans-f1-banner">
+            <span class="pixel-font text-2xl font-bold text-[var(--bg-panel)] bg-[var(--fg-primary)] px-4 py-2 rounded">
+              ⚽ KICK-OFF
+            </span>
+          </div>
+        `;
+      } else if (effectType === 'pixel-blinds') {
+        sound.playBlindsClick();
+        let blindsHtml = '';
+        for (let i = 0; i < 8; i++) {
+          const topPct = (i / 8) * 100;
+          const heightPct = 100 / 8 + 0.5;
+          const delay = i * 0.04;
+          blindsHtml += `<div class="trans-blind-strip" style="top: ${topPct}%; height: ${heightPct}%; animation-delay: ${delay}s;"></div>`;
+        }
+        overlay.innerHTML = blindsHtml;
+      } else if (effectType === 'card-fan') {
+        sound.playCardFan();
+        overlay.innerHTML = `
+          <div class="trans-card" style="--dx: -160px; --rot: -22deg; animation-delay: 0s;"><span>JKR</span><span class="text-center font-bold">★ JKR ★</span><span>JKR</span></div>
+          <div class="trans-card" style="--dx: -80px; --rot: -10deg; animation-delay: 0.06s;"><span>A♠</span><span class="text-center font-bold">♠ ACE ♠</span><span>A♠</span></div>
+          <div class="trans-card" style="--dx: 0px; --rot: 0deg; animation-delay: 0.12s;"><span>K♦</span><span class="text-center font-bold">♦ KING ♦</span><span>K♦</span></div>
+          <div class="trans-card" style="--dx: 80px; --rot: 12deg; animation-delay: 0.18s;"><span>Q♣</span><span class="text-center font-bold">♣ QUEEN ♣</span><span>Q♣</span></div>
+          <div class="trans-card" style="--dx: 160px; --rot: 24deg; animation-delay: 0.24s;"><span>10♥</span><span class="text-center font-bold">♥ SPREAD ♥</span><span>10♥</span></div>
+        `;
+      } else if (effectType === 'scanline-matrix') {
+        sound.playScanlineBuzz();
+        overlay.innerHTML = `<div class="trans-scanline"></div>`;
+      }
+
+      // Trigger slide switch midway through transition
+      setTimeout(() => {
+        if (onMidpoint) onMidpoint();
+      }, 350);
+
+      // Clean up overlay after animation ends
+      setTimeout(() => {
+        overlay.style.display = 'none';
+        overlay.innerHTML = '';
+      }, 900);
+    }
+
+    function triggerTransitionDemo(effectType) {
+      executeTransitionEffect(effectType, null);
+    }
+
+    // =========================================================================
+    // 3. SLIDE NAVIGATION & STATE CONTROLLER
+    // =========================================================================
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+
+    function updateNavUI() {
+      // Update Slide Pill
+      const activeSlideEl = slides[currentSlide];
+      const title = activeSlideEl.getAttribute('data-title') || 'Slide';
+      const numStr = String(currentSlide + 1).padStart(2, '0') + ' / ' + String(totalSlides).padStart(2, '0');
+      document.getElementById('slide-num-pill').textContent = numStr;
+      document.getElementById('slide-title-pill').textContent = title;
+
+      // Update Dots
+      const dotsContainer = document.getElementById('slide-dots-container');
+      dotsContainer.innerHTML = '';
+      slides.forEach((_, idx) => {
+        const dot = document.createElement('button');
+        dot.className = `w-2 h-2 rounded-full transition-all ${idx === currentSlide ? 'bg-[var(--pastel-mint-border)] w-6' : 'bg-[var(--border-color)] hover:bg-[var(--fg-muted)]'}`;
+        dot.title = `Go to Slide ${idx + 1}`;
+        dot.onclick = () => goToSlide(idx);
+        dotsContainer.appendChild(dot);
+      });
+    }
+
+    function goToSlide(targetIdx) {
+      if (targetIdx < 0 || targetIdx >= totalSlides || targetIdx === currentSlide) return;
+
+      // Pick next transition
+      let chosenEffect = transitionMode;
+      if (chosenEffect === 'auto') {
+        chosenEffect = TRANSITIONS[currentTransIndex % TRANSITIONS.length];
+        currentTransIndex++;
+      }
+
+      executeTransitionEffect(chosenEffect, () => {
+        slides[currentSlide].classList.remove('active');
+        currentSlide = targetIdx;
+        slides[currentSlide].classList.add('active');
+        updateNavUI();
+      });
+    }
+
+    function navigateSlide(direction) {
+      const nextIdx = currentSlide + direction;
+      if (nextIdx >= 0 && nextIdx < totalSlides) {
+        goToSlide(nextIdx);
+      }
+    }
+
+    // Keyboard Shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        navigateSlide(1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        navigateSlide(-1);
+      } else if (e.key === 'm' || e.key === 'M') {
+        toggleSound();
+      }
+    });
+
+    // =========================================================================
+    // 4. HEADER BUTTON HANDLERS
+    // =========================================================================
+    function toggleSound() {
+      sound.enabled = !sound.enabled;
+      const sfxBtn = document.getElementById('sfx-toggle-btn');
+      const sfxIcon = document.getElementById('sfx-icon');
+      if (sound.enabled) {
+        sfxBtn.classList.add('active');
+        sfxBtn.innerHTML = '<span>🔊</span> SFX: ON';
+        sound.playCoinDing();
+      } else {
+        sfxBtn.classList.remove('active');
+        sfxBtn.innerHTML = '<span>🔇</span> SFX: MUTED';
+      }
+    }
+    document.getElementById('sfx-toggle-btn').addEventListener('click', toggleSound);
+
+    // Transition Mode Cycle Button
+    document.getElementById('trans-cycle-btn').addEventListener('click', () => {
+      const modes = ['auto', ...TRANSITIONS];
+      let currentIdx = modes.indexOf(transitionMode);
+      transitionMode = modes[(currentIdx + 1) % modes.length];
+      document.getElementById('trans-mode-label').textContent = transitionMode.toUpperCase();
+      sound.playVoicePop();
+    });
+
+    // Theme Toggle Button
+    document.getElementById('theme-toggle-btn').addEventListener('click', () => {
+      const isLight = document.body.classList.toggle('theme-light');
+      document.body.classList.toggle('theme-dark', !isLight);
+      document.getElementById('theme-toggle-btn').innerHTML = isLight ? '<span>📄</span> PAPER' : '<span>♠</span> FELT';
+      sound.playBlindsClick();
+    });
+
+    // View Toggle Button (Slide vs Scroll)
+    document.getElementById('view-toggle-btn').addEventListener('click', () => {
+      const isScroll = document.body.classList.toggle('view-scroll');
+      document.getElementById('view-toggle-btn').innerHTML = isScroll ? '<span>☰</span> SCROLL' : '<span>▤</span> SLIDE';
+      sound.playBlindsClick();
+    });
+
+
+    // Initial Nav Setup
+    updateNavUI();
+  </script>
+</body>
+</html>

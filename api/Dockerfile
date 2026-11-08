@@ -1,4 +1,4 @@
-# Friend Spreader API (FastAPI) — mirrors ../freevo-api/app/Dockerfile
+# MarketMate API (FastAPI) — mirrors ../freevo-api/app/Dockerfile
 FROM python:3.13
 
 WORKDIR /usr/src/app

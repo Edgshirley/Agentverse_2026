@@ -1,5 +1,5 @@
 // ============================================================================
-// Deterministic Integer TOKS Double-Entry Ledger (SPEC §1.8, §2.3, §5.2, §7.1)
+// Deterministic Integer CHIP Double-Entry Ledger (SPEC §1.8, §2.3, §5.2, §7.1)
 // ============================================================================
 
 import { Clock } from './clock';
@@ -28,7 +28,7 @@ export class ToksLedger {
 
   public static assertIntegerToks(amount: number, label: string = 'amount'): void {
     if (!Number.isInteger(amount) || !Number.isSafeInteger(amount)) {
-      throw new LedgerError(`${label} must be an integer number of TOKS, got: ${amount}`);
+      throw new LedgerError(`${label} must be an integer number of CHIP, got: ${amount}`);
     }
   }
 
@@ -80,7 +80,7 @@ export class ToksLedger {
   }
 
   /**
-   * Locks integer `amount` TOKS from player's wallet into market escrow.
+   * Locks integer `amount` CHIP from player's wallet into market escrow.
    */
   public lockEscrow(
     playerId: string,
@@ -101,7 +101,7 @@ export class ToksLedger {
     if (!p) throw new LedgerError(`Unknown player: ${playerId}`);
     if (p.wallet_balance_toks < amount) {
       throw new LedgerError(
-        `Insufficient wallet balance for ${p.nickname}: needs ${amount} TOKS, has ${p.wallet_balance_toks} TOKS`
+        `Insufficient wallet balance for ${p.nickname}: needs ${amount} CHIP, has ${p.wallet_balance_toks} CHIP`
       );
     }
 
@@ -136,7 +136,7 @@ export class ToksLedger {
   }
 
   /**
-   * Releases integer `amount` TOKS from player's escrow back to their wallet.
+   * Releases integer `amount` CHIP from player's escrow back to their wallet.
    */
   public releaseEscrow(
     playerId: string,
@@ -157,7 +157,7 @@ export class ToksLedger {
     if (!p) throw new LedgerError(`Unknown player: ${playerId}`);
     if (p.escrow_balance_toks < amount) {
       throw new LedgerError(
-        `Insufficient escrow balance for ${p.nickname}: needs ${amount} TOKS, has ${p.escrow_balance_toks} TOKS`
+        `Insufficient escrow balance for ${p.nickname}: needs ${amount} CHIP, has ${p.escrow_balance_toks} CHIP`
       );
     }
 
@@ -217,7 +217,7 @@ export class ToksLedger {
 
     if (sender.wallet_balance_toks < amount) {
       throw new LedgerError(
-        `Insufficient wallet balance for ${sender.nickname}: needs ${amount} TOKS, has ${sender.wallet_balance_toks} TOKS`
+        `Insufficient wallet balance for ${sender.nickname}: needs ${amount} CHIP, has ${sender.wallet_balance_toks} CHIP`
       );
     }
 
@@ -254,7 +254,7 @@ export class ToksLedger {
   /**
    * Settles a batch of escrow-backed payouts atomically.
    * Each item specifies `escrowRelease` (how much of that player's escrow is consumed/unlocked)
-   * and `walletCredit` (how much TOKS is credited to their wallet).
+   * and `walletCredit` (how much CHIP is credited to their wallet).
    * Enforces strict zero-sum: sum(escrowRelease) === sum(walletCredit).
    */
   public settleEscrowBatch(
@@ -287,7 +287,7 @@ export class ToksLedger {
 
     if (totalEscrowReleased !== totalWalletCredited) {
       throw new LedgerError(
-        `Zero-sum violation in settleEscrowBatch: released ${totalEscrowReleased} TOKS != credited ${totalWalletCredited} TOKS`
+        `Zero-sum violation in settleEscrowBatch: released ${totalEscrowReleased} CHIP != credited ${totalWalletCredited} CHIP`
       );
     }
 
@@ -347,7 +347,7 @@ export class ToksLedger {
 
     if (currentSum !== this.totalMintedToks) {
       throw new LedgerError(
-        `Zero-sum violation: current total TOKS (${currentSum}) != minted total TOKS (${this.totalMintedToks})`
+        `Zero-sum violation: current total CHIP (${currentSum}) != minted total CHIP (${this.totalMintedToks})`
       );
     }
 

@@ -33,7 +33,7 @@ node backend/scripts/check_llm_key.mjs # confirms the key works (never prints it
 
 - `make dev` with Docker → `env_file: secrets.env` on the `engine` service
 - `make dev` without Docker → `backend/scripts/run_server.mjs` loads it
-- `make prod` → same `env_file` on the prod `engine` service
+- `make prod` → put `GEMINI_API_KEY` in `prod.env` instead (also git-ignored, read via `--env-file`)
 
 The key is only read by the backend rules engine (`backend/src/worker/agents.ts`).
 It must **never** be sent to or bundled into the frontend — anything under

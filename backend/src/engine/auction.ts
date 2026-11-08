@@ -129,11 +129,11 @@ export class WidthAuctionEngine {
       throw new AuctionError(`Bid width ${width} must be in (0, ${maxSpan}]`);
     }
 
-    // Verify bidder has at least k TOKS in wallet to cover the MM quote ante requirement
+    // Verify bidder has at least k CHIP in wallet to cover the MM quote ante requirement
     const player = this.ledger.getPlayer(playerId);
     if (player.wallet_balance_toks < market.lot_stake_k) {
       throw new AuctionError(
-        `Player ${player.nickname} needs at least ${market.lot_stake_k} TOKS in wallet to bid in width auction`
+        `Player ${player.nickname} needs at least ${market.lot_stake_k} CHIP in wallet to bid in width auction`
       );
     }
 
@@ -254,7 +254,7 @@ export class WidthAuctionEngine {
 
   /**
    * Handles MM missing the 3-minute quote deadline (SPEC §2.2):
-   * MM forfeits an ante of `k` TOKS to the next-narrowest bidder, who quotes at their own bid width.
+   * MM forfeits an ante of `k` CHIP to the next-narrowest bidder, who quotes at their own bid width.
    * If no bidders remain, the market voids.
    */
   public handleQuoteTimeout(market: Market, idempotencyKey: string): Market {
@@ -283,7 +283,7 @@ export class WidthAuctionEngine {
     }
 
     const nextBest = remainingBids[0];
-    // Forfeit k TOKS ante from timedOutMm to nextBest.player_id
+    // Forfeit k CHIP ante from timedOutMm to nextBest.player_id
     this.ledger.transferWallet(
       timedOutMm,
       nextBest.player_id,
@@ -291,7 +291,7 @@ export class WidthAuctionEngine {
       market.lot_stake_k,
       'ANTE_FORFEIT',
       idempotencyKey,
-      `MM quote timeout ante forfeiture (${market.lot_stake_k} TOKS) to next bidder`
+      `MM quote timeout ante forfeiture (${market.lot_stake_k} CHIP) to next bidder`
     );
 
     const now = this.clock.now();

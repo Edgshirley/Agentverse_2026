@@ -48,7 +48,7 @@ export const ExhibitD_WireTrace: React.FC<ExhibitDWireTraceProps> = ({
                 <span style={{ color: 'var(--fg-muted)' }}>{entry.detail}</span>
                 {entry.toks_delta != null && (
                   <span style={{ marginLeft: 6, fontWeight: 700 }}>
-                    [{entry.toks_delta >= 0 ? `+${entry.toks_delta}` : entry.toks_delta} TOKS]
+                    [{entry.toks_delta >= 0 ? `+${entry.toks_delta}` : entry.toks_delta} CHIP]
                   </span>
                 )}
               </div>

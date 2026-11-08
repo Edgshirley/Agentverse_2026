@@ -15,7 +15,7 @@ export interface PoissonSpreadValuation {
 }
 
 /**
- * Computes analytical probabilities and per-lot fair values (in integer TOKS)
+ * Computes analytical probabilities and per-lot fair values (in integer CHIP)
  * for a "Time of First Goal" spread market `[L, H]` conditioned on no goal scored up to `currentMinute`.
  * Uses an exponential arrival time distribution (Poisson process with intensity `lambdaPer95Min`).
  */
@@ -91,7 +91,7 @@ export function computePoissonSpreadFairValue(params: {
           probOver * 100
         )}%, P(INSIDE)=${Math.round(probInside * 100)}%, P(UNDER)=${Math.round(
           probUnder * 100
-        )}% -> Fair Value ${overLotFairValueToks} TOKS/Over lot.`;
+        )}% -> Fair Value ${overLotFairValueToks} CHIP/Over lot.`;
 
   return {
     currentMinute: t,

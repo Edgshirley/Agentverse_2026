@@ -48,8 +48,8 @@ export interface TerminalStatePayload {
 
 export function useMarketSync() {
   const [data, setData] = useState<TerminalStatePayload | null>(null);
-  const [selectedMarketId, setSelectedMarketId] = useState<string>('mkt_arsenal');
-  const [activePlayerId, setActivePlayerId] = useState<string>('ana');
+  const [selectedMarketId, setSelectedMarketId] = useState<string>('');
+  const [activePlayerId, setActivePlayerId] = useState<string>('you');
   const [loading, setLoading] = useState<boolean>(true);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
 
@@ -57,15 +57,18 @@ export function useMarketSync() {
     async (marketIdOverride?: string) => {
       try {
         const targetId = marketIdOverride ?? selectedMarketId;
-        const res = await fetch(`/api/state?marketId=${encodeURIComponent(targetId)}`);
+        const query = targetId ? `?marketId=${encodeURIComponent(targetId)}` : '';
+        const res = await fetch(`/api/state${query}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = (await res.json()) as TerminalStatePayload;
         setData(json);
         if (json.activeBundle?.market.id && json.activeBundle.market.id !== selectedMarketId) {
           setSelectedMarketId(json.activeBundle.market.id);
+        } else if (!json.activeBundle && selectedMarketId !== '') {
+          setSelectedMarketId('');
         }
         setLoading(false);
-      } catch (err: any) {
+      } catch {
         setLoading(false);
       }
     },
@@ -96,7 +99,7 @@ export function useMarketSync() {
         await fetchState();
         return json;
       } catch (err: any) {
-        setErrorBanner(err.message || 'Action rejected by deterministic engine');
+        setErrorBanner(err.message || 'Action rejected');
         throw err;
       }
     },

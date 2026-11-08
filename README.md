@@ -10,6 +10,7 @@
 Agentverse_2026/
 ├── README.md
 ├── SPEC.md
+├── Makefile                           # Stack lifecycle: `make dev`, `make dev-down`, `make prod`, `make prod-down`
 ├── docker-compose.dev.yml             # Dev stack: mounts ./backend, ./frontend, and runs Python `seed` container
 ├── docker-compose.prod.yml            # Prod stack: builds production `backend` (:4000) and `frontend` (:3000)
 │
@@ -49,7 +50,21 @@ Agentverse_2026/
 
 ---
 
-## Docker Compose (`dev` & `prod`)
+## Makefile & Docker Compose (`dev` & `prod`)
+
+```bash
+# Start development stack (backend :4000, frontend :5173, Python seed)
+make dev
+
+# Stop development stack
+make dev-down
+
+# Start production stack (backend :4000, frontend :3000)
+make prod
+
+# Stop production stack
+make prod-down
+```
 
 ### 1. Development (`docker-compose.dev.yml`)
 Mounts `./backend` into the `backend` container (`:4000`), mounts `./frontend` into the `frontend` container (`:5173`), and runs the Python `seed` container ([`backend/scripts/seed_dev.py`](file:///Users/andreas/Documents/Agentverse_2026/backend/scripts/seed_dev.py)) once the backend healthcheck passes:

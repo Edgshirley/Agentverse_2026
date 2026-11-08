@@ -1,120 +1,83 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Group, Player } from '../shared/types';
+import { AppScreen } from '../App';
 
 interface HeaderBarProps {
   group: Group;
-  players: Player[];
-  activePlayerId: string;
-  onSelectPlayer: (id: string) => void;
+  activePlayer: Player;
+  marketCount: number;
+  activeScreen: AppScreen;
+  onNavigateScreen: (screen: AppScreen) => void;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
-  onOpenStrategySheet: (mode: 'create' | 'strategy') => void;
-  onStepReplay?: () => void;
   onResetDemo: () => void;
-  onJoinPlayer: (nickname: string) => Promise<void>;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
   group,
-  players,
-  activePlayerId,
-  onSelectPlayer,
+  activePlayer,
+  marketCount,
+  activeScreen,
+  onNavigateScreen,
   theme,
   onToggleTheme,
-  onOpenStrategySheet,
-  onStepReplay,
   onResetDemo,
-  onJoinPlayer,
 }) => {
-  const [newNick, setNewNick] = useState('');
-  const [showInviteInput, setShowInviteInput] = useState(false);
-
-  const activePlayer = players.find((p) => p.id === activePlayerId) ?? players[0];
-
-  const handleJoin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newNick.trim()) return;
-    await onJoinPlayer(newNick.trim());
-    setNewNick('');
-    setShowInviteInput(false);
-  };
-
   return (
     <header className="terminal-header">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <span className="badge-inverted">SPREAD // v2026.11</span>
-        <span style={{ fontWeight: 700 }}>{group.name}</span>
-        <span style={{ color: 'var(--fg-muted)' }}>
-          INVITE:[<strong style={{ color: 'var(--fg-primary)' }}>{group.invite_code}</strong>]
+      {/* Brand + Group Name */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span className="btn-coral pixel-font" style={{ padding: '5px 12px', fontSize: 13 }}>
+          ♠ SPREAD
         </span>
-        {showInviteInput ? (
-          <form onSubmit={handleJoin} style={{ display: 'inline-flex', gap: 4 }}>
-            <input
-              type="text"
-              placeholder="NICKNAME..."
-              value={newNick}
-              onChange={(e) => setNewNick(e.target.value)}
-              style={{ padding: '2px 6px', width: 110 }}
-            />
-            <button type="submit">JOIN</button>
-          </form>
-        ) : (
-          <button onClick={() => setShowInviteInput(true)} style={{ padding: '2px 6px' }}>
-            + JOIN GROUP
-          </button>
-        )}
+        <span style={{ fontWeight: 700, fontSize: 13 }}>{group.name}</span>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ color: 'var(--fg-muted)' }}>TRADER:</span>
-          {players.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => onSelectPlayer(p.id)}
-              className={p.id === activePlayerId ? 'btn-inverted' : ''}
-              style={{ padding: '2px 7px', fontSize: 11 }}
-            >
-              {p.nickname}
-            </button>
-          ))}
+      {/* Clean 3-Tab Navigation: ASK BOT · LIVE BETS · CHAT */}
+      <nav className="nav-pills-group">
+        <button
+          className={`nav-pill-btn ${activeScreen === 'voice' ? 'active' : ''}`}
+          onClick={() => onNavigateScreen('voice')}
+        >
+          ASK BOT
+        </button>
+        <button
+          className={`nav-pill-btn ${activeScreen === 'table' ? 'active' : ''}`}
+          onClick={() => onNavigateScreen('table')}
+        >
+          LIVE BETS {marketCount > 0 ? `(${marketCount})` : ''}
+        </button>
+        <button
+          className={`nav-pill-btn ${activeScreen === 'chat' ? 'active' : ''}`}
+          onClick={() => onNavigateScreen('chat')}
+        >
+          CHAT
+        </button>
+      </nav>
+
+      {/* Your SPRD Balance & Theme */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="chip-wallet-badge">
+          <span className="pixel-font">{activePlayer.wallet_balance_toks.toLocaleString()}</span>
+          <span className="pixel-font" style={{ fontSize: 11, opacity: 0.9 }}>
+            SPRD
+          </span>
+          {activePlayer.escrow_balance_toks > 0 && (
+            <span style={{ fontSize: 11, opacity: 0.75 }}>
+              ({activePlayer.escrow_balance_toks} IN PLAY)
+            </span>
+          )}
         </div>
 
-        {activePlayer && (
-          <div
-            style={{
-              border: '1px solid var(--border-strong)',
-              padding: '2px 8px',
-              display: 'flex',
-              gap: 10,
-            }}
-          >
-            <span>
-              WALLET: <strong>{activePlayer.wallet_balance_toks.toLocaleString()} TOKS</strong>
-            </span>
-            <span style={{ color: 'var(--fg-muted)' }}>|</span>
-            <span>
-              ESCROW: <strong>{activePlayer.escrow_balance_toks.toLocaleString()} TOKS</strong>
-            </span>
-          </div>
-        )}
-
-        <button className="btn-inverted" onClick={() => onOpenStrategySheet('create')}>
-          + PROPOSE MARKET [VOICE / AI]
+        <button onClick={onToggleTheme} style={{ padding: '5px 10px', fontSize: 11 }}>
+          {theme === 'dark' ? '☀ LIGHT' : '☾ DARK'}
         </button>
-        <button onClick={() => onOpenStrategySheet('strategy')}>
-          AI STRATEGY SHEET [FR-04 GATE]
-        </button>
-        {onStepReplay && (
-          <button onClick={onStepReplay} title="Advance deterministic match replay">
-            ▶ STEP MATCH FEED
-          </button>
-        )}
-        <button onClick={onToggleTheme}>
-          THEME: {theme === 'dark' ? '#000000 LIVE' : '#FAFAFA SHEET'}
-        </button>
-        <button onClick={onResetDemo} style={{ color: 'var(--fg-muted)' }}>
-          RESET DEMO
+        <button
+          onClick={onResetDemo}
+          style={{ padding: '5px 10px', fontSize: 11, color: 'var(--fg-muted)' }}
+          title="Clear all markets and start fresh as the first person in your group"
+        >
+          START FRESH
         </button>
       </div>
     </header>

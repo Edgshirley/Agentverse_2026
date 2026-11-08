@@ -20,17 +20,23 @@ export class EdgeStateStore {
   public stateVersion: number = 1;
   public replayIndexByMarket: Map<string, number> = new Map();
   private d1Initialized: boolean = false;
+  private seedDemoFixtures: boolean;
 
-  constructor() {
+  constructor(seedDemoFixtures: boolean = true) {
+    this.seedDemoFixtures = seedDemoFixtures;
     this.clock = new DeterministicClock(1762542000000);
     this.engine = new SpreadEngine(this.clock);
     this.group = {
       id: 'grp_citadel',
-      name: 'CITADEL // NORTH LONDON SYNDICATE',
+      name: seedDemoFixtures ? 'CITADEL // NORTH LONDON SYNDICATE' : 'FRIENDS BETTING CLUB',
       invite_code: 'SPREAD-2026',
       created_at: this.clock.now(),
     };
-    this.seedInitialState();
+    if (this.seedDemoFixtures) {
+      this.seedInitialState();
+    } else {
+      this.seedCleanFirstPersonState();
+    }
   }
 
   public reset(): void {
@@ -38,12 +44,27 @@ export class EdgeStateStore {
     this.engine = new SpreadEngine(this.clock);
     this.replayIndexByMarket.clear();
     this.stateVersion += 1;
-    this.seedInitialState();
+    if (this.seedDemoFixtures) {
+      this.seedInitialState();
+    } else {
+      this.seedCleanFirstPersonState();
+    }
   }
 
   public bumpVersion(): number {
     this.stateVersion += 1;
     return this.stateVersion;
+  }
+
+  private seedCleanFirstPersonState(): void {
+    this.engine.ledger.registerPlayer({
+      id: 'you',
+      group_id: this.group.id,
+      nickname: 'YOU',
+      is_admin: true,
+      wallet_balance_toks: 1000,
+      escrow_balance_toks: 0,
+    });
   }
 
   private seedInitialState(): void {
@@ -389,4 +410,4 @@ export class EdgeStateStore {
   }
 }
 
-export const globalStore = new EdgeStateStore();
+export const globalStore = new EdgeStateStore(false);

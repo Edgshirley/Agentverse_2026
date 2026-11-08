@@ -19,6 +19,22 @@ export const app = new Hono<{ Bindings: Env }>();
 
 app.use('/api/*', cors());
 
+function ensurePlayerRegistered(rawIdOrNick: string): string {
+  const cleanId = (rawIdOrNick || 'you').trim().toLowerCase().replace(/[^a-z0-9]/g, '_') || 'you';
+  const existing = globalStore.engine.ledger.getAllPlayers().find((p) => p.id === cleanId);
+  if (!existing) {
+    globalStore.engine.ledger.registerPlayer({
+      id: cleanId,
+      group_id: globalStore.group.id,
+      nickname: cleanId.toUpperCase(),
+      is_admin: false,
+      wallet_balance_toks: 1000,
+      escrow_balance_toks: 0,
+    });
+  }
+  return cleanId;
+}
+
 // 1. Get complete group & active market terminal state
 app.get('/api/state', async (c) => {
   const requestedMarketId = c.req.query('marketId');
@@ -89,10 +105,14 @@ app.post('/api/markets', async (c) => {
     const archetype = body.archetype || 'simple';
     const route = body.route || 'auto';
 
+    const proposerId = ensurePlayerRegistered(body.proposer_id || 'you');
+    const arbiterId =
+      route === 'arbiter' ? ensurePlayerRegistered(body.arbiter_id || 'boss') : null;
+
     let market: Market = {
       id,
       group_id: globalStore.group.id,
-      proposer_id: body.proposer_id || 'ana',
+      proposer_id: proposerId,
       archetype,
       question: body.question,
       unit: body.unit || (archetype === 'spread' ? 'units' : '%'),
@@ -106,7 +126,7 @@ app.post('/api/markets', async (c) => {
       state: archetype === 'spread' ? 'width_auction' : 'live',
       verifiability: body.verifiability || 'public_verifiable',
       route,
-      arbiter_id: route === 'arbiter' ? body.arbiter_id || 'eli' : null,
+      arbiter_id: arbiterId,
       countdown_ends_at:
         route === 'arbiter'
           ? body.countdown_ends_at || now + 15 * 60 * 1000
@@ -152,8 +172,9 @@ app.post('/api/markets/:id/auction/bid', async (c) => {
   try {
     const marketId = c.req.param('id');
     const { playerId, width } = await c.req.json<{ playerId: string; width: number }>();
+    const validPlayerId = ensurePlayerRegistered(playerId);
     const market = globalStore.engine.getMarket(marketId);
-    const res = globalStore.engine.auction.placeWidthBid(market, playerId, Number(width));
+    const res = globalStore.engine.auction.placeWidthBid(market, validPlayerId, Number(width));
     globalStore.engine.createMarket(res.market);
     globalStore.engine.emitWireTrace(
       marketId,
@@ -245,9 +266,10 @@ app.post('/api/markets/:id/take', async (c) => {
       amount: number;
       idempotencyKey?: string;
     }>();
+    const validPlayerId = ensurePlayerRegistered(playerId);
     globalStore.clock.advance(250);
-    const key = idempotencyKey || `take_${marketId}_${playerId}_${globalStore.clock.now()}`;
-    globalStore.engine.executeOneTapTake(marketId, playerId, side, Number(amount), key);
+    const key = idempotencyKey || `take_${marketId}_${validPlayerId}_${globalStore.clock.now()}`;
+    globalStore.engine.executeOneTapTake(marketId, validPlayerId, side, Number(amount), key);
     globalStore.bumpVersion();
     await globalStore.persistToD1(c.env);
     return c.json(globalStore.getFullMarketBundle(marketId));
@@ -307,12 +329,13 @@ app.post('/api/markets/:id/orders', async (c) => {
       sizeToks: number;
       idempotencyKey?: string;
     }>();
+    const validPlayerId = ensurePlayerRegistered(playerId);
     globalStore.clock.advance(250);
-    const key = idempotencyKey || `ord_${marketId}_${playerId}_${globalStore.clock.now()}`;
+    const key = idempotencyKey || `ord_${marketId}_${validPlayerId}_${globalStore.clock.now()}`;
     const mkt = globalStore.engine.getMarket(marketId);
     const res = globalStore.engine.poolBook.placeOrder(
       mkt,
-      playerId,
+      validPlayerId,
       side,
       type,
       Number(triggerLevel),
@@ -433,10 +456,11 @@ app.post('/api/markets/:id/strategy/activate', async (c) => {
     const body = await c.req.json<Partial<StrategyMandate>>();
     globalStore.clock.advance(250);
     const now = globalStore.clock.now();
+    const validPlayerId = ensurePlayerRegistered(body.player_id || 'you');
     const mandate: StrategyMandate = {
       id: body.id || `mandate_${now}`,
       market_id: marketId,
-      player_id: body.player_id || 'ana',
+      player_id: validPlayerId,
       input_modality: body.input_modality || 'voice',
       raw_transcript: body.raw_transcript || '',
       parsed_strategy_summary: body.parsed_strategy_summary || '',

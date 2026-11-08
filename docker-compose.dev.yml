@@ -104,6 +104,10 @@ services:
       dockerfile: Dockerfile
       target: dev
     container_name: spread-engine
+    # LLM keys live in git-ignored secrets.env (see INSTRUCTIONS.md)
+    env_file:
+      - path: secrets.env
+        required: false
     expose:
       - "4000"
     environment:

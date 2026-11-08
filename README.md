@@ -2,6 +2,8 @@
 
 **Friend Spreader (`Spread`)** is a real-time social market-making and continuous trading terminal where friend groups run **Spread (`[L, H]`)**, **Simple (`Yes/No` & scalar)**, **Ranking**, and **Stacked (derivative)** markets in integer play-money Stokens (`TOKS`).
 
+> ⚠️ **Before committing, read [INSTRUCTIONS.md](INSTRUCTIONS.md)** — API keys must never be pushed to GitHub.
+
 ---
 
 ## Repository Structure (`frontend/` + `backend/`)

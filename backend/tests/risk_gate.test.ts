@@ -60,6 +60,15 @@ describe('Two-Stage AI Classification & Mandatory 3-Part Strategy Risk Gate (SPE
     expect(a2Stacked.archetype).toBe('stacked');
   });
 
+  it('reads stakes with or without the chip unit', async () => {
+    const mkt = createTestMarket();
+    const stakeOf = async (text: string) =>
+      (await parseStrategyRuleWithRiskGate(text, 'text', mkt)).stake_toks;
+    expect(await stakeOf('Put 100 CHIP on YES')).toBe(100);
+    expect(await stakeOf('bet 25 chips on YES')).toBe(25);
+    expect(await stakeOf('stake 80 on YES')).toBe(80);
+  });
+
   it('blocks conversational strategy entry missing take_profit_level or min_balance_floor (FR-04 / FR-91)', async () => {
     const mkt = createTestMarket();
     const incompleteProposal = await parseStrategyRuleWithRiskGate(

@@ -229,7 +229,7 @@ Return JSON with:
     lower.includes('odds hit') ||
     lower.includes('stacked');
 
-  // Extract stake k if mentioned (e.g. "25 CHIP" or "25 CHIP")
+  // Extract stake k if mentioned (e.g. "25 CHIP" or "25 chips")
   const stakeMatch = prompt.match(/(\d+)\s*chips?/i);
   const k = stakeMatch ? Math.max(5, parseInt(stakeMatch[1], 10)) : isFootballMinute ? 10 : 25;
 
@@ -531,9 +531,9 @@ Extract from the player's transcript:
     side = aiParsed.side;
   }
 
-  // Extract stake in CHIP / CHIP (e.g. "Put 100 CHIP" or "stake 80")
+  // Extract stake in chips (e.g. "Put 100 CHIP", "bet 25 chips" or "stake 80")
   const stakeMatch =
-    clean.match(/(?:put|bet|stake|enter|buy)\s+(\d+)\s*chips??/i) ||
+    clean.match(/(?:put|bet|stake|enter|buy)\s+(\d+)\s*(?:chips?)?/i) ||
     clean.match(/(\d+)\s*chips?/i);
   const stakeToks = stakeMatch
     ? parseInt(stakeMatch[1], 10)

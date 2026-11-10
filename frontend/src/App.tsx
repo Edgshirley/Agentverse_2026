@@ -1,6 +1,7 @@
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
 import { useMarketSync } from './hooks/useMarketSync';
 import { useActivePlayerId } from './hooks/useActivePlayerId';
+import { useFakeFriends } from './hooks/useFakeFriends';
 import { PlayerSwitcher } from './dev/PlayerSwitcher';
 import { HeaderBar } from './components/HeaderBar';
 import { ProfileModal, generateThemedGamerName } from './components/ProfileModal';
@@ -94,10 +95,12 @@ export const App: React.FC = () => {
     logout,
   } = useMarketSync();
   const [activePlayerId, setActivePlayerId] = useActivePlayerId(authUser?.player_id);
+  useFakeFriends(data?.chatMessages, dispatchAction);
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [showUnitLadder, setShowUnitLadder] = useState<boolean>(true);
   const [mobilePane, setMobilePane] = useState<MobilePane>('chat');
+  const [simOpen, setSimOpen] = useState<boolean>(isSimRoute);
   const [betDrawerOpen, setBetDrawerOpen] = useState<boolean>(false);
   const [newBetRequest, setNewBetRequest] = useState<number>(0);
 
@@ -303,14 +306,14 @@ export const App: React.FC = () => {
         playerSwitcher={
           devPlayerTools ? (
             <>
-              <a
+              <button
                 className="dev-sim-link"
-                href={isSimRoute ? '/' : '/sim'}
-                title={isSimRoute ? 'Leave simulator' : 'Open simulator (dev only)'}
-                aria-label={isSimRoute ? 'Leave simulator' : 'Open simulator'}
+                onClick={() => setSimOpen((open) => !open)}
+                title={simOpen ? 'Stop the sim' : 'Play the sim (resets local data)'}
+                aria-label={simOpen ? 'Stop the sim' : 'Play the sim'}
               >
-                <Icon name={isSimRoute ? 'close' : 'play'} />
-              </a>
+                <Icon name={simOpen ? 'close' : 'play'} />
+              </button>
               <PlayerSwitcher
                 players={players}
                 activePlayerId={activePlayer.id}
@@ -437,9 +440,11 @@ export const App: React.FC = () => {
         ))}
       </nav>
 
-      {isSimRoute && devPlayerTools && SimConsole && (
+      {simOpen && devPlayerTools && SimConsole && (
         <Suspense fallback={null}>
           <SimConsole
+            displayName={effectiveDisplayName}
+            onClose={() => setSimOpen(false)}
             refresh={refresh}
             onSelectMarket={setSelectedMarketId}
             onOpenBet={openBetDrawer}

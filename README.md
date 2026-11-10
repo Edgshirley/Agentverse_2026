@@ -87,7 +87,10 @@ cd frontend && npm install && npm run dev
 - **Real or preset:** typed bets always call Gemini. The `PRESET` buttons use offline keyword rules and are labelled everywhere; they never call the AI.
 
 - **Personas:** play as Édouard, Jules, André, Michel or Nathalie from the header. The choice is per browser tab.
-- **Simulator:** http://localhost:5173/sim steps or skips through a scripted betting session. Opening it resets local data.
+- **Simulator:** the ▶ button in the header (or http://localhost:5173/sim) plays a scripted betting session in under 30 seconds, from your first chat message through MarketMate's suggestion to both markets settling. It resets local data when it starts.
+- **Fake friends:** MAYA and THEO reply in chat whenever a bet is created or someone talks about betting, so the chat feels alive when you test on your own. They stay quiet while the simulator runs.
+
+Lounge music (`frontend/public/audio/marketmate_lounge.m4a`) loops in every build, with mute and volume controls in the header. It starts on your first click, because browsers block autoplay, and it dips under each sound effect.
 
 ## Repo
 

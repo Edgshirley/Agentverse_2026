@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon';
+import { MusicControl } from './MusicControl';
 import { Player } from '../shared/types';
 import { CatAvatarId, PixelCatAvatar, PixelMascot } from './PixelMascot';
 import { HintBubble } from './HintBubble';
@@ -42,6 +43,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       {/* Your CHIP Balance, Theme & Cat Profile Button */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         {playerSwitcher}
+
+        <MusicControl />
 
         <div className="chip-wallet-badge">
           <Icon name="coins" size={15} />

@@ -401,43 +401,119 @@ button:disabled {
   background-color: var(--pastel-sky-bg);
 }
 
-.sim-console {
+
+.sim-pill {
   position: fixed;
   right: max(20px, calc((100vw - 1400px) / 2 + 20px));
   bottom: 20px;
   z-index: 30;
-  width: 400px;
+  width: 320px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-color: var(--brand-border);
 }
 
-.app-shell:has(.sim-console) .bet-drawer {
-  padding-bottom: 210px;
+.sim-pill button {
+  padding: 4px 6px;
 }
 
-.sim-console-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.sim-progress {
-  font-size: 11px;
+.sim-pill-tag {
+  font-size: 10px;
   color: var(--fg-muted);
 }
 
-.sim-buttons {
+.sim-pill-body {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  gap: 6px;
-  margin-left: auto;
+  flex-direction: column;
+  gap: 5px;
 }
 
-.sim-buttons button {
-  padding: 5px 8px;
+.sim-pill-label {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+.sim-suggest {
+  position: fixed;
+  left: max(20px, calc((100vw - 1400px) / 2 + 28px));
+  bottom: 96px;
+  z-index: 35;
+  width: min(360px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-color: var(--brand-border);
+  animation: sim-suggest-in 260ms cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+
+.sim-suggest p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.sim-suggest-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.sim-suggest-market {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 2px dashed var(--border-color);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.sim-suggest-market span {
+  color: var(--fg-muted);
+  font-size: 11px;
+}
+
+.sim-suggest button {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  pointer-events: none;
+  transition: transform 120ms ease, filter 120ms ease;
+}
+
+.sim-suggest button.sim-pressed {
+  transform: scale(0.92) translateY(2px);
+  filter: brightness(1.25);
+}
+
+@keyframes sim-suggest-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.app-shell:has(.sim-pill) .bet-drawer {
+  padding-bottom: 80px;
+}
+
+
+
+
+
 
 .sim-progress-bar {
   height: 6px;
@@ -452,28 +528,20 @@ button:disabled {
   transition: width 0.15s ease;
 }
 
-.sim-label {
-  font-size: 12px;
-  min-height: 1.55em;
-}
 
-.sim-chapters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
 
-.sim-chapters button {
-  padding: 3px 8px;
-  font-size: 11px;
-}
 
 @media (max-width: 900px) {
-  .sim-console {
-    left: 12px;
-    right: 12px;
+  .sim-pill {
+    left: 16px;
+    right: 16px;
     bottom: 72px;
     width: auto;
+  }
+
+  .sim-suggest {
+    left: 16px;
+    bottom: 140px;
   }
 }
 

@@ -17,7 +17,7 @@ import { createSqliteD1Database } from '../dist/sqlite_d1.mjs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Local (non-docker) runs: load LLM keys from the git-ignored repo-root
-// secrets.env. Already-set env vars win. See INSTRUCTIONS.md.
+// secrets.env. Already-set env vars win. See docs/CONTRIBUTING.md.
 const SECRETS_ENV = path.resolve(__dirname, '../../secrets.env');
 if (fs.existsSync(SECRETS_ENV) && typeof process.loadEnvFile === 'function') {
   process.loadEnvFile(SECRETS_ENV);

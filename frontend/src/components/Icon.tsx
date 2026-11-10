@@ -37,6 +37,8 @@ import { UserPlus } from 'pixelarticons/react/UserPlus.js';
 import { Users } from 'pixelarticons/react/Users.js';
 import { Wallet } from 'pixelarticons/react/Wallet.js';
 import { Zap } from 'pixelarticons/react/Zap.js';
+import { Volume3 } from 'pixelarticons/react/Volume3.js';
+import { VolumeX } from 'pixelarticons/react/VolumeX.js';
 
 const ICONS = {
   'arrow-down': ArrowDown,
@@ -77,6 +79,8 @@ const ICONS = {
   users: Users,
   wallet: Wallet,
   zap: Zap,
+  volume: Volume3,
+  'volume-x': VolumeX,
 };
 
 export type IconName = keyof typeof ICONS;

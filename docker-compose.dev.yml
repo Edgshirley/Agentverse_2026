@@ -104,7 +104,7 @@ services:
       dockerfile: Dockerfile
       target: dev
     container_name: marketmate-engine
-    # LLM keys live in git-ignored secrets.env (see INSTRUCTIONS.md)
+    # LLM keys live in git-ignored secrets.env (see docs/CONTRIBUTING.md)
     env_file:
       - path: secrets.env
         required: false

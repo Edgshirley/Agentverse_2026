@@ -1,12 +1,15 @@
 # MarketMate
 
+[![CI](https://github.com/Edgshirley/Agentverse_2026/actions/workflows/ci.yml/badge.svg)](https://github.com/Edgshirley/Agentverse_2026/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Turn any argument in your group chat into a market. Friends bet play-money `CHIP` on a real order book, with a tuxedo cat dealer turning chat messages into bets.
 
-[![Pitch deck: click to open the slides](docs/pitch-deck-preview.png)](https://edgshirley.github.io/Agentverse_2026/pitch-deck.html)
+![MarketMate demo: a chat message becomes a market, friends bid and take sides, and the bet settles](docs/demo.gif)
 
-<sub>▶ Click the slide to open the pitch deck (arrow keys to move).</sub>
+<sub>▶ [Watch with sound](docs/demo.mp4) · [Pitch deck](https://edgshirley.github.io/Agentverse_2026/pitch-deck.html) (arrow keys to move) · Built at the Agentverse 2026 hackathon</sub>
 
-> ⚠️ **Before committing, read [INSTRUCTIONS.md](INSTRUCTIONS.md)** — API keys must never be pushed to GitHub.
+**Stack:** React + TypeScript (Vite) · TypeScript rules engine (Hono) · FastAPI gateway · Keycloak · Postgres · Redis · Gemini with Google Search · Docker Compose
 
 ## How a bet works
 
@@ -38,7 +41,7 @@ An outcome exactly on `L` or `H` counts as inside the window. Yes/no and stacked
 
 ## Run it
 
-Needs Docker.
+Needs Docker. Without it, `make dev` falls back to the engine and UI only, with no login.
 
 ```bash
 make dev
@@ -68,7 +71,7 @@ cd backend && npm test
 make api-test
 ```
 
-The bot runs on Gemini with Google Search: it drafts bets from plain text, briefs bidders with web facts and settles bets from published results. Put `GEMINI_API_KEY` in `secrets.env` for dev (copy `secrets.env.example`) or `prod.env` for production. Both are git-ignored; see `INSTRUCTIONS.md`. Without a key the bot reports that it's unavailable and never invents anything.
+The bot runs on Gemini with Google Search: it drafts bets from plain text, briefs bidders with web facts and settles bets from published results. Put `GEMINI_API_KEY` in `secrets.env` for dev (copy `secrets.env.example`) or `prod.env` for production. Both are git-ignored; see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md). Without a key the bot reports that it's unavailable and never invents anything.
 
 ## Dev tools
 
@@ -85,7 +88,6 @@ cd frontend && npm install && npm run dev
 `npm run dev` sets `DEV_TOOLS=1`, which enables the dev and simulation routes. They return 404 in production.
 
 - **Real or preset:** typed bets always call Gemini. The `PRESET` buttons use offline keyword rules and are labelled everywhere; they never call the AI.
-
 - **Personas:** play as Édouard, Jules, André, Michel or Nathalie from the header. The choice is per browser tab.
 - **Simulator:** the ▶ button in the header (or http://localhost:5173/sim) plays a scripted betting session in under 30 seconds, from your first chat message through MarketMate's suggestion to both markets settling. It resets local data when it starts.
 - **Fake friends:** MAYA and THEO reply in chat whenever a bet is created or someone talks about betting, so the chat feels alive when you test on your own. They stay quiet while the simulator runs.
@@ -101,4 +103,12 @@ Lounge music (`frontend/public/audio/marketmate_lounge.m4a`) loops in every buil
 | `backend/src/engine/` | Deterministic rules: auction, payouts, order book, ledger |
 | `backend/src/worker/` | Hono API, bot agents, persistence |
 | `SPEC.md` | Full product and engine spec |
-| `TEAM_TASKS.md` | Open tasks |
+| `docs/TEAM_TASKS.md` | Open tasks |
+
+## Contributing
+
+API keys must never reach GitHub. Read [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) before your first commit: it covers where keys live, the pre-commit check and what to do if one leaks. CI runs the engine tests, the API tests and the frontend build on every push and pull request.
+
+## License
+
+[MIT](LICENSE)

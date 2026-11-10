@@ -105,7 +105,7 @@ export const App: React.FC = () => {
   const [newBetRequest, setNewBetRequest] = useState<number>(0);
 
   // Player Profile State: 6 Cat Avatars + Custom or Auto-Generated Themed Gamer Name.
-  // Saved in this browser's localStorage for now (see TEAM_TASKS.md: move to the server profile later).
+  // Saved in this browser's localStorage for now (see docs/TEAM_TASKS.md: move to the server profile later).
   const [savedProfile] = useState<StoredProfile>(() => loadStoredProfile());
   const [selectedAvatar, setSelectedAvatar] = useState<CatAvatarId>(savedProfile.avatar);
   const [customName, setCustomName] = useState<string>(savedProfile.customName);

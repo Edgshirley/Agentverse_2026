@@ -1,4 +1,4 @@
-# MarketMate — Engineering & UX Tasks for the Team (`TEAM_TASKS.md`)
+# MarketMate — Engineering & UX Tasks for the Team (`docs/TEAM_TASKS.md`)
 
 Updated: Nov 8, 2026
 
